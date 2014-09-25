@@ -8,8 +8,7 @@ import tornado.options
 import tornado.web
 
 import routes
-import logging
-import logging.config
+
 
 from tornado.options import options
 from common.appdefine import mclusterManagerDefine
@@ -30,9 +29,21 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(self, routes.handlers, **settings)
 
 def main():
-    config_path = os.path.join(options.base_dir, "config")
-    logging.config.fileConfig(config_path + '/logging.conf')
+   
 #    logging.basicConfig(filename = '/var/log/mcluster-manager/mcluster-manager.log', level = logging.INFO, filemode = 'w', format = '%(asctime)s - %(levelname)s: %(message)s')  
+#     if  len(sys.argv) == 2: 
+#         if sys.argv[1] == 'debug':
+#             _logger = logging.getLogger('root')
+#             _logger.setLevel(logging.DEBUG)
+#             print 'into debug mode, can see debug contents.'
+#         else :
+#             logging.info('input correct arguments.')
+#             return
+#     elif len(sys.argv > 2):
+#         logging.info('input arguments too many.')
+#         return 
+#     else :
+#         pass  
     tornado.options.parse_command_line()
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(options.port)
