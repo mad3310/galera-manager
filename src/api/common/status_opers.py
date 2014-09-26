@@ -40,7 +40,7 @@ class Check_Status_Base(object):
             return
             
         pre_stat = self.zkOper.retrieveClusterStatus()
-        if not pre_stat and pre_stat['_status'] != 'initializing':
+        if pre_stat.has_key('_status') and pre_stat['_status'] != 'initializing':
             node_num = len(data_node_info_list)
             online_node_list = self.zkOper.retrieve_started_nodes()
             dict = {}

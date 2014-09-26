@@ -1,5 +1,5 @@
-adminUser=root
-adminPassword=cm9vdA==
-clusterName=1111111111111letv_mcluster_test_1
-clusterUUID=963a4f3c-43b6-11e4-ac70-000c2949c8bb
+adminUser=
+adminPassword=
+clusterName=
+clusterUUID=
 dataNodeListOnCluster=
