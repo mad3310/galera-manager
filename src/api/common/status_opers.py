@@ -10,6 +10,7 @@ from common.helper import check_leader
 import logging
 import tornado.httpclient
 import datetime
+import re
 
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
@@ -37,7 +38,23 @@ class Check_Status_Base(object):
         leader_flag = check_leader()
         if leader_flag == False:
             return
+            
+        pre_stat = self.zkOper.retrieveClusterStatus()
+        if not pre_stat and pre_stat['_status'] != 'initializing':
+            node_num = len(data_node_info_list)
+            online_node_list = self.zkOper.retrieve_started_nodes()
+            dict = {}
         
+            online_num = len(online_node_list)
+            if node_num == online_num:
+                dict['_status'] = 'running'   
+            elif node_num / 2 + 1 <= online_num < node_num:
+                dict['_status'] = 'sub-health'
+            else :
+                dict['_status'] = 'failed' 
+            logging.info(pre_stat + " change to " + dict['_status'])
+            self.zkOper.writeClusterStatus(dict) 
+            
         success_count = 0
         failed_count = 0
         
@@ -209,14 +226,14 @@ class Check_DB_Anti_Item(Check_Status_Base):
         Path_Value = {}
         Path_Value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
         if Path_Value != {}:
-            str_msg = Path_Value['message']
-            r_list = str_msg[::-1].split('=')
-            r_value = r_list[0]
-            value = int(r_value[::-1])
-            failed_count = value
+#             str_msg = Path_Value['message']
+#             r_list = str_msg[::-1].split('=')
+#             r_value = r_list[0]
+#             value = int(r_value[::-1])
+            failed_count = int(re.findall(r'failed count=(\d)', Path_Value['message'])[0])
         if conn == None:
             failed_count += 1
-            if failed_count > 1:
+            if failed_count > 4:
                 anti_item_count = 500
                 error_record ="no way to connect to db"
         else:
@@ -230,7 +247,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
         
             if anti_item_count > 0:
                 error_record = "mcluster existed on Myisam,Nopk,FullText,SPATIAL,please check which db right now."
-                logging.error(error_record)
+                logging.info(error_record)
     
        
         alarm_level = self.retrieve_alarm_level(anti_item_count, 0, 0)
