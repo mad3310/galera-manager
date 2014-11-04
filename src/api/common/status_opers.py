@@ -52,7 +52,7 @@ class Check_Status_Base(object):
                 dict['_status'] = 'sub-health'
             else :
                 dict['_status'] = 'failed' 
-            logging.info(pre_stat + " change to " + dict['_status'])
+            logging.info(pre_stat['_status'] + " change to " + dict['_status'])
             self.zkOper.writeClusterStatus(dict) 
             
         success_count = 0

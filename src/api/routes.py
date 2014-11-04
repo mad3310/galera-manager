@@ -54,8 +54,6 @@ handlers = [
             (r"/mcluster/monitor/async", Mcluster_Monitor_Async),
             (r"/mcluster/status", MclusterStatus),
             (r"/mcluster/status/([a-zA-Z]+)", MclusterStatusDetail),
-            (r"/glb/start", Startgbalancer),
-            (r"/glb/stop", Stopgbalancer),
             (r"/inner/db/check/wr", Inner_DB_Check_WR),
             (r"/inner/db/check/wsrep_status", Inner_DB_Check_WsrepStatus),
             (r"/inner/db/check/cur_conns", Inner_DB_Check_CurConns),

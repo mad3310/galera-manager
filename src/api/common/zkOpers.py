@@ -7,17 +7,19 @@ Created on 2013-7-11
 @author: asus
 '''
 from kazoo.client import KazooClient
+from kazoo.exceptions import SessionExpiredError
 
 import logging
 import threading
-
+from common.my_logging import debug_log
 class ZkOpers(object):
     
     zk = None
     
     rootPath = "/letv/mysql/mcluster"
+    log_obj = debug_log('root')
+    logger = log_obj.get_logger_object()
     
-    logger = logging.getLogger('root')
     '''
     classdocs
     '''
@@ -25,8 +27,42 @@ class ZkOpers(object):
         '''
         Constructor
         '''
-        self.zk = KazooClient(hosts=zkAddress+':'+str(zkPort))
-        self.zk.start()
+#         self.log_obj = debug_log('root')
+#         self.logger = self.log_obj.get_logger_object()
+        self.zkaddress = zkAddress
+        self.zkport = zkPort
+        self.zk = self.instance(self.zkaddress, self.zkport)
+        #self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport))
+        #self.zk.start()
+        
+    def my_listener(self, stat):
+        if stat == KazooClient.LOST:
+            self.zk = self.instance(self.zkaddress, self.zkport)
+        elif stat == KazooClient.SUSPENDED:
+            self.zk = self.instance(self.zkaddress, self.zkport)
+        else:
+            pass
+            
+    def instance(self, address, port):
+        self.__zkc = KazooClient(hosts=address+":"+str(port))
+        self.__zkc.add_listener(self.my_listener)
+        self.__zkc.start()
+        logging.info("instance zk client (%s:%s)" % (address, port))
+        return self.__zkc
+        
+    def ensureinstance(self):
+        count = 0
+        while count < 10:
+            try:
+                clusters = self.zk.get_children(self.rootPath)
+                if len(clusters) != 0:
+                    return self.zk
+            except SessionExpiredError, e:
+                logging.error("zk client retry time: %s" % (count))
+                self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport))
+                self.zk.start()
+            finally:
+                count += 1
         
     def existCluster(self):
         self.zk.ensure_path(self.rootPath)
@@ -52,7 +88,19 @@ class ZkOpers(object):
         self.zk.ensure_path(path)
         self.zk.set(path, str(clusterProps))#vesion need to write
         
-            
+    def writeClusterStatus(self, clusterProps):
+        clusterUUID = self.getClusterUUID()
+        path = self.rootPath + "/" + clusterUUID + "/cluster_status"
+        self.zk.ensure_path(path)
+        self.zk.set(path, str(clusterProps))  
+        
+    def retrieveClusterStatus(self):
+        self.zk = self.ensureinstance()
+        clusterUUID = self.getClusterUUID()
+        path = self.rootPath + "/" + clusterUUID + "/cluster_status"
+        resultValue = self._retrieveSpecialPathProp(path)
+        return resultValue   
+    
     def writeDataNodeInfo(self,clusterUUID,dataNodeProps):
         dataNodeIp = dataNodeProps['dataNodeIp']
         path = self.rootPath + "/" + clusterUUID + "/dataNode/" + dataNodeIp
@@ -174,6 +222,7 @@ class ZkOpers(object):
             self.zk.delete(path)
             
     def retrieve_started_nodes(self):
+        self.zk = self.ensureinstance()
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/node/started"
         started_nodes = self._return_children_to_list(path)

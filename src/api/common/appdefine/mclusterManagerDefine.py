@@ -64,3 +64,10 @@ define("stat_variable_status", default="/usr/local/bin/innotop -h127.0.0.1 -uroo
 define("stat_dir_size", default="df -Ph", help="stat_dir_size")
 define("stat_top_command", default='top -u mysql -bn 1', help='stat_top_command')
 define("stat_mem_command", default='free -g', help='stat_mem_command')
+
+define("x_queue_avg_threshold", default = 10, type = int, help = "limit wsrep local send queue avg ")
+define("sleep_time", default = 10, type = int, help = "sleep time in _check_start_status")
+define("delta_time", default = 8, type = int, help = "delta time between read and write")
+
+define("new_count_times", default = 60, type = int, help = "if it is new cluster, we use this by default")
+define("old_count_times", default = 300, type = int, help = "Others we use this value.")

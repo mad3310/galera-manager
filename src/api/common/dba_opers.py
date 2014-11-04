@@ -34,22 +34,22 @@ class DBAOpers(object):
             sql = """drop user {username}@'{ip_address}'""".format(username=username,ip_address=ip_address)
             logging.info("drop user sql is:" + sql)
             cursor.execute(sql)
-
-    def create_db_table(self, conn, tb_name , db_name ):
+    
+    def check_create_table(self, conn, tb_name , db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
         try:
-            sql = "CREATE TABLE if not exists %s ( `id` int(12) NOT NULL AUTO_INCREMENT ,`time` varchar(32) NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8" % (tb_name)
-        
+            sql = "select * from %s" % (tb_name)
             cursor.execute(sql)
-        except Exception, e:
-            logging.exception(e)
+        except MySQLdb.Error, e:
+            sql = "CREATE TABLE if not exists %s ( `id` int(12) NOT NULL AUTO_INCREMENT ,`time` varchar(32) NOT NULL, `identifier` varchar(64) NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8" % (tb_name)
+            cursor.execute(sql)
         logging.info('create table ' + tb_name + ' success')
 
-    def insert_record_time(self, conn, time_data , tb_name, db_name):
+    def insert_record_time(self, conn, time_data, identifier, tb_name, db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
-        sql = "INSERT INTO %s (time) VALUES('%s')" % (tb_name, time_data)
+        sql = "INSERT INTO %s (time, identifier ) VALUES('%s','%s')" % (tb_name, time_data, identifier)
         try:
              cursor.execute(sql)
         
@@ -71,23 +71,64 @@ class DBAOpers(object):
         rows = cursor.fetchall()
         ret = rows[0][0]
         return ret
-    def query_record_time(self, conn, tb_name, db_name ):
+    def delete_tb_contents(self, conn, tb_name, db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
         try:
-            sql = "SELECT time from %s" % (tb_name) 
+            sql = "delete from %s" % (tb_name)
             cursor.execute(sql)
+        except Exception, e:
+            logging.exception(e)
+        
+    def query_record_time(self, conn, identifier, tb_name, db_name):
+        conn.select_db(db_name)
+        cursor = conn.cursor()
+        try:
+            sql = "select time from %s where identifier = '%s' order by id desc limit 1" %(tb_name, identifier)
+            cursor.execute(sql)
+#             id = cursor.fetchall()
+#             
+#             sql = "SELECT time from %s where identifer = %s and id = %s" % (tb_name, identifer, id) 
+#             cursor.execute(sql)
         except Exception, e:
             logging.exception(e)
         rows = cursor.fetchall()   
         ret = rows[0][0]
         return ret
+    def check_tb_data(self, conn, tb_name, db_name):
+        conn.select_db(db_name)
+        cursor = conn.cursor()
+        try :
+            sql = "select count(*) from %s" % (tb_name)
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            num = rows[0][0]
+        
+        except Exception, e :
+            logging.error(e)
+        return num
+    
+
+    def count_tb_table(self, conn, db_name):
+        conn.select_db(db_name)
+        cursor = conn.cursor()
+        
+        try :
+            sql = "SHOW TABLES"
+            cursor.execute(sql)            
+            _tuples = cursor.fetchall()
+            
+            count = sum(1 for t in _tuples)
+        except Exception, e:
+            logging.exception(e)
+        return count
+    
     def drop_table(self, conn, tb_name, db_name ):
         conn.select_db(db_name)
         cursor = conn.cursor()
      	
         try:
-            sql = "DROP table %s" %(tb_name)
+            sql = "DROP table `%s`" %(tb_name)
             cursor.execute(sql)
         except Exception, e:
             logging.exception(e)
@@ -397,9 +438,10 @@ class DBAOpers(object):
             return False
         
         value = key_value.get('wsrep_local_send_queue_avg')
-        if float(value) > 0.5:
+        send_qu_threshold = options.x_queue_avg_threshold
+        if float(value) >= send_qu_threshold:
             logging.error("wsrep local send queue avg is " + value)
             return False
-        
+        logging.info("wsrep local send queue avg is " + value)
         return True
         

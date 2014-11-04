@@ -15,10 +15,13 @@ from common.utils.exceptions import HTTPAPIError
 from common.db_stat_opers import DBStatOpers
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
+from common.helper import check_leader
+from common.my_logging import debug_log
 
-
+import socket
 import datetime
 import time
+import logging
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 # create database in mcluster
 # eg. curl --user root:root -d "dbName=managerTest&userName=zbz" "http://localhost:8888/db"
@@ -34,15 +37,25 @@ class DBOnMCluster(APIHandler):
     conf_opers = ConfigFileOpers()
     
     def post(self):
+        dict = {}
         dbName = self.get_argument("dbName", None)
+        dict.setdefault("dbName ", dbName)
         userName = self.get_argument("userName", None)
+        dict.setdefault("userName ", userName)
         ip_address = self.get_argument("ip_address", '%')
+        dict.setdefault("ip_address " ,ip_address)
         max_queries_per_hour = self.get_argument("max_queries_per_hour", 0)
+        dict.setdefault("max_queries_per_hour " , max_queries_per_hour)
         max_updates_per_hour = self.get_argument("max_updates_per_hour", 0)
+        dict.setdefault("max_updates_per_hour " , max_updates_per_hour)
         max_connections_per_hour = self.get_argument("max_connections_per_hour", 0)
+        dict.setdefault("max_connections_per_hour " , max_connections_per_hour)
         max_user_connections = self.get_argument("max_user_connections", 200)
+        dict.setdefault("max_user_connections" ,max_user_connections)
         userPassword = get_random_password()
-        
+        intg_dict = {}
+        intg_dict.setdefault("args:" , dict)
+        logging.info(str(intg_dict))
         conn = self.dba_opers.get_mysql_connection()
         
         try:
@@ -130,6 +143,8 @@ class Inner_DB_Retrieve_Recover_UUID_Seqno(APIHandler):
 # we need to know this issue and notification.
 # eg. curl "http://localhost:8888/inner/db/check/cur_conns" 
 class Inner_DB_Check_CurConns(APIHandler):
+    log_obj = debug_log('root')
+    logger = log_obj.get_logger_object()
     
     dba_opers = DBAOpers()
     
@@ -174,8 +189,8 @@ class Inner_DB_Check_WsrepStatus(APIHandler):
             error_message = "connection break down"
             raise HTTPAPIError(status_code=417, error_detail= error_message,\
                             notification = "direct", \
-                            log_message = e,\
-                            response =  e)
+                            log_message = error_message,\
+                            response =  error_message)
             
         if check_result == False:
             self.finish("false")
@@ -191,108 +206,104 @@ class Inner_DB_Check_WR(APIHandler):
     dba_opers = DBAOpers()
     
     confOpers = ConfigFileOpers()
+    log_obj = debug_log('root')
+    logger = log_obj.get_logger_object()
     
     invokeCommand = InvokeCommand()
-    
+
+#     
     def get(self):
-        userPassword = get_random_password()
-        tmp_str = 'mmt_' + userPassword
-        tbName = tmp_str
-       # userName = tmp_str
-        #ip_address = options.mysql_host
-         
-        conn = self.dba_opers.get_mysql_connection()
+
+       
+        dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
+        data_node_ip = dataNodeProKeyValue['dataNodeIp']
+        self.logger.info('data_node_ip is :' + str(data_node_ip))
+        started_ip_list = self.zkOper.retrieve_started_nodes()
+        self.logger.info('started_ip_list is: ' + str(started_ip_list))
+        identifier = socket.gethostname()
         
-        if conn is None:
-            dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
-            data_node_ip = dataNodeProKeyValue['dataNodeIp']
-            self.zkOper.remove_started_node(data_node_ip)
-            self.invokeCommand.run_check_shell(options.kill_innotop)
+        conn = self.dba_opers.get_mysql_connection()
+        try:       
+            if conn is None:
+                if data_node_ip in started_ip_list:
+                    self.zkOper.remove_started_node(data_node_ip)
+                    self.invokeCommand.run_check_shell(options.kill_innotop)
+                self.finish("false")
+                return
+            self.zkOper.write_started_node(data_node_ip)
+            
+            dbName = 'monitor'
+            n_time = datetime.datetime.now()
+            
+            h = n_time.hour
+            min = n_time.minute
+            offset = h/6
+
+            tbName = ''
+         
+            prefix_tb_name = 'tem'
+            mid_tb_name = str(identifier)
+            mid_tb_name_rps = mid_tb_name.replace("-", "_")
+            pre_tbname = prefix_tb_name + mid_tb_name_rps
+            for i in range(4):
+                tbName = pre_tbname + "_" + str(i)
+                self.dba_opers.check_create_table(conn, tbName, dbName )
+                
+            tbName = pre_tbname +"_" + str(offset)
+            
+            del_tbName = ''
+            if  h % 6 == 0 and min <= 4:
+                int_tbName = (offset + 2 ) % 4
+                        
+                del_tbName = pre_tbname + "_" + str(int_tbName)
+                _count = self.dba_opers.check_tb_data(conn, del_tbName, dbName)
+                if _count != 0:
+                    self.dba_opers.delete_tb_contents(conn, del_tbName, dbName)
+                    self.logger.info('delete the contents in database (%s) before 12 hours success!' % (del_tbName))
+            
+            str_time = n_time.strftime(TIME_FORMAT)
+            self.logger.info("time is :" + str_time)
+            self.dba_opers.insert_record_time(conn, str_time , identifier ,tbName , dbName)
+            self.logger.info('Insert time %s into table %s ' % (str_time, tbName))
+          
+
+        except Exception,e:
+            self.logger.error(e)
             self.finish("false")
             return
-        
-        dbName = 'monitor'
-        try:
-            self.dba_opers.create_db_table(conn, tbName , dbName)
-            n_time = datetime.datetime.now()
-            str_time = n_time.strftime(TIME_FORMAT) 
-            self.dba_opers.insert_record_time(conn, str_time ,tbName , dbName)
-    #        self.dba_opers.create_user(conn, userName, userPassword, ip_address, dbName)
-    #        self.dba_opers.grant_wr_privileges(conn, userName, userPassword, dbName, ip_address)
-    #        self.dba_opers.flush_privileges(conn)
-        except Exception,e:
-            error_message = " create table and insert data into it break down"
-            raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                            notification = "direct", \
-                            log_message= error_message,\
-                            response =  error_message)
         finally:
             conn.close()
                
-        dbProps = {"tbName":tbName}
-       
-        clusterUUID = self.zkOper.getClusterUUID()
-        self.zkOper.write_db_info(clusterUUID, dbName, dbProps)
-       
-     #   self.logger.debug("monitor database create successful,the master user name=" + userName + " and user password=" + userPassword)
-       
-        db_props = self.zkOper.retrieve_db_prop(clusterUUID, dbName)
-       
-        if db_props is None:
-            error_message = "[DB_Check_WR].[retrieve null value for created db props for remove operation!]"
-            raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                            notification = "direct", \
-                            log_message= error_message,\
-                            response =  error_message)
-            
-        z_tbName = db_props.get("tbName")
-        
-        try:
-
+        return_flag = "true"
+        try: 
             conn = self.dba_opers.get_mysql_connection()
-            row = self.dba_opers.query_count_rows(conn, tbName, dbName)
-            if row != 1:
-                error_message = 'Insert into database wrong'
-                raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                            notification = "direct", \
-                            log_message= error_message,\
-                            response =  error_message)
-   
-                
-    
-            record_time = self.dba_opers.query_record_time(conn ,tbName , dbName)
-# set this to determine that delta time between writes and read is less than 3 seconds.
-            t_threshold = 3
-            
+        except Exception, e:
+            return_flag = 'false'
+            self.logger.error(e)
+            self.finish(return_flag)
+            return
+        try: 
+            record_time = self.dba_opers.query_record_time(conn ,identifier ,tbName , dbName)
             record_stamp_time = time.mktime(time.strptime(record_time, TIME_FORMAT))
             n_stamp_time = time.time()
+            
+            t_threshold = options.delta_time
             delta_time = n_stamp_time - record_stamp_time
+            
             if delta_time > t_threshold:
-                error_message = 'delta_time bewteen read and write is too long'
+                error_message = 'delta_time bewteen read and write is too long -- delta_time is %s' % (delta_time)
+                self.logger.error(error_message)
                 raise HTTPAPIError(status_code=500, error_detail= error_message,\
                             notification = "direct", \
                             log_message= error_message,\
                             response = error_message)             
-            #self.zkOper.remove_db(clusterUUID, dbName)
-            #self.dba_opers.delete_user(conn, masterUserName, ip_address)
-            #self.dba_opers.drop_database(conn, dbName)
+
         except Exception, e:
             self.logger.error(e)
-            error_message = 'the status of database is incorrect'
-            raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                          notification = "direct", \
-                          log_message= error_message,\
-                          response =  error_message)
-            
-        
-        finally:
-            self.dba_opers.drop_table(conn, tbName, dbName)      
+            return_flag = "false"
+        finally: 
             conn.close()
-                
-        self.logger.debug("monitor database remove successful!removed database is " + dbName + 
-                " and remove user, the table name is " + str(z_tbName))
-        
-        self.finish("true")
+        self.finish(return_flag)
         
 
 # retrieve the database stat with innotop

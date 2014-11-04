@@ -10,6 +10,7 @@ from tornado.options import options
 from tornado.web import asynchronous
 from tornado.gen import engine
 from common.utils.exceptions import HTTPAPIError
+#from common.zkOpers import ZkOpers
 
 import logging
 import uuid
@@ -31,6 +32,8 @@ class CreateMCluster(APIHandler):
     def post(self):
         #check if exist cluster
         existCluster = self.zkOper.existCluster()
+        requestParam = {}
+        args = self.request.arguments
         if existCluster:
             raise HTTPAPIError(status_code=417, error_detail="server has belong to a cluster,should be not create new cluster!",\
                                 notification = "direct", \
@@ -39,10 +42,16 @@ class CreateMCluster(APIHandler):
         
         requestParam = {}
         args = self.request.arguments
+        logging.info("args :" + str(args))
         for key in args:
             value = args[key][0]
             requestParam.setdefault(key,value)
-            
+        cluster_name = requestParam['clusterName']
+        if len(cluster_name) >= 33:
+            raise HTTPAPIError(status_code=403, error_detail="Cluster name is too long, please use name whoes length is less than 33 characters",\
+                                notification = "direct", \
+                                log_message= "Cluster name is too long, please use name whoes length is less than 33 characters",\
+                                response =  "Cluster name is too long, please use name whoes length is less than 33 characters!")
         clusterUUID = str(uuid.uuid1())
         requestParam.setdefault("clusterUUID",clusterUUID)
         
@@ -109,12 +118,22 @@ class InitMCluster(APIHandler):
             self.confOpers.setValue(options.mysql_cnf_file_name, requestParam)
             
             sst_user_password = self.invokeCommand.runBootstrapScript()
+            #self.zkOper = ZkOpers('127.0.0.1',2181)
+            #logging.info("init zk")
             self.zkOper.write_started_node(data_node_ip)
+                
             
 #            mysql_cnf_text_test = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
             
             mysql_cnf_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
             self.zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_text, issue_mycnf_changed)
+        except Exception, e:
+            logging.error(e)
+            raise HTTPAPIError(status_code=500, error_detail="server_error",
+                               notification = "direct",
+                               log_message= "server_error",
+                               response =  "server_error")
+            
         finally:
             self.zkOper.unLock_init_node_action(lock)
         
@@ -152,21 +171,22 @@ class ClusterStart(APIHandler):
     @asynchronous
     def post(self):
         args = self.request.arguments
+        logging.info("args :" + str(args))
         for key in args:
             value = args[key][0]
         if value != 'new' and value != 'old':
-            raise HTTPAPIError(status_code=-1, error_detail="arguments are wrong",\
-                                notification = "direct", \
-                                log_message= "arguments are wrong",\
-                                response =  "arguments are wrong, retry again.")
+            raise HTTPAPIError(status_code=-1, error_detail="arguments are wrong",
+                               notification = "direct",
+                               log_message= "arguments are wrong",
+                               response =  "arguments are wrong, retry again.")
         logging.info("Arguments in Http requests is " + value)
         try:
             self.mysql_service_opers.start(value)
         except kazoo.exceptions.LockTimeout:
-            raise HTTPAPIError(status_code=578, error_detail="lock by other thread",\
-                                notification = "direct", \
-                                log_message= "lock by other thread",\
-                                response =  "current operation is using by other people, please wait a moment to try again!")
+            raise HTTPAPIError(status_code=578, error_detail="lock by other thread",
+                               notification = "direct",
+                               log_message= "lock by other thread",
+                               response =  "current operation is using by other people, please wait a moment to try again!")
         
         dict = {}
  #       dict.setdefault("code", '000000')
@@ -182,7 +202,7 @@ class ClusterStatus(APIHandler):
     @asynchronous
     def get(self):
         try:
-            cluster_status = self.zkOper.retrieve_monitor_status_value("node", "cluster_status")
+            cluster_status = self.zkOper.retrieveClusterStatus()
             cluster_started_nodes = self.zkOper.retrieve_started_nodes()
         except kazoo.exceptions.LockTimeout:
             raise HTTPAPIError(status_code=578, error_detail="lock by other thread",\
@@ -216,7 +236,7 @@ class ClusterStop(APIHandler):
         
         status_dict = {}
         status_dict['_status'] = 'stopping'
-        self.zkOper.write_monitor_status("node", "cluster_status", status_dict)
+        self.zkOper.writeClusterStatus(status_dict)
         
         dict = {}
         #dict.setdefault("code", '000000')

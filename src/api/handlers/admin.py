@@ -3,6 +3,7 @@ import os
 import stat
 import base64
 import shutil
+import logging
 
 from common.configFileOpers import ConfigFileOpers
 from base import BaseHandler, APIHandler
@@ -20,6 +21,7 @@ class AdminConf(APIHandler):
     def post(self):
         requestParam = {}
         args = self.request.arguments
+        logging.info("args:" + str(args))
         try:
             for key in args:
                 requestParam.setdefault(key,args[key][0])
@@ -27,6 +29,7 @@ class AdminConf(APIHandler):
             if requestParam != {}:
                 self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
         except Exception,e:
+            logging.error(e)
             error_message="server error in cluster conf"
             raise HTTPAPIError(status_code=500, error_detail= error_message,\
                                     notification = "direct", \
@@ -65,6 +68,7 @@ class AdminReset(APIHandler):
             shutil.copyfile(mclusterManagerCnfTemFileName, mclusterManagerCnfFileName)
    
         except Exception,e:
+            logging.error(e)
             error_message="server error in cluster reset"
             raise HTTPAPIError(status_code=500, error_detail= error_message,\
                                     notification = "direct", \
@@ -86,6 +90,7 @@ class AdminUser(APIHandler):
     def post(self):
         requestParam = {}
         args = self.request.arguments
+        logging.info("args :"+ str(args))
         for key in args:
             value = args[key][0]
             if key == 'adminPassword':

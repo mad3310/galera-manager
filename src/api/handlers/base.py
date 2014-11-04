@@ -7,6 +7,7 @@ from tornado.options import options
 from common.zkOpers import ZkOpers
 from common.utils.exceptions import HTTPAPIError
 from common.utils.mail import send_email
+from common.my_logging import debug_log
 
 import logging
 import traceback
@@ -16,7 +17,8 @@ class BaseHandler(RequestHandler):
     
     zkOper = ZkOpers('127.0.0.1',2181)
     
-    logger = logging.getLogger('root')
+    log_obj = debug_log('root')
+    logger = log_obj.get_logger_object()
     
     @property
     def db(self):

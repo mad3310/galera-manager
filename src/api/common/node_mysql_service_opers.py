@@ -109,17 +109,20 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
         finished_flag = False
         
         sh_name = "ps -ef | grep mysqld_safe | grep -iv grep | wc -l"
-        
-        while not finished_flag:
+        count = 10
+        while not finished_flag and count >= 0:
+            
             result = self.invokeCommand.run_check_shell(sh_name)
             
             if int(result) == 0:
                 finished_flag = False
-                break
+                count -= 1
+                #break
             
             finished_flag = self.dba_opers.retrieve_wsrep_status()
                         
             time.sleep(2)
+
         
         if finished_flag:    
             self.zkOper.write_started_node(data_node_ip)

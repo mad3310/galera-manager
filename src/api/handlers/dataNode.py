@@ -2,6 +2,7 @@
 
 import tornado.httpclient
 import kazoo
+import logging
 
 from common.configFileOpers import ConfigFileOpers
 from common.tornado_basic_auth import require_basic_auth
@@ -24,6 +25,7 @@ class AddDataNodeToMCluster(APIHandler):
         try:
             requestParam = {}
             args = self.request.arguments
+            logging.info("args :" + str(args))
             for key in args:
                 value = args[key][0]
                 requestParam.setdefault(key,value)
@@ -41,30 +43,43 @@ class AddDataNodeToMCluster(APIHandler):
             fullText,stat = self.zkOper.retrieveMysqlProp(clusterUUID)
             self.confOpers.writeFullText(options.mysql_cnf_file_name, fullText)
         
+            data_node_ip = requestParam.get('dataNodeIp')
             mycnfParam = self.confOpers.getValue(options.mysql_cnf_file_name)
             orginal_cluster_address = mycnfParam['wsrep_cluster_address']
-            data_node_ip = requestParam.get('dataNodeIp')
-            new_cluster_address = orginal_cluster_address + "," + str(data_node_ip)
-            data_node_name = requestParam.get('dataNodeName')
+            
+            
+            index = orginal_cluster_address.find("//")
+            
+            ip_str = orginal_cluster_address[index + 2 :]
+            ip_lists = ip_str.rstrip().split(",")
+            dict = {}
+            
+            if data_node_ip not in ip_lists:
+                new_cluster_address = orginal_cluster_address + "," + str(data_node_ip)
+                
+                data_node_name = requestParam.get('dataNodeName')
         
-            mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-            self.confOpers.writeFullText(options.mysql_cnf_file_name, mysql_cnf_full_text)
+                mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
+                #self.confOpers.writeFullText(options.mysql_cnf_file_name, mysql_cnf_full_text)
         
-            keyValueMap = {}
-            keyValueMap.setdefault('wsrep_cluster_address',new_cluster_address)
-            keyValueMap.setdefault('wsrep_node_name', str(data_node_name))
-            keyValueMap.setdefault('wsrep_node_address' ,str(data_node_ip))
-            self.confOpers.setValue(options.mysql_cnf_file_name, keyValueMap)
+                keyValueMap = {}
+                keyValueMap.setdefault('wsrep_cluster_address',new_cluster_address)
+                keyValueMap.setdefault('wsrep_node_name', str(data_node_name))
+                keyValueMap.setdefault('wsrep_node_address' ,str(data_node_ip))
+                self.confOpers.setValue(options.mysql_cnf_file_name, keyValueMap)
         
-            mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-            self.zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_full_text, issue_mycnf_changed)
+                mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
+                self.zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_full_text, issue_mycnf_changed)
+            else:
+                dict.setdefault("message", "node already in the cluster")
+                pass
         except Exception,e:
+            logging.error(e)
             error_message="server error in cluster_node add"
             raise HTTPAPIError(status_code=500, error_detail= error_message,\
                                     notification = "direct", \
                                     log_message= error_message,\
                                     response =  error_message)
-        dict = {}
 #        dict.setdefault("code", "000000")
         dict.setdefault("message", "add data node into cluster successful!")
         self.finish(dict)
@@ -87,6 +102,7 @@ class SyncDataNode(APIHandler):
             return_result = self.zkOper.retrieve_data_node_info(ip_address)
             self.confOpers.setValue(options.data_node_property, return_result)
         except Exception,e:
+            logging.error(e)
             error_message="Specify the ip address "
             raise HTTPAPIError(status_code=400, error_detail= error_message,\
                                     notification = "direct", \
@@ -142,11 +158,13 @@ class DataNodeStart(APIHandler):
             isNewCluster = False
         
             args = self.request.arguments
+            logging.info("args :" + str(args))
             if args != {}:
                 isNewCluster = args['isNewCluster'][0]
         
             self.mysql_service_opers.start(isNewCluster)
         except Exception,e:
+            logging.error(e)
             error_message="server error in cluster_node start"
             raise HTTPAPIError(status_code=500, error_detail= error_message,\
                                     notification = "direct", \
@@ -159,7 +177,7 @@ class DataNodeStart(APIHandler):
 
 # stop mysqld service on data node
 # eg. curl --user root:root "http://localhost:8888/node/stop"
-@require_basic_auth        
+@require_basic_auth
 class DataNodeStop(APIHandler):
     
     mysql_service_opers = Node_Mysql_Service_Opers()
@@ -169,6 +187,7 @@ class DataNodeStop(APIHandler):
         try:
             self.mysql_service_opers.stop()
         except Exception,e:
+            logging.error(e)
             error_message="server error in cluster_node stop"
             raise HTTPAPIError(status_code=500, error_detail= error_message,\
                                     notification = "direct", \
@@ -230,7 +249,7 @@ class StatNodeMemorySize(APIHandler):
         self.finish(return_dict)
         
 
-# no used        
+# no used
 class CopyConfigFileInfoHandler(APIHandler):
     def get(self):
         ip = self.get_argument("ip", None)
