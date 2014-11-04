@@ -75,7 +75,7 @@ class DBAOpers(object):
         conn.select_db(db_name)
         cursor = conn.cursor()
         try:
-            sql = "delete from %s" % (tb_name)
+            sql = "truncate %s" % (tb_name)
             cursor.execute(sql)
         except Exception, e:
             logging.exception(e)
