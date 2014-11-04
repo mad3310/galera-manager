@@ -10,7 +10,6 @@ from handlers.database import *
 from handlers.databaseUser import *
 from handlers.monitor import *
 from handlers.status import *
-from handlers.gbalancer import *
 
 handlers = [
             (r"/generateConfigFile", GenerateConfigFileHandler),
