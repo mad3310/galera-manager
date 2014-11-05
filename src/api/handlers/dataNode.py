@@ -288,7 +288,7 @@ class CopyConfigFileInfoHandler(APIHandler):
 class PortCheck(APIHandler):
     invokeCommand = InvokeCommand()
     def get(self):
-        check_port_shell = 'netstat -anutlp | grep 3306'
+        check_port_shell = 'netstat -anutlp | grep 3306|grep -w LISTEN'
         result = self.invokeCommand.run_check_shell(check_port_shell)
         if result != '':
             self.finish('true')
