@@ -90,7 +90,7 @@ class Check_Status_Base(object):
                 error_record_ip += callback_key_ip + ","
                 failed_count += 1
 
-        if (err_record_msg == '' or error_record_ip == '')
+        if (err_record_msg != '' or error_record_ip != ''):
             error_record_dict.setdefault("msg",error_record_msg)
             error_record_dict.setdefault("ip", error_record_ip.rstrip(','))
      
