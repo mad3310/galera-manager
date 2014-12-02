@@ -69,7 +69,7 @@ class Check_Status_Base(object):
        
         error_record_dict = {}    
         error_record_msg = ''
-        error_record_ip = ''
+        error_record_ip_list = [] 
 
         for i in range(len(key_sets)):
             callback_key = key_sets.pop()
@@ -87,12 +87,12 @@ class Check_Status_Base(object):
                 success_count += 1
             else:
                 callback_key_ip = callback_key.split("_")[-1]
-                error_record_ip += callback_key_ip + ","
+                error_record_ip_list.append(callback_key_ip)
                 failed_count += 1
 
         if (err_record_msg != '' or error_record_ip != ''):
             error_record_dict.setdefault("msg",error_record_msg)
-            error_record_dict.setdefault("ip", error_record_ip.rstrip(','))
+            error_record_dict.setdefault("ip", error_record_ip_list)
      
         http_client.close()
         
@@ -108,7 +108,7 @@ class Check_Status_Base(object):
         dt = datetime.datetime.now()
         result_dict.setdefault("message", message)
         result_dict.setdefault("alarm", alarm_level)
-        result_dict.setdefault("error_record", str(error_record_dict))
+        result_dict.setdefault("error_record", error_record_dict)
         result_dict.setdefault("ctime", dt.strftime(TIME_FORMAT))
         
 #        logging.info("monitor_type:" + monitor_type + " monitor_key:" + 
@@ -211,7 +211,7 @@ class Check_Node_Size(Check_Status_Base):
         format_str = "total=%s, exist=%s, lost=%s"
         format_values = (zk_data_node_count, address_count, lost_count)
         message = format_str % format_values
-        node_size_dict.setdefault("lost_ip", str(lost_ip_list))
+        node_size_dict.setdefault("lost_ip", lost_ip_list)
         node_size_dict.setdefault("message", message)
         node_size_dict.setdefault("alarm", alarm_level)
         
