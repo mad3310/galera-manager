@@ -62,6 +62,7 @@ def main():
         config_file_obj.setValue(options.data_node_property, return_result)
     except Exception, e:
         logging.info("No write ")
+        logging.error(e)
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(options.port)
      
