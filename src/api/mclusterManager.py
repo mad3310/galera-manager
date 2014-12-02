@@ -8,11 +8,14 @@ import tornado.options
 import tornado.web
 
 import routes
-
+import socket
+import logging
 
 from tornado.options import options
 from common.appdefine import mclusterManagerDefine
 from common.sceduler_opers import Sceduler_Opers
+from common.zkOpers import ZkOpers 
+from common.configFileOpers import ConfigFileOpers
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -43,11 +46,26 @@ def main():
 #         logging.info('input arguments too many.')
 #         return 
 #     else :
-#         pass  
+#         pass 
     tornado.options.parse_command_line()
+    try:
+        zk_client = ZkOpers('127.0.0.1', 2181)
+        config_file_obj = ConfigFileOpers()
+        
+        clusterUUID = zk_client.getClusterUUID() 
+        data, stat = zk_client.retrieveClusterProp(clusterUUID) 
+    
+        config_file_obj.setValue(options.cluster_property, eval(data)) 
+
+        node_ip_addr = socket.gethostbyname(socket.gethostname())
+        return_result = zk_client.retrieve_data_node_info(node_ip_addr)
+        config_file_obj.setValue(options.data_node_property, return_result)
+    except Exception, e:
+        logging.info("No write ")
+        logging.error(e)
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(options.port)
-    
+     
     sceduler_opers = Sceduler_Opers()
     
     tornado.ioloop.IOLoop.instance().start()
