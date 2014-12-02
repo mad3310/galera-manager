@@ -181,6 +181,7 @@ class Check_Node_Size(Check_Status_Base):
         if key_value == {}:
             return False
         
+        lost_ip_list = [] 
         wsrep_incoming_addresses_value = key_value.get('wsrep_incoming_addresses')
         wsrep_cluster_size = key_value.get('wsrep_cluster_size')
         logging.info("[compare Mcluster the count of data node] incoming address(show status):" + 
@@ -196,7 +197,9 @@ class Check_Node_Size(Check_Status_Base):
             
             if zk_incoming_address_port in wsrep_incoming_addresses_list:
                 address_count = address_count + 1
-                
+            else:
+                 lost_ip_list.append(data_node_info_list[i]) 
+
         total = zk_data_node_count
         exist = address_count
         lost = zk_data_node_count - address_count
@@ -208,6 +211,7 @@ class Check_Node_Size(Check_Status_Base):
         format_str = "total=%s, exist=%s, lost=%s"
         format_values = (zk_data_node_count, address_count, lost_count)
         message = format_str % format_values
+        node_size_dict.setdefault("lost_ip", str(lost_ip_list))
         node_size_dict.setdefault("message", message)
         node_size_dict.setdefault("alarm", alarm_level)
         
