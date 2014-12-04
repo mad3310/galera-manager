@@ -55,13 +55,17 @@ def main():
 		
        	    clusterUUID = zk_client.getClusterUUID() 
             data, stat = zk_client.retrieveClusterProp(clusterUUID) 
-    
-            config_file_obj.setValue(options.cluster_property, eval(data)) 
 
             node_ip_addr = socket.gethostbyname(socket.gethostname())
             return_result = zk_client.retrieve_data_node_info(node_ip_addr)
-            if return_result:
+
+            if return_result and data:
                 config_file_obj.setValue(options.data_node_property, return_result)
+                config_file_obj.setValue(options.cluster_property, eval(data)) 
+            else:
+                logging.info("write data into configuration failed")
+         else:
+             logging.info("Cluster does not exist")
     except Exception, e:
         logging.info("No write ")
         logging.error(e)
