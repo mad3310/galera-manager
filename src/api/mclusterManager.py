@@ -51,15 +51,17 @@ def main():
     try:
         zk_client = ZkOpers('127.0.0.1', 2181)
         config_file_obj = ConfigFileOpers()
-        
-        clusterUUID = zk_client.getClusterUUID() 
-        data, stat = zk_client.retrieveClusterProp(clusterUUID) 
+        if (zk_client.existCluster()):
+		
+       	    clusterUUID = zk_client.getClusterUUID() 
+            data, stat = zk_client.retrieveClusterProp(clusterUUID) 
     
-        config_file_obj.setValue(options.cluster_property, eval(data)) 
+            config_file_obj.setValue(options.cluster_property, eval(data)) 
 
-        node_ip_addr = socket.gethostbyname(socket.gethostname())
-        return_result = zk_client.retrieve_data_node_info(node_ip_addr)
-        config_file_obj.setValue(options.data_node_property, return_result)
+            node_ip_addr = socket.gethostbyname(socket.gethostname())
+            return_result = zk_client.retrieve_data_node_info(node_ip_addr)
+            if return_result:
+                config_file_obj.setValue(options.data_node_property, return_result)
     except Exception, e:
         logging.info("No write ")
         logging.error(e)
