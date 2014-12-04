@@ -11,6 +11,7 @@ import routes
 import socket
 import logging
 
+import json
 from tornado.options import options
 from common.appdefine import mclusterManagerDefine
 from common.sceduler_opers import Sceduler_Opers
@@ -59,9 +60,9 @@ def main():
             node_ip_addr = socket.gethostbyname(socket.gethostname())
             return_result = zk_client.retrieve_data_node_info(node_ip_addr)
 
-            if return_result and data:
+            if return_result and type(data) is dict:
                 config_file_obj.setValue(options.data_node_property, return_result)
-                config_file_obj.setValue(options.cluster_property, eval(data)) 
+                config_file_obj.setValue(options.cluster_property, data) 
             else:
                 logging.info("write data into configuration failed")
         else:
