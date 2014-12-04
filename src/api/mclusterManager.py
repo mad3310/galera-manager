@@ -64,7 +64,7 @@ def main():
                 config_file_obj.setValue(options.cluster_property, eval(data)) 
             else:
                 logging.info("write data into configuration failed")
-         else:
+        else:
              logging.info("Cluster does not exist")
     except Exception, e:
         logging.info("No write ")

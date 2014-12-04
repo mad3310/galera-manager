@@ -24,9 +24,13 @@ class Abstract_Stat_Service(object):
     def _retrieve_dict_with_result(self, stat_command):
         return_result = self.invokeCommand.run_check_shell(stat_command)
         title_value_result = return_result.split('\n')
-        title_list = title_value_result[0].split('\t')
-        value_list = title_value_result[1].split('\t')
+       
         
+        title_list = title_value_result[0].split('\t')
+        value_list = []
+        if len(title_value_result) == 2:
+		    value_list = title_value_result[1].split('\t') 
+           
         dict = {}
         for i in range(len(title_list)):
             title = title_list[i]
