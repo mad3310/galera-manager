@@ -59,10 +59,15 @@ def main():
 
             node_ip_addr = socket.gethostbyname(socket.gethostname())
             return_result = zk_client.retrieve_data_node_info(node_ip_addr)
-
-            if return_result and type(data) is dict:
+            
+            json_str_return_result = return_result.replace("'", "\"")
+            dict_return_result = json.loads(json_str_return_result)
+            
+            json_str_data = data.replace("'", "\"")
+            dict_data = json.loads(json_str_data)            
+            if type(return_result) is dict and type(dict_data) is dict:
                 config_file_obj.setValue(options.data_node_property, return_result)
-                config_file_obj.setValue(options.cluster_property, data) 
+                config_file_obj.setValue(options.cluster_property, dict_data) 
             else:
                 logging.info("write data into configuration failed")
         else:
