@@ -65,7 +65,7 @@ def main():
             
             json_str_data = data.replace("'", "\"")
             dict_data = json.loads(json_str_data)            
-            if type(return_result) is dict and type(dict_data) is dict:
+            if type(dict_return_result) is dict and type(dict_data) is dict:
                 config_file_obj.setValue(options.data_node_property, return_result)
                 config_file_obj.setValue(options.cluster_property, dict_data) 
             else:
