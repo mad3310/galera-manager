@@ -144,8 +144,8 @@ class BackUpCheck(APIHandler):
     def get_latest_date_id(self, _path):
         list = []
         for f in listdir(_path):
-            if(re.search("_script", f) != None):
-               date = f.replace("_script.log", "")
+            if(re.search("^[0-9]+_script.log$", f) != None):
+               date = f.replace("_script", "")
                list.append(int(date))
         if (len(list) == 0):
             logging.error("list is empty")
