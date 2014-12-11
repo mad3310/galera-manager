@@ -2,8 +2,4 @@ adminUser=
 adminPassword=
 clusterName=
 clusterUUID=
-<<<<<<< HEAD
 dataNodeListOnCluster=
-=======
-dataNodeListOnCluster=
->>>>>>> 5f52e0550699ccfacb83a342bfe598296207f204
