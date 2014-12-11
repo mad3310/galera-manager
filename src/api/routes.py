@@ -10,7 +10,7 @@ from handlers.database import *
 from handlers.databaseUser import *
 from handlers.monitor import *
 from handlers.status import *
-
+from handlers.backup import *
 handlers = [
             (r"/generateConfigFile", GenerateConfigFileHandler),
             (r"/copyConfigFileInfo", CopyConfigFileInfoHandler),
@@ -60,5 +60,7 @@ handlers = [
             (r"/inner/node/check/log/error", DataNodeMonitorLogError),
             (r"/inner/node/check/log/warning", DataNodeMonitorLogWarning),
             (r"/inner/node/check/log/health", DataNodeMonitorLogHealth),
-            (r"/inner/node_port/check", PortCheck)
+            (r"/inner/node_port/check", PortCheck),
+            (r"/backup", BackUp),
+            (r"/backup/check", BackUpCheck)
 ]
