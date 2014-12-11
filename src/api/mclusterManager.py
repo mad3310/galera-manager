@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
+import logging
+import json
 import os.path
+import routes
+import socket
+
 import tornado.httpserver
 import tornado.ioloop
 import tornado.options
 import tornado.web
-
-import routes
-import socket
-import logging
-
-import json
 from tornado.options import options
 from common.appdefine import mclusterManagerDefine
 from common.sceduler_opers import Sceduler_Opers

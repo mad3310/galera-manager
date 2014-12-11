@@ -122,17 +122,16 @@ class Check_Cluster_Available(Check_Status_Base):
     invokeCommand = InvokeCommand()
     
     def check(self, data_node_info_list):
-        shell_result = self.invokeCommand.run_check_shell(options.check_mcluster_health)
+        shell_result = self.invokeCommand.run_check_shell(options.check_mcluster_health).strip()
         
         message = "no avaliable data node on VIP"
         
-        if shell_result:
-            message = "ok"
-            
         failed_count = 0
-        if shell_result == None or shell_result == False:
+        if shell_result == None or shell_result == False or shell_result == "false":
             failed_count = 3
-            
+        else:
+            message = "ok"
+        
         alarm_result = self.retrieve_alarm_level(0,0,failed_count)
             
         cluster_available_dict = {}
