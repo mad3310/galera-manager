@@ -27,7 +27,7 @@ class backup_thread(threading.Thread):
             ret_sub_p = invokeCommand._runSysCmdnoWait(options.full_back_sh)
             logging.info("ret_sub_p" + str(ret_sub_p))
             if ret_sub_p == False:
-                queue.put(-1)
+                self.queue.put(-1)
                 raise HTTPAPIError(status_code=411, error_detail="Full Back up process terminated!",\
                                 notification = "direct", \
                                 log_message= "Full Back up process terminated!",\
