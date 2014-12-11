@@ -71,3 +71,4 @@ define("delta_time", default = 8, type = int, help = "delta time between read an
 
 define("new_count_times", default = 60, type = int, help = "if it is new cluster, we use this by default")
 define("old_count_times", default = 300, type = int, help = "Others we use this value.")
+define("full_back_sh", default=join(base_dir,"shell","mcluster_backup_full.sh"), help="full backup")
