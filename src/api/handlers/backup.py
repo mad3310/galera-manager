@@ -22,18 +22,18 @@ from tornado.web import asynchronous
 from common.invokeCommand import InvokeCommand
 from common.utils.exceptions import HTTPAPIError
 from handlers.backup_thread import backup_thread
-
+from common.tornado_basic_auth import require_basic_auth
 
 
 # Start backing up database data.
-#eq curl  "http://localhost:8888/backup" backup data by full dose.
+#eq curl --user root:root "http://localhost:8888/backup" backup data by full dose.
 
 queue = multiprocessing.Queue()
 
+@require_basic_auth
 class BackUp(APIHandler):
     
 #    global store_list
-    @asynchronous
     def get(self):
 
         backup_worker = backup_thread(queue)
