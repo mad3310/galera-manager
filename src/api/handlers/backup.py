@@ -34,6 +34,7 @@ queue = multiprocessing.Queue()
 class BackUp(APIHandler):
     
 #    global store_list
+    @asynchronous
     def get(self):
 
         backup_worker = backup_thread(queue)
@@ -85,7 +86,8 @@ class BackUp(APIHandler):
 
 #eq curl  "http://localhost:8888/backup/check" backup data by full dose.
 class BackUpCheck(APIHandler):
-#    global store_list
+#    global store_list	
+    @asynchronous
     def get(self):
         date_id = self.get_latest_date_id('/var/log/mcluster-manager/mcluster-backup/')
         logging.info("here")
