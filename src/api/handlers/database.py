@@ -313,7 +313,12 @@ class DBStat(APIHandler):
     stat_opers = DBStatOpers()
     
     def get(self):
-        return_dict = self.stat_opers.stat()
+        args = self.request.arguments
+        if len(args) == 0:
+            return_dict = self.stat_opers.stat()
+        else:
+            if args['inner'][0] == "true":
+                return_dict = self.stat_opers.stat("inner")
         self.finish(return_dict)
 
 # retrieve the database stat with innotop
