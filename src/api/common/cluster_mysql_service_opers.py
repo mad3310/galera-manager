@@ -183,7 +183,7 @@ class GaleraStatus():
                 
             self.c_uuid_seqno_dict.setdefault(data_node_ip, uuid_seqno_sub_dict)
                 
-        logging.info("Before sort, the uuid_seqno_dict value is %s" % str(c_uuid_seqno_dict))
+        logging.info("Before sort, the uuid_seqno_dict value is %s" % str(self.c_uuid_seqno_dict))
         return self.c_uuid_seqno_dict
 
         
@@ -258,7 +258,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 for (node_ip, value) in uuid_seqno_dict.items():
                     if not value:
                         err_node.join(node_ip)
-                if node_ip:
+                if err_node != "":
                     error_message = "data node(%s) error, please check the status and start it by human." % (node_ip)
                     status_dict['_status'] = 'failed'
                     self.zkOper.writeClusterStatus(status_dict)
