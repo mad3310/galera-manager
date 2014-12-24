@@ -13,7 +13,7 @@ class InvokeCommand():
         p = subprocess.Popen(cmdStr, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         ret_str = p.stdout.read()
         retval = p.wait()
-        return (ret_str,retval)
+        return (ret_str.strip(),retval)
 
     def _runSysCmdnoWait(self,cmdStr):
         if cmdStr == "":
