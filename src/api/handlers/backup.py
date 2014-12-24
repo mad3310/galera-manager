@@ -4,6 +4,7 @@ import re
 import os
 import time
 import Queue
+import socket
 import logging
 import datetime
 import threading
@@ -82,16 +83,81 @@ class BackUp(APIHandler):
         dict.setdefault("message", "Process is running ,wait")
         self.finish(dict)
          
+#eq curl  "http://localhost:8888/backup/inner/check" backup data by full dose.
+class BackUpChecker(APIHandler):
+
+#    global store_list	
+    @asynchronous
+    def get(self):
+        hostname = socket.gethostname()
+        obj =  re.search("-n-3", hostname)
+        if obj == None:
+            self.finish("true")
+            return
+        date_id = self.get_latest_date_id('/var/log/mcluster-manager/mcluster-backup/')
+        logging.info("date_id" + str(date_id))
+        time_partition_list = []
+        time_partition_list = self.resolve_time(date_id)
+        log_datetime = datetime.datetime(int(time_partition_list[0]), int(time_partition_list[1]), 
+						int(time_partition_list[2]), int(time_partition_list[3]), int(time_partition_list[4]), int(time_partition_list[5]))
+       
+        now_time = datetime.datetime.now()
+        time_expire = datetime.timedelta(hours = 30)
+        expire_time = log_datetime + time_expire
+        logging.info("expire_time :" +str(expire_time))
+        logging.info("now_time :" + str(now_time))
+        logging.info("result:" + str(now_time > expire_time))
+        status_dict = {}
+        if now_time > expire_time:
+            status_dict.setdefault("status","expired") 
+            self.zkOper.write_db_backup_info(status_dict)
+            self.finish("expired")
+        else:
+            status_dict.setdefault("status","expected")
+            self.zkOper.write_db_backup_info(status_dict)
+            self.finish("true")
+        logging.info("backup status:" + str(status_dict))
+      
+        
+    def resolve_time(self, str_time):
+        resolve_result = []
+
+        year = str_time[0:4]
+        month = str_time[4:6]
+        day = str_time[6:8]
+        hour = str_time[8:10]
+        min = str_time[10:12]
+        second = str_time[12:14]
+        
+        resolve_result.append(year)
+        resolve_result.append(month)
+        resolve_result.append(day)
+        resolve_result.append(hour)
+        resolve_result.append(min)
+        resolve_result.append(second)
+        return resolve_result
+
+    def get_latest_date_id(self, _path):
+        list = []
+        for f in listdir(_path):
+            if(re.search("^[0-9]+_script.log$", f) != None):
+               date = f.replace("_script.log", "")
+               list.append(int(date))
+        if (len(list) == 0):
+            logging.error("list is empty")
+        list.sort()
+        return str(list[-1])
 
 
 #eq curl  "http://localhost:8888/backup/check" backup data by full dose.
 class BackUpCheck(APIHandler):
+
 #    global store_list	
     @asynchronous
     def get(self):
         date_id = self.get_latest_date_id('/var/log/mcluster-manager/mcluster-backup/')
-        logging.info("here")
-#       value = p_dict['flag']
+        logging.info("date_id" + str(date_id))
+        #value = p_dict['flag']
 #       if value != 'inc' and value != 'full':
 #           raise HTTPAPIError(status_code=-1, error_detail="arguments are wrong",
 #                             notification = "direct",
@@ -143,11 +209,12 @@ class BackUpCheck(APIHandler):
                     
         self.finish(dict)
 
+    
     def get_latest_date_id(self, _path):
         list = []
         for f in listdir(_path):
             if(re.search("^[0-9]+_script.log$", f) != None):
-               date = f.replace("_script", "")
+               date = f.replace("_script.log", "")
                list.append(int(date))
         if (len(list) == 0):
             logging.error("list is empty")

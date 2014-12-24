@@ -90,7 +90,9 @@ class DB_Info_Async_Handler:
     check_db_cur_conns = Check_DB_Cur_Conns()
     
     check_db_anti_itme = Check_DB_Anti_Item()
-    
+
+    check_db_backup =  Check_Backup_Status()
+
     def retrieve_info(self, data_node_info_list):
         self._action(data_node_info_list)
         
@@ -99,6 +101,7 @@ class DB_Info_Async_Handler:
         self.check_db_wsrep_status.check(data_node_info_list)
         self.check_db_cur_conns.check(data_node_info_list)
         self.check_db_anti_itme.check(data_node_info_list)
+        self.check_db_backup.check(data_node_info_list)
         
 # retrieve the status of mcluster
 # eg. curl "http://localhost:8888/mcluster/monitor"

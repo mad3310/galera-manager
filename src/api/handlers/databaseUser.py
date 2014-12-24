@@ -15,23 +15,23 @@ from common.utils import get_random_password
 from common.utils.exceptions import HTTPAPIError
 
 # create manager user in mcluster
-# eg. curl --user root:root -d "role=manager&dbName=managerTest&userName=zbz" "http://localhost:8888/db/user"
+# eg. curl --user root:root -d "role=manager&dbName=managerTest&userName=zbz" "http://localhost:8888/dbUser"
 
 # create readonly user in mcluster
-# eg. curl --user root:root -d "role=ro&dbName=managerTest&userName=zbz" "http://localhost:8888/db/user"
+# eg. curl --user root:root -d "role=ro&dbName=managerTest&userName=zbz" "http://localhost:8888/dbUser"
 
 # create write_read user in mcluster
-# eg. curl --user root:root -d "role=wr&dbName=managerTest&userName=zbz" "http://localhost:8888/db/user"
+# eg. curl --user root:root -d "role=wr&dbName=managerTest&userName=zbz" "http://localhost:8888/dbUser"
 
 # delete database user in mcluster
-# eg. curl --user root:root -X DELETE "http://localhost:8888/Dbuser/{dbName}/{userName}/{ipAddress}"
+# eg. curl --user root:root -X DELETE "http://localhost:8888/dbUser/{dbName}/{userName}/{ipAddress}"
 
 # update database user parameter
 # eg. 
-# curl --user root:root -d "dbName=managerTest&userName=zbz&ip_address=127.0.0.1&max_queries_per_hour=200" "http://localhost:8888/db/user"
-# curl --user root:root -d "dbName=managerTest&userName=zbz&ip_address=127.0.0.1&max_updates_per_hour=200" "http://localhost:8888/db/user"
-# curl --user root:root -d "dbName=managerTest&userName=zbz&ip_address=127.0.0.1&max_connections_per_hour=200" "http://localhost:8888/db/user"
-# curl --user root:root -d "dbName=managerTest&userName=zbz&ip_address=127.0.0.1&max_user_connections=200" "http://localhost:8888/db/user"
+# curl --user root:root -d "dbName=managerTest&userName=zbz&ip_address=127.0.0.1&max_queries_per_hour=200" "http://localhost:8888/dbUser"
+# curl --user root:root -d "dbName=managerTest&userName=zbz&ip_address=127.0.0.1&max_updates_per_hour=200" "http://localhost:8888/dbUser"
+# curl --user root:root -d "dbName=managerTest&userName=zbz&ip_address=127.0.0.1&max_connections_per_hour=200" "http://localhost:8888/dbUser"
+# curl --user root:root -d "dbName=managerTest&userName=zbz&ip_address=127.0.0.1&max_user_connections=200" "http://localhost:8888/dbUser"
 
 
 @require_basic_auth

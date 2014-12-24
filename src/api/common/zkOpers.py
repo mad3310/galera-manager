@@ -129,7 +129,13 @@ class ZkOpers(object):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName 
         self.zk.ensure_path(path)
         self.zk.set(path, str(dbProps))#version need to write
-        
+
+    def write_db_backup_info(self, dict_status):
+        clusterUUID = self.getClusterUUID()
+        path = self.rootPath + "/" + clusterUUID + "/monitor_status/" + "db/" + "backup"
+        self.zk.ensure_path(path)
+        self.zk.set(path, str(dict_status))
+
     def write_user_info(self,clusterUUID,dbName,username,ipAddress,userProps):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + username + "|" + ipAddress
         self.zk.ensure_path(path)
