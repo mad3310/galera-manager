@@ -90,8 +90,13 @@ class Check_Status_Base(object):
         http_client.close()
         
         alarm_level = self.retrieve_alarm_level(zk_data_node_count, success_count, failed_count)
-        if monitor_type != "backup" and monitor_key == "db":
-           self.write_status(zk_data_node_count, success_count, failed_count, alarm_level, error_record, monitor_type, monitor_key)
+        if monitor_key == "backup":
+            if failed_count >= 1:
+                error_record = "expired"
+            else:
+                error_record = "expected"
+        
+        self.write_status(zk_data_node_count, success_count, failed_count, alarm_level, error_record, monitor_type, monitor_key)
          
     def write_status(self, total_count, success_count, failed_count, alarm_level, error_record, monitor_type, monitor_key):
         result_dict = {}
@@ -206,6 +211,7 @@ class Check_Node_Size(Check_Status_Base):
         
         return node_size_dict
     
+
 class Check_DB_Anti_Item(Check_Status_Base):
     
     dba_opers = DBAOpers()
@@ -427,7 +433,7 @@ class Check_Backup_Status(Check_Status_Base):
            return options.alarm_general
         else:
             return options.alarm_serious
-        
+
            
 class Check_Node_Log_Warning(Check_Status_Base):
     
