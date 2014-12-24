@@ -118,7 +118,7 @@ class DBStatOpers(Abstract_Stat_Service):
         requesturi = "http://"+peer_ip+":"+str(options.port)+url
         try:
             response = http_client.fetch(requesturi)
-        except httpclient.HTTPError as e:
+        except tornado.httpclient.HTTPError as e:
             logging.error(str(e))
             http_client.close()
             return "error"
