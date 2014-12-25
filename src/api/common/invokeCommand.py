@@ -25,7 +25,7 @@ class InvokeCommand():
         if p.poll():
             return False
         else:
-            return p.pid
+            return p
 
     def runBootstrapScript(self):
         stop_command_result = self._runSysCmd(options.mysql_stop_command)
@@ -105,7 +105,7 @@ class InvokeCommand():
     def run_service_shell(self, service_shell_path_name):
         result = str(self._runSysCmdnoWait(service_shell_path_name))
         logging.info("service shell: " + service_shell_path_name + " the result is: " + result)
-        return result
+        return result.pid
             
 if __name__ == "__main__":
     invokeCommand = InvokeCommand()
