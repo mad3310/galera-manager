@@ -102,11 +102,6 @@ class InvokeCommand():
         logging.info("check shell: " +  check_shell_path_name + " the result is: " + result)
         return result
 
-    def run_service_shell(self, service_shell_path_name):
-        result = str(self._runSysCmdnoWait(service_shell_path_name))
-        logging.info("service shell: " + service_shell_path_name + " the result is: " + result)
-        return result.pid
-            
 if __name__ == "__main__":
     invokeCommand = InvokeCommand()
     sst_user_password = invokeCommand.runBootstrapScript()
