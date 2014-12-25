@@ -63,6 +63,7 @@ class DBUser(APIHandler):
         intg_dict = {}
         intg_dict.setdefault("args:", dict)
         logging.info(str(intg_dict))
+        
         if role is None:
             raise HTTPAPIError(status_code=417, error_detail="when create db's user, no specify the user role",\
                                 notification = "direct", \
@@ -90,8 +91,16 @@ class DBUser(APIHandler):
         if user_password is None:
             user_password = get_random_password()
         
-        conn = self.dba_opers.get_mysql_connection()
+        existed_flag =  "true"
         
+        conn = self.dba_opers.get_mysql_connection()
+        existed_flag = self.dba_opers.check_if_existed_database(conn, dbName)
+        if existed_flag == "false": 
+            raise HTTPAPIError(status_code = 417, error_detail = dbName + \
+                             "doesn't exist", notification = "direct", \
+                             log_message = "database " + dbName + " doesn't exist", \
+                             response = "Please create database " + dbName + " first")
+
         self.dba_opers.create_user(conn, userName, user_password, ip_address)
         
         if 'manager' ==  role:
