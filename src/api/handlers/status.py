@@ -40,7 +40,7 @@ class MclusterStatus(APIHandler):
             monitor_type = monitor_types[i]
             monitor_status_list = self.zkOper.retrieve_monitor_status_list(monitor_type)
             monitor_status_list_count = len(monitor_status_list)
-        
+            
             monitor_type_sub_dict = {}
             for i in range(monitor_status_list_count):
                 monitor_status_key = monitor_status_list[i]

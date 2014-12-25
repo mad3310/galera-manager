@@ -200,29 +200,43 @@ class BackUpCheck(APIHandler):
 #       else :
         log_filepath = "/var/log/mcluster-manager/mcluster-backup/" + date_id +"_script.log"
         dict = {}
+        time_partition_list = []
+        time_partition_list = self.resolve_time(date_id)
 
-                  
-        start_lines = os.popen("grep  '== Mysql backup  is starting  ==' " + log_filepath).readlines()
-        logging.info(str(start_lines))
-        if (len(start_lines) == 1):
-            failed_lines = os.popen(" grep '== script is failed ==' " + log_filepath).readlines()
-            if (len(failed_lines) != 0):
-               logging.error(str(failed_lines))
-               raise HTTPAPIError(status_code=411, error_detail=str(failed_lines),
-                           notification = "direct",
-                           log_message= "Full backup failed",
-                           response =  "Full backup failed")
-            end_lines = os.popen("grep '== the script is ok ==' "+ log_filepath).readlines()
-            if (len(end_lines) == 1):
-                dict.setdefault("message", "back up success")
-            elif(len(end_lines) == 0):
-                dict.setdefault("message", "back up is processing")
-            else:
-                logging.error(str(end_lines))
-                raise HTTPAPIError(status_code=411, error_detail="Full backup ended more than one time",
-                           notification = "direct",
-                           log_message= "Full backup process ended more than one time",
-                           response =  "Full backup process ended more than one time")
+        log_datetime = datetime.datetime(int(time_partition_list[0]), int(time_partition_list[1]), 
+						int(time_partition_list[2]), int(time_partition_list[3]), int(time_partition_list[4]), int(time_partition_list[5]))
+       
+        now_time = datetime.datetime.now()
+        time_expire = datetime.timedelta(hours = 30)
+        expire_time = log_datetime + time_expire
+        logging.info("expire_time :" +str(expire_time))
+        logging.info("now_time :" + str(now_time))
+        logging.info("result:" + str(now_time > expire_time))
+        if now_time > expire_time:
+            dict.setdefault("message","expired") 
+       #     self.zkOper.write_db_backup_info(status_dict)
+        else:
+            start_lines = os.popen("grep  '== Mysql backup  is starting  ==' " + log_filepath).readlines()
+            logging.info(str(start_lines))
+            if (len(start_lines) == 1):
+                failed_lines = os.popen(" grep '== script is failed ==' " + log_filepath).readlines()
+                if (len(failed_lines) != 0):
+                    logging.error(str(failed_lines))
+                    raise HTTPAPIError(status_code=411, error_detail=str(failed_lines),
+                               notification = "direct",
+                               log_message= "Full backup failed",
+                               response =  "Full backup failed")
+                end_lines = os.popen("grep '== the script is ok ==' "+ log_filepath).readlines()
+                if (len(end_lines) == 1):
+                    dict.setdefault("message", "back up success")
+                elif(len(end_lines) == 0):
+                    dict.setdefault("message", "back up is processing")
+                else:
+                    logging.error(str(end_lines))
+                    raise HTTPAPIError(status_code=411, error_detail="Full backup ended more than one time",
+                               notification = "direct",
+                               log_message= "Full backup process ended more than one time",
+                               response =  "Full backup process ended more than one time")
                 
 #          if end_flag == True:
 #            if len(re_obj) == 0:
@@ -233,12 +247,12 @@ class BackUpCheck(APIHandler):
 #                               log_message= "Increment backup process starts wrong",
 #                               response =  "Increment backup process starts wrong")
 #                    else:
-        else:
-            raise HTTPAPIError(status_code=411, error_detail="Full backup process starts more than one time",
-                           notification = "direct",
-                           log_message= "Full backup process starts more than one time",
-                           response =  "Full backup process starts more than one time")
-                    
+            else:
+                raise HTTPAPIError(status_code=411, error_detail="Full backup process starts more than one time",
+                               notification = "direct",
+                               log_message= "Full backup process starts more than one time",
+                               response =  "Full backup process starts more than one time")
+                     
         self.finish(dict)
 
     
@@ -255,3 +269,23 @@ class BackUpCheck(APIHandler):
             logging.error("list is empty")
         list.sort()
         return str(list[-1])
+   
+    def resolve_time(self, str_time):
+        resolve_result = []
+
+        year = str_time[0:4]
+        month = str_time[4:6]
+        day = str_time[6:8]
+        hour = str_time[8:10]
+        min = str_time[10:12]
+        second = str_time[12:14]
+        
+        resolve_result.append(year)
+        resolve_result.append(month)
+        resolve_result.append(day)
+        resolve_result.append(hour)
+        resolve_result.append(min)
+        resolve_result.append(second)
+        return resolve_result
+
+

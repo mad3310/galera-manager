@@ -36,12 +36,10 @@ class DBAOpers(object):
     
     def get_db_users(self, conn):
         cursor = conn.cursor()
-        cursor.execute("""select * as c from mysql.user where user !='root' and user != 'sstuser' and user != 'monitor'""")
+        cursor.execute("""select * from mysql.user where user !='root' and user != 'sstuser' and user != 'monitor' and user != 'backup'""")
         rows = cursor.fetchall()
-        c = rows[0][0]
         logging.info(str(rows))
-        logging.info(str(c))
-        return c 
+        return rows 
  
     def delete_user(self, conn, username, ip_address):
         cursor = conn.cursor()

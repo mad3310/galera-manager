@@ -437,6 +437,7 @@ class Check_Backup_Status(Check_Status_Base):
         monitor_type = "db"
         monitor_key = "backup"
         super(Check_Backup_Status, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
+    
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:
            return options.alarm_nothing
@@ -445,31 +446,119 @@ class Check_Backup_Status(Check_Status_Base):
         else:
             return options.alarm_serious
 
-#class Check_Database_User(Check_Status_Base):
-#    dba_opers = DBAOpers()
-#   
-#    def __init__(self):
-#       super(Check_Database_User, self).__init__()
-#
-#    @tornado.gen.engine
-#    def check(self, data_node_info_list):
-#        url_post = "/dbuser/inner/check"
-#        monitor_type = "db"
-#        monitor_key = "dbuser"
-#        
-#        conn = self.get_opers.get_mysql_connection()
-#        user_set = self.get_opers.get_db_users(conn)
-#        logging.info(str(user_set))
-#        logging.info(len(user_set))
-#        #started_nodes_list = self.zkOper.retrieve_started_nodes()
-##        super(Check_DataBase_User, self).check_status(data_node_info_list, url_post, monitor_type, monitor)
-#       
-#    def retrieve_alarm_level(self, total_count, success_count, failed_count):
-#        if failed_count == 0:
-#            return options.alarm_nothing
-#        else:
-#            return options.alarm_general
-# 
+class Check_Database_User(Check_Status_Base):
+    dba_opers = DBAOpers()
+   
+    def __init__(self):
+       super(Check_Database_User, self).__init__()
+
+    @tornado.gen.engine
+    def check(self, data_node_info_list):
+        url_post = "/dbuser/inner/check"
+        monitor_type = "db"
+        monitor_key = "dbuser"
+        
+        conn = self.dba_opers.get_mysql_connection()
+        user_tuple = self.dba_opers.get_db_users(conn)
+        logging.info(str(user_tuple))
+        logging.info(len(user_tuple))
+        
+        user_src_mysql_list = []
+
+        user_mysql_src_dict = {}
+# We convert origin tuple grabbed from mysql into list, then  combine the elements subscripted 0 ,1 as key of dict and combine the elements subscripted -3, -4 ,-5, -6 as the value of the dict.Finally we append the dict into list.
+        for t in user_tuple:
+            inner_value_list =  []
+            dict_key_str = (list(t)[1] + "|" + list(t)[0])
+            inner_value_list.append(list(t)[-3])
+            inner_value_list.append(list(t)[-4])
+            inner_value_list.append(list(t)[-5])
+            inner_value_list.append(list(t)[-6])
+            user_mysql_src_dict.setdefault(dict_key_str, inner_value_list)
+
+        logging.info("list format :" + str(user_mysql_src_dict))    
+        
+        db_list = self.zkOper.retrieve_db_list()
+        logging.info("db_list: " + str(db_list)) 
+        
+        user_zk_src_list = []
+        for db_name in db_list:
+            db_user_list =self.zkOper.retrieve_db_user_list(db_name)
+            logging.info("dbName: " + db_name + " db_user_list : " + str(db_user_list))
+            for db_user in db_user_list:
+                inner_list = []
+                inner_list.append(db_user)
+                prop = self.zkOper.get_db_user_prop(db_name, db_user)
+                inner_list.append(prop)
+                user_zk_src_list.append(inner_list)
+                logging.info("result" + str(inner_list))
+        logging.info("user_zk_src_list :" + str(user_zk_src_list))
+        differ_dict_set = {}
+        count_dict_set = {}
+        count_dict_set.setdefault("total" , 0)
+        count_dict_set.setdefault("failed" , 0)
+        count_dict_set.setdefault("success" , 0)
+         
+        self.compare_center(user_mysql_src_dict, user_zk_src_list, differ_dict_set ,count_dict_set)
+        count_dict_set["total"] = count_dict_set["success"]  + count_dict_set["failed"]
+        
+        alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
+        total_count = count_dict_set["total"]
+        failed_count = count_dict_set["failed"]
+        success_count = count_dict_set["success"]
+        error_record = str(differ_dict_set)
+       
+        logging.info("Check_db_user -----> error_record" + str(error_record))
+        logging.info("Check_db_user <------> " + str(count_dict_set))
+        super(Check_Database_User, self).write_status(total_count, success_count, \
+                                                    failed_count, \
+                                                    alarm_level, error_record, monitor_type, \
+                                                    monitor_key)
+        
+
+    def compare_center(self, _user_mysql_src_dict, _user_zk_src_list, _differ_dict_set ,_count_dict):
+        _user_mysql_src_dict_keys = _user_mysql_src_dict.keys()
+        logging.info("_user_mysql_src_dict_keys" + str(_user_mysql_src_dict_keys))
+        logging.info("_user_mysql_src_dict ::::" + str(_user_mysql_src_dict))
+        logging.info("_user_zk_src_list: " + str(_user_zk_src_list))
+        for list_iter in _user_zk_src_list:
+            if list_iter[0] in _user_mysql_src_dict_keys:
+                if long(list_iter[1]["max_queries_per_hour"]) == _user_mysql_src_dict[list_iter[0]][0] and  \
+                       long(list_iter[1]["max_connections_per_hour"])==  _user_mysql_src_dict[list_iter[0]][1] and \
+                           long(list_iter[1]["max_updates_per_hour"]) ==  _user_mysql_src_dict[list_iter[0]][2] and \
+                               long(list_iter[1]["max_user_connections"]) == _user_mysql_src_dict[list_iter[0]][3] :
+                    _count_dict["success"] = _count_dict["success"] + 1
+                    continue
+                else:
+                    inner_dict = {}
+                    inner_dict.setdefault("message", "different")
+                    logging.info("list_iter[0] :" + str(list_iter[0]))
+                    _differ_dict_set.setdefault(list_iter[0], inner_dict)
+                    _count_dict["failed"] = _count_dict["success"] + 1
+            else: 
+                inner_dict = {}
+                inner_dict.setdefault("message", "unknown")
+                _differ_dict_set.setdefault(list_iter[0], inner_dict)
+                _count_dict["failed"] = _count_dict["success"] + 1
+        
+        _user_zk_src_keys_list  = []
+        for i in range(len(_user_zk_src_list)):
+            _user_zk_src_keys_list.append(_user_zk_src_list[i][0])
+        logging.info("_user_zk_src_keys_list :" + str(_user_zk_src_keys_list))    
+        if len(_user_mysql_src_dict) != len(_user_zk_src_keys_list):
+            for _user_mysql_list_iter in _user_mysql_src_dict_keys:
+                if _user_mysql_list_iter not in _user_zk_src_keys_list:
+                   inner_dict = {}
+                   inner_dict.setdefault("message" , "lost")
+                   _differ_dict_set.setdefault(_user_mysql_list_iter, inner_dict)
+         
+                  
+    def retrieve_alarm_level(self, total_count, success_count, failed_count):
+        if failed_count == 0:
+            return options.alarm_nothing
+        else:
+            return options.alarm_general
+ 
            
 class Check_Node_Log_Warning(Check_Status_Base):
     

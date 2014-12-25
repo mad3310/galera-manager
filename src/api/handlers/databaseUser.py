@@ -97,7 +97,7 @@ class DBUser(APIHandler):
         existed_flag = self.dba_opers.check_if_existed_database(conn, dbName)
         if existed_flag == "false": 
             raise HTTPAPIError(status_code = 417, error_detail = dbName + \
-                             "doesn't exist", notification = "direct", \
+                             " database doesn't exist", notification = "direct", \
                              log_message = "database " + dbName + " doesn't exist", \
                              response = "Please create database " + dbName + " first")
 

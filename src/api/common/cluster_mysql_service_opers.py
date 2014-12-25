@@ -217,6 +217,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
             if cluster_flag == 'new':
                 portstatus_obj = PortStatus()
                 need_start_node_ip_list = portstatus_obj.check_port(data_node_info_list)
+                logging.info("need_start_node_ip_list:" + str(need_start_node_ip_list))
                 if node_num - len(need_start_node_ip_list) != 1:
                     error_message = "data nodes's status is abnormal."
                     status_dict['_status'] = 'failed'
@@ -272,6 +273,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
     
             url_post = "/node/start"
             logging.info("/node/start start issue!")
+            logging.info("need_start_node_ip_list:" + str(need_start_node_ip_list))
             for data_node_ip in need_start_node_ip_list:
                 started_nodes = self.zkOper.retrieve_started_nodes()
 #                started_nodes_count = len(started_nodes)
