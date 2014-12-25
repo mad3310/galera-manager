@@ -229,7 +229,7 @@ class BackUpCheck(APIHandler):
         list_dir = listdir(_path)
         if list_dir == []:
             return "empty"
-        for f in list_dir(_path):
+        for f in list_dir:
             if(re.search("^[0-9]+_script.log$", f) != None):
                date = f.replace("_script.log", "")
                list.append(int(date))
