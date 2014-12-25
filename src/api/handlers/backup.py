@@ -99,6 +99,8 @@ class BackUpChecker(APIHandler):
             logging.info("No backup process has run")
             self.finish("expired")
             return
+
+        log_filepath = "/var/log/mcluster-manager/mcluster-backup/" + date_id +"_script.log"
         logging.info("date_id" + str(date_id))
         time_partition_list = []
         time_partition_list = self.resolve_time(date_id)
@@ -113,13 +115,29 @@ class BackUpChecker(APIHandler):
         logging.info("result:" + str(now_time > expire_time))
         status_dict = {}
         if now_time > expire_time:
-       #     status_dict.setdefault("status","expired") 
+            status_dict.setdefault("status","expired") 
        #     self.zkOper.write_db_backup_info(status_dict)
             self.finish("expired")
         else:
-       #     status_dict.setdefault("status","expected")
+            status_dict.setdefault("status","expected")
+            flag = "true"
+            start_lines = os.popen("grep  '== Mysql backup  is starting  ==' " + log_filepath).readlines()
+            logging.info(str(start_lines))
+            if (len(start_lines) == 1):
+                failed_lines = os.popen(" grep '== script is failed ==' " + log_filepath).readlines()
+                if (len(failed_lines) != 0):
+                   logging.error(str(failed_lines))
+                   flag = "false"
+            end_lines = os.popen("grep '== the script is ok ==' "+ log_filepath).readlines()
+            if (len(end_lines) == 1):
+                pass
+            elif(len(end_lines) == 0):
+                pass
+       #if hte " == the script is ok == " shows up more than once, we consider backup run out of order"
+            else:
+                flag = "false"
        #     self.zkOper.write_db_backup_info(status_dict)
-            self.finish("true")
+            self.finish(flag)
         logging.info("backup status:" + str(status_dict))
       
         
@@ -200,7 +218,7 @@ class BackUpCheck(APIHandler):
             elif(len(end_lines) == 0):
                 dict.setdefault("message", "back up is processing")
             else:
-                logging.error(str(endlines))
+                logging.error(str(end_lines))
                 raise HTTPAPIError(status_code=411, error_detail="Full backup ended more than one time",
                            notification = "direct",
                            log_message= "Full backup process ended more than one time",
