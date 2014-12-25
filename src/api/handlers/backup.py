@@ -95,6 +95,10 @@ class BackUpChecker(APIHandler):
             self.finish("true")
             return
         date_id = self.get_latest_date_id('/var/log/mcluster-manager/mcluster-backup/')
+        if date_id == "empty":
+            logging.info("No backup process has run")
+            self.finish("expired")
+            return
         logging.info("date_id" + str(date_id))
         time_partition_list = []
         time_partition_list = self.resolve_time(date_id)
@@ -109,12 +113,12 @@ class BackUpChecker(APIHandler):
         logging.info("result:" + str(now_time > expire_time))
         status_dict = {}
         if now_time > expire_time:
-            status_dict.setdefault("status","expired") 
-            self.zkOper.write_db_backup_info(status_dict)
+       #     status_dict.setdefault("status","expired") 
+       #     self.zkOper.write_db_backup_info(status_dict)
             self.finish("expired")
         else:
-            status_dict.setdefault("status","expected")
-            self.zkOper.write_db_backup_info(status_dict)
+       #     status_dict.setdefault("status","expected")
+       #     self.zkOper.write_db_backup_info(status_dict)
             self.finish("true")
         logging.info("backup status:" + str(status_dict))
       
@@ -139,7 +143,10 @@ class BackUpChecker(APIHandler):
 
     def get_latest_date_id(self, _path):
         list = []
-        for f in listdir(_path):
+        list_dir = listdir(_path)
+        if list_dir == []:
+            return "empty"
+        for f in list_dir:
             if(re.search("^[0-9]+_script.log$", f) != None):
                date = f.replace("_script.log", "")
                list.append(int(date))
@@ -156,6 +163,13 @@ class BackUpCheck(APIHandler):
     @asynchronous
     def get(self):
         date_id = self.get_latest_date_id('/var/log/mcluster-manager/mcluster-backup/')
+        if date_id == "empty":
+             raise HTTPAPIError(status_code=411, error_detail="Full backup ended less than one time",
+                           notification = "direct",
+                           log_message= "Full backup process ended less than one time",
+                           response =  "Full backup process ended less than one time")
+                
+
         logging.info("date_id" + str(date_id))
         #value = p_dict['flag']
 #       if value != 'inc' and value != 'full':
@@ -212,7 +226,10 @@ class BackUpCheck(APIHandler):
     
     def get_latest_date_id(self, _path):
         list = []
-        for f in listdir(_path):
+        list_dir = listdir(_path)
+        if list_dir == []:
+            return "empty"
+        for f in list_dir(_path):
             if(re.search("^[0-9]+_script.log$", f) != None):
                date = f.replace("_script.log", "")
                list.append(int(date))
