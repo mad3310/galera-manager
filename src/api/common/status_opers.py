@@ -567,12 +567,12 @@ class Check_Database_User(Check_Status_Base):
                     inner_dict.setdefault("message", "different")
                     logging.info("list_iter[0] :" + str(list_iter[0]))
                     _differ_dict_set.setdefault(list_iter[0], inner_dict)
-                    _count_dict["failed"] = _count_dict["success"] + 1
+                    _count_dict["failed"] = _count_dict["failed"] + 1
             else: 
                 inner_dict = {}
                 inner_dict.setdefault("message", "unknown")
                 _differ_dict_set.setdefault(list_iter[0], inner_dict)
-                _count_dict["failed"] = _count_dict["success"] + 1
+                _count_dict["failed"] = _count_dict["failed"] + 1
         
         _user_zk_src_keys_list  = []
         for i in range(len(_user_zk_src_list)):
