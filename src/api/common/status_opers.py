@@ -463,10 +463,12 @@ class Check_Database_User(Check_Status_Base):
         logging.info(str(user_tuple))
         logging.info(len(user_tuple))
         
-        user_src_mysql_list = []
+        #user_src_mysql_list = []
 
         user_mysql_src_dict = {}
+
 # We convert origin tuple grabbed from mysql into list, then  combine the elements subscripted 0 ,1 as key of dict and combine the elements subscripted -3, -4 ,-5, -6 as the value of the dict.Finally we append the dict into list.
+        
         for t in user_tuple:
             inner_value_list =  []
             dict_key_str = (list(t)[1] + "|" + list(t)[0])
@@ -493,16 +495,47 @@ class Check_Database_User(Check_Status_Base):
                 user_zk_src_list.append(inner_list)
                 logging.info("result" + str(inner_list))
         logging.info("user_zk_src_list :" + str(user_zk_src_list))
+        
         differ_dict_set = {}
         count_dict_set = {}
-        count_dict_set.setdefault("total" , 0)
-        count_dict_set.setdefault("failed" , 0)
-        count_dict_set.setdefault("success" , 0)
+        error_record = ""
+        if len(user_zk_src_list) == 0 and len(user_mysql_src_dict) == 0:
+            count_dict_set.setdefault("total", 0)
+            count_dict_set.setdefault("failed", 0)
+            count_dict_set.setdefault("success", 0) 
+            error_record = "no database users in zk neither in mysql"
+            differ_dict_set.setdefault("Empty","" )
+
+            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
+            
+
+        elif len(user_zk_src_list) == 0 and len(user_mysql_src_dict) != 0:
+            count_dict_set.setdefault("total", 0)
+            count_dict_set.setdefault("failed", 0)
+            count_dict_set.setdefault("success", 0) 
+            error_record = "no database users in zk"
+            differ_dict_set.setdefault("different", str(user_mysql_src_dict))
+
+            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
+            
+        elif len(user_zk_src_list) != 0 and len(user_mysql_src_dict) == 0:
+            count_dict_set.setdefault("total", 0)
+            count_dict_set.setdefault("failed", 0)
+            count_dict_set.setdefault("success", 0) 
+            error_record = "no database users in mysql"
+            differ_dict_set.setdefault("different", str(user_zk_src_list))
+
+            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
+            
+        else: 
+            count_dict_set.setdefault("total" , 0)
+            count_dict_set.setdefault("failed" , 0)
+            count_dict_set.setdefault("success" , 0)
          
-        self.compare_center(user_mysql_src_dict, user_zk_src_list, differ_dict_set ,count_dict_set)
-        count_dict_set["total"] = count_dict_set["success"]  + count_dict_set["failed"]
+            self.compare_center(user_mysql_src_dict, user_zk_src_list, differ_dict_set ,count_dict_set)
+            count_dict_set["total"] = count_dict_set["success"]  + count_dict_set["failed"]
+            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
         
-        alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
         total_count = count_dict_set["total"]
         failed_count = count_dict_set["failed"]
         success_count = count_dict_set["success"]
