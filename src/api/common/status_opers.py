@@ -454,7 +454,7 @@ class Check_Database_User(Check_Status_Base):
 
     @tornado.gen.engine
     def check(self, data_node_info_list):
-        url_post = "/dbuser/inner/check"
+        #url_post = "/dbuser/inner/check"
         monitor_type = "db"
         monitor_key = "dbuser"
         
