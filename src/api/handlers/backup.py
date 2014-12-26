@@ -161,7 +161,11 @@ class BackUpChecker(APIHandler):
 
     def get_latest_date_id(self, _path):
         list = []
-        list_dir = listdir(_path)
+        list_dir = []
+        try:
+            list_dir = listdir(_path)
+        except OSError, e:
+            logging.info(e)
         if list_dir == []:
             return "empty"
         for f in list_dir:
@@ -258,7 +262,12 @@ class BackUpCheck(APIHandler):
     
     def get_latest_date_id(self, _path):
         list = []
-        list_dir = listdir(_path)
+        list_dir = []
+        try:
+            list_dir = listdir(_path)
+        except OSError, e:
+            logging.info(e)
+            return "empty"
         if list_dir == []:
             return "empty"
         for f in list_dir:
