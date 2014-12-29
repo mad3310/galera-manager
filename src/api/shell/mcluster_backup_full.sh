@@ -35,9 +35,8 @@ log_failed(){
 }
 
 fb_file_lock(){
-   log "== Mysql backup  is starting  =="
    if [ -f /var/lock/backup.lock  ];then
-      log "xtrabackup have run"
+      echo "xtrabackup is running"
       exit 1
    fi
    touch  /var/lock/backup.lock
@@ -47,7 +46,13 @@ fb_file_unlock(){
    rm -f /var/lock/backup.lock
 }
 
+fail_exit(){
+   rm -f /var/lock/backup.lock
+   exit 1
+}
+
 full_backup(){
+   log "== Mysql backup  is starting  =="
    if [ `ss -tlnp|grep 3306|wc -l` -eq  1  -a  -f /opt/letv/mcluster/root/var/run/mysqld/mysqld.pid   ];then
       if [ $MCLUSTER_DISK_FREE -ge $MCLUSTER_USAGE -a $DATA_DISK_FREE -ge $MCLUSTER_USAGE ];then
          $INNOBACKUPEX --user=$BACKUP_USER --password=$BACKUP_PASSWD --defaults-file=$MY_CNF_PATH --no-timestamp $BACKUP_RS_PATH/full_backup-$date_suffix  >>$LOG_FILE_PATH/`date +%Y%m%d%H%M%S`_backup.log 2>&1
@@ -55,14 +60,14 @@ full_backup(){
             log "== Backup All Data end =="
          else
             log_failed "Backup All Data is ERROR"
-            exit 1
+            fail_exit
          fi
          cp -a $BACKUP_RS_PATH/full_backup-$date_suffix $REMOTE_BACKUP_RS_PATH/
          if [ $? -eq 0 ];then
             log "== Cp backup_file ok  =="
          else
             log_failed "Cp backup_file is  ERROR"
-            exit 1
+            fail_exit
          fi
          fb_update_index $REMOTE_BACKUP_RS_PATH/full_backup-$date_suffix
          rm -rf $BACKUP_RS_PATH/full_backup-$date_suffix
@@ -70,11 +75,11 @@ full_backup(){
          log "== the script is ok =="
       else
          log_failed "The disk is full"
-         exit 1
+         fail_exit
       fi
    else
          log_failed "Mcluster is not start"
-         exit 1
+         fail_exit
    fi
 }
 
