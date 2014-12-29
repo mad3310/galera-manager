@@ -556,10 +556,10 @@ class Check_Database_User(Check_Status_Base):
         logging.info("_user_zk_src_list: " + str(_user_zk_src_list))
         for list_iter in _user_zk_src_list:
             if list_iter[0] in _user_mysql_src_dict_keys:
-                if long(list_iter[1]["max_queries_per_hour"]) == _user_mysql_src_dict[list_iter[0]][0] and  \
+                if long(list_iter[1]["max_user_connections"]) == _user_mysql_src_dict[list_iter[0]][0] and  \
                        long(list_iter[1]["max_connections_per_hour"])==  _user_mysql_src_dict[list_iter[0]][1] and \
                            long(list_iter[1]["max_updates_per_hour"]) ==  _user_mysql_src_dict[list_iter[0]][2] and \
-                               long(list_iter[1]["max_user_connections"]) == _user_mysql_src_dict[list_iter[0]][3] :
+                               long(list_iter[1]["max_queries_per_hour"]) == _user_mysql_src_dict[list_iter[0]][3] :
                     _count_dict["success"] = _count_dict["success"] + 1
                     continue
                 else:
@@ -571,6 +571,7 @@ class Check_Database_User(Check_Status_Base):
             else: 
                 inner_dict = {}
                 inner_dict.setdefault("message", "unknown")
+                logging.info("list_iter[0] :" + str(list_iter[0]))
                 _differ_dict_set.setdefault(list_iter[0], inner_dict)
                 _count_dict["failed"] = _count_dict["failed"] + 1
         
@@ -578,12 +579,12 @@ class Check_Database_User(Check_Status_Base):
         for i in range(len(_user_zk_src_list)):
             _user_zk_src_keys_list.append(_user_zk_src_list[i][0])
         logging.info("_user_zk_src_keys_list :" + str(_user_zk_src_keys_list))    
-        if len(_user_mysql_src_dict) != len(_user_zk_src_keys_list):
-            for _user_mysql_list_iter in _user_mysql_src_dict_keys:
-                if _user_mysql_list_iter not in _user_zk_src_keys_list:
-                   inner_dict = {}
-                   inner_dict.setdefault("message" , "lost")
-                   _differ_dict_set.setdefault(_user_mysql_list_iter, inner_dict)
+        for _user_mysql_list_iter in _user_mysql_src_dict_keys:
+            if _user_mysql_list_iter not in _user_zk_src_keys_list:
+                inner_dict = {}
+                inner_dict.setdefault("message" , "lost")
+                _differ_dict_set.setdefault(_user_mysql_list_iter, inner_dict)
+                _count_dict["failed"] = _count_dict["failed"] + 1
          
                   
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
