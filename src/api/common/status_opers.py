@@ -578,12 +578,11 @@ class Check_Database_User(Check_Status_Base):
         for i in range(len(_user_zk_src_list)):
             _user_zk_src_keys_list.append(_user_zk_src_list[i][0])
         logging.info("_user_zk_src_keys_list :" + str(_user_zk_src_keys_list))    
-        if len(_user_mysql_src_dict) != len(_user_zk_src_keys_list):
-            for _user_mysql_list_iter in _user_mysql_src_dict_keys:
-                if _user_mysql_list_iter not in _user_zk_src_keys_list:
-                   inner_dict = {}
-                   inner_dict.setdefault("message" , "lost")
-                   _differ_dict_set.setdefault(_user_mysql_list_iter, inner_dict)
+        for _user_mysql_list_iter in _user_mysql_src_dict_keys:
+            if _user_mysql_list_iter not in _user_zk_src_keys_list:
+                inner_dict = {}
+                inner_dict.setdefault("message" , "lost")
+                _differ_dict_set.setdefault(_user_mysql_list_iter, inner_dict)
          
                   
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
