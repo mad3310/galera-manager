@@ -78,7 +78,10 @@ class ZkOpers(object):
     
     def getClusterUUID(self):
         self.logger.debug(self.rootPath)
-        dataNodeName = self.zk.get_children(self.rootPath)
+        try: 
+            dataNodeName = self.zk.get_children(self.rootPath)
+        except SessionExpiredError, e:
+             dataNodeName = self.zk.get_children(self.rootPath)
         self.logger.debug(dataNodeName)
         return dataNodeName[0]
         
@@ -129,7 +132,32 @@ class ZkOpers(object):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName 
         self.zk.ensure_path(path)
         self.zk.set(path, str(dbProps))#version need to write
-        
+    
+    def retrieve_db_list(self):
+        clusterUUID = self.getClusterUUID()
+        logging.info("ClusterUUID:" + clusterUUID)
+        path = self.rootPath + "/" + clusterUUID + "/db"
+        db_list = self._return_children_to_list(path)
+        return  db_list
+    
+    def retrieve_db_user_list(self, dbName):
+        clusterUUID = self.getClusterUUID()
+        path = self.rootPath + "/" + clusterUUID + "/db/" + dbName
+        db_user_list = self._return_children_to_list(path)
+        return db_user_list
+   
+    def get_db_user_prop(self, dbName, dbUser):
+        clusterUUID = self.getClusterUUID()
+        path  = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + dbUser
+        resultValue = self._retrieveSpecialPathProp(path)
+        return resultValue
+
+    def write_db_backup_info(self, dict_status):
+        clusterUUID = self.getClusterUUID()
+        path = self.rootPath + "/" + clusterUUID + "/monitor_status/" + "db/" + "backup"
+        self.zk.ensure_path(path)
+        self.zk.set(path, str(dict_status))
+
     def write_user_info(self,clusterUUID,dbName,username,ipAddress,userProps):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + username + "|" + ipAddress
         self.zk.ensure_path(path)

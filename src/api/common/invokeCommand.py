@@ -13,7 +13,7 @@ class InvokeCommand():
         p = subprocess.Popen(cmdStr, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         ret_str = p.stdout.read()
         retval = p.wait()
-        return (ret_str,retval)
+        return (ret_str.strip(),retval)
 
     def _runSysCmdnoWait(self,cmdStr):
         if cmdStr == "":
@@ -25,7 +25,7 @@ class InvokeCommand():
         if p.poll():
             return False
         else:
-            return p.pid
+            return p
 
     def runBootstrapScript(self):
         stop_command_result = self._runSysCmd(options.mysql_stop_command)
@@ -102,11 +102,6 @@ class InvokeCommand():
         logging.info("check shell: " +  check_shell_path_name + " the result is: " + result)
         return result
 
-    def run_service_shell(self, service_shell_path_name):
-        result = str(self._runSysCmdnoWait(service_shell_path_name))
-        logging.info("service shell: " + service_shell_path_name + " the result is: " + result)
-        return result
-            
 if __name__ == "__main__":
     invokeCommand = InvokeCommand()
     sst_user_password = invokeCommand.runBootstrapScript()

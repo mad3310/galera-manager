@@ -60,7 +60,7 @@ def _request_fetch(request):
             return_result = response.body.strip()
             
     http_client.close()
-            
+    logging.info("coming here mean Exception was caught, if exist any")        
     return return_result
     
     

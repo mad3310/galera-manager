@@ -24,6 +24,23 @@ class DBAOpers(object):
     def __unicode__(self):
         return self.name
     
+    def check_if_existed_database(self, conn, db_name):
+        cursor = conn.cursor()
+        sql = """SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '{db_name}'""".format(db_name=db_name)
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        logging.info("database:" + str(rows))
+        if len(rows) == 0:
+            return "false"
+        return "true"
+    
+    def get_db_users(self, conn):
+        cursor = conn.cursor()
+        cursor.execute("""select * from mysql.user where user !='root' and user != 'sstuser' and user != 'monitor' and user != 'backup'""")
+        rows = cursor.fetchall()
+        logging.info(str(rows))
+        return rows 
+ 
     def delete_user(self, conn, username, ip_address):
         cursor = conn.cursor()
         cursor.execute("""select count(*) as c from mysql.user where user='{username}' and host='{ip_address}'"""

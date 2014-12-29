@@ -42,7 +42,7 @@ class backup_thread(threading.Thread):
                                 response =  "Increment Back up process terminated!")
                 
         
-        self.queue.put(ret_sub_p)
+        self.queue.put(ret_sub_p.pid)
         logging.info("wait here")
         ret_sub_p.wait()
         #Thread.__init__(self)  

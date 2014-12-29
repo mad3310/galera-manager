@@ -66,14 +66,14 @@ class Check_Status_Base(object):
             callback_key = "%s_%s_%s" % (monitor_type,monitor_key,zk_incoming_address)
             key_sets.add(callback_key)
             http_client.fetch(requesturi, callback=(yield Callback(callback_key)))
-       
-        error_record_dict = {}    
+            
+        error_record_dict = {}
         error_record_msg = ''
         error_record_ip_list = [] 
-
         for i in range(len(key_sets)):
             callback_key = key_sets.pop()
             response = yield Wait(callback_key)
+            
             if response.error:
                 return_result = False
                 message = "remote access,the key:%s,error message:%s" % (callback_key,response.error)
@@ -89,17 +89,22 @@ class Check_Status_Base(object):
                 callback_key_ip = callback_key.split("_")[-1]
                 error_record_ip_list.append(callback_key_ip)
                 failed_count += 1
-
+           
         if (error_record_msg != '' or error_record_ip_list != []):
             error_record_dict.setdefault("msg",error_record_msg)
             error_record_dict.setdefault("ip", error_record_ip_list)
-     
+
         http_client.close()
         
         alarm_level = self.retrieve_alarm_level(zk_data_node_count, success_count, failed_count)
+        if monitor_key == "backup":
+            if failed_count >= 1:
+                error_record_dict['msg']= "expired"
+            else:
+                error_record_dict['msg'] = "expected"
         
         self.write_status(zk_data_node_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key)
-        
+         
     def write_status(self, total_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key):
         result_dict = {}
         format_str = "total=%s, success count=%s, failed count=%s"
@@ -122,16 +127,18 @@ class Check_Cluster_Available(Check_Status_Base):
     invokeCommand = InvokeCommand()
     
     def check(self, data_node_info_list):
-        shell_result = self.invokeCommand.run_check_shell(options.check_mcluster_health).strip()
+        shell_result = self.invokeCommand.run_check_shell(options.check_mcluster_health)
         
         message = "no avaliable data node on VIP"
         
+        if shell_result:
+            message = "ok"
+            
         failed_count = 0
         if shell_result == None or shell_result == False or shell_result == "false":
             failed_count = 3
         else:
             message = "ok"
-        
         alarm_result = self.retrieve_alarm_level(0,0,failed_count)
             
         cluster_available_dict = {}
@@ -197,8 +204,7 @@ class Check_Node_Size(Check_Status_Base):
             if zk_incoming_address_port in wsrep_incoming_addresses_list:
                 address_count = address_count + 1
             else:
-                 lost_ip_list.append(data_node_info_list[i]) 
-
+                lost_ip_list.append(data_node_info_list[i])
         total = zk_data_node_count
         exist = address_count
         lost = zk_data_node_count - address_count
@@ -216,6 +222,7 @@ class Check_Node_Size(Check_Status_Base):
         
         return node_size_dict
     
+
 class Check_DB_Anti_Item(Check_Status_Base):
     
     dba_opers = DBAOpers()
@@ -419,7 +426,173 @@ class Check_Node_Log_Error(Check_Status_Base):
         else:
             return options.alarm_serious
         
+ #eq curl  "http://localhost:8888/backup/inner/check" backup data by full dose.
+class Check_Backup_Status(Check_Status_Base):
+
+    def __init__(self):
+       super(Check_Backup_Status, self).__init__()
+    @tornado.gen.engine  
+    def check(self, data_node_info_list):
+        url_post = "/backup/inner/check"
+        monitor_type = "db"
+        monitor_key = "backup"
+        super(Check_Backup_Status, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
+    
+    def retrieve_alarm_level(self, total_count, success_count, failed_count):
+        if failed_count == 0:
+           return options.alarm_nothing
+        elif failed_count == 1:
+           return options.alarm_general
+        else:
+            return options.alarm_serious
+
+class Check_Database_User(Check_Status_Base):
+    dba_opers = DBAOpers()
+   
+    def __init__(self):
+       super(Check_Database_User, self).__init__()
+
+    @tornado.gen.engine
+    def check(self, data_node_info_list):
+        #url_post = "/dbuser/inner/check"
+        monitor_type = "db"
+        monitor_key = "dbuser"
         
+        conn = self.dba_opers.get_mysql_connection()
+        user_tuple = self.dba_opers.get_db_users(conn)
+        logging.info(str(user_tuple))
+        logging.info(len(user_tuple))
+        
+        #user_src_mysql_list = []
+
+        user_mysql_src_dict = {}
+
+# We convert origin tuple grabbed from mysql into list, then  combine the elements subscripted 0 ,1 as key of dict and combine the elements subscripted -3, -4 ,-5, -6 as the value of the dict.Finally we append the dict into list.
+        
+        for t in user_tuple:
+            inner_value_list =  []
+            dict_key_str = (list(t)[1] + "|" + list(t)[0])
+            inner_value_list.append(list(t)[-3])
+            inner_value_list.append(list(t)[-4])
+            inner_value_list.append(list(t)[-5])
+            inner_value_list.append(list(t)[-6])
+            user_mysql_src_dict.setdefault(dict_key_str, inner_value_list)
+
+        logging.info("list format :" + str(user_mysql_src_dict))    
+        
+        db_list = self.zkOper.retrieve_db_list()
+        logging.info("db_list: " + str(db_list)) 
+        
+        user_zk_src_list = []
+        for db_name in db_list:
+            db_user_list =self.zkOper.retrieve_db_user_list(db_name)
+            logging.info("dbName: " + db_name + " db_user_list : " + str(db_user_list))
+            for db_user in db_user_list:
+                inner_list = []
+                inner_list.append(db_user)
+                prop = self.zkOper.get_db_user_prop(db_name, db_user)
+                inner_list.append(prop)
+                user_zk_src_list.append(inner_list)
+                logging.info("result" + str(inner_list))
+        logging.info("user_zk_src_list :" + str(user_zk_src_list))
+        
+        differ_dict_set = {}
+        count_dict_set = {}
+        error_record = ""
+        if len(user_zk_src_list) == 0 and len(user_mysql_src_dict) == 0:
+            count_dict_set.setdefault("total", 0)
+            count_dict_set.setdefault("failed", 0)
+            count_dict_set.setdefault("success", 0) 
+            error_record = "no database users in zk neither in mysql"
+            differ_dict_set.setdefault("Empty","" )
+
+            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
+            
+
+        elif len(user_zk_src_list) == 0 and len(user_mysql_src_dict) != 0:
+            count_dict_set.setdefault("total", 0)
+            count_dict_set.setdefault("failed", 0)
+            count_dict_set.setdefault("success", 0) 
+            error_record = "no database users in zk"
+            differ_dict_set.setdefault("different", str(user_mysql_src_dict))
+
+            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
+            
+        elif len(user_zk_src_list) != 0 and len(user_mysql_src_dict) == 0:
+            count_dict_set.setdefault("total", 0)
+            count_dict_set.setdefault("failed", 0)
+            count_dict_set.setdefault("success", 0) 
+            error_record = "no database users in mysql"
+            differ_dict_set.setdefault("different", str(user_zk_src_list))
+
+            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
+            
+        else: 
+            count_dict_set.setdefault("total" , 0)
+            count_dict_set.setdefault("failed" , 0)
+            count_dict_set.setdefault("success" , 0)
+         
+            self.compare_center(user_mysql_src_dict, user_zk_src_list, differ_dict_set ,count_dict_set)
+            count_dict_set["total"] = count_dict_set["success"]  + count_dict_set["failed"]
+            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
+        
+        total_count = count_dict_set["total"]
+        failed_count = count_dict_set["failed"]
+        success_count = count_dict_set["success"]
+        error_record = error_record + str(differ_dict_set)
+       
+        logging.info("Check_db_user -----> error_record" + str(error_record))
+        logging.info("Check_db_user <------> " + str(count_dict_set))
+        super(Check_Database_User, self).write_status(total_count, success_count, \
+                                                    failed_count, \
+                                                    alarm_level, error_record, monitor_type, \
+                                                    monitor_key)
+        
+
+    def compare_center(self, _user_mysql_src_dict, _user_zk_src_list, _differ_dict_set ,_count_dict):
+        _user_mysql_src_dict_keys = _user_mysql_src_dict.keys()
+        logging.info("_user_mysql_src_dict_keys" + str(_user_mysql_src_dict_keys))
+        logging.info("_user_mysql_src_dict ::::" + str(_user_mysql_src_dict))
+        logging.info("_user_zk_src_list: " + str(_user_zk_src_list))
+        for list_iter in _user_zk_src_list:
+            if list_iter[0] in _user_mysql_src_dict_keys:
+                if long(list_iter[1]["max_queries_per_hour"]) == _user_mysql_src_dict[list_iter[0]][0] and  \
+                       long(list_iter[1]["max_connections_per_hour"])==  _user_mysql_src_dict[list_iter[0]][1] and \
+                           long(list_iter[1]["max_updates_per_hour"]) ==  _user_mysql_src_dict[list_iter[0]][2] and \
+                               long(list_iter[1]["max_user_connections"]) == _user_mysql_src_dict[list_iter[0]][3] :
+                    _count_dict["success"] = _count_dict["success"] + 1
+                    continue
+                else:
+                    inner_dict = {}
+                    inner_dict.setdefault("message", "different")
+                    logging.info("list_iter[0] :" + str(list_iter[0]))
+                    _differ_dict_set.setdefault(list_iter[0], inner_dict)
+                    _count_dict["failed"] = _count_dict["failed"] + 1
+            else: 
+                inner_dict = {}
+                inner_dict.setdefault("message", "unknown")
+                _differ_dict_set.setdefault(list_iter[0], inner_dict)
+                _count_dict["failed"] = _count_dict["failed"] + 1
+        
+        _user_zk_src_keys_list  = []
+        for i in range(len(_user_zk_src_list)):
+            _user_zk_src_keys_list.append(_user_zk_src_list[i][0])
+        logging.info("_user_zk_src_keys_list :" + str(_user_zk_src_keys_list))    
+        if len(_user_mysql_src_dict) != len(_user_zk_src_keys_list):
+            for _user_mysql_list_iter in _user_mysql_src_dict_keys:
+                if _user_mysql_list_iter not in _user_zk_src_keys_list:
+                   inner_dict = {}
+                   inner_dict.setdefault("message" , "lost")
+                   _differ_dict_set.setdefault(_user_mysql_list_iter, inner_dict)
+         
+                  
+    def retrieve_alarm_level(self, total_count, success_count, failed_count):
+        if failed_count == 0:
+            return options.alarm_nothing
+        else:
+            return options.alarm_general
+ 
+           
 class Check_Node_Log_Warning(Check_Status_Base):
     
     def __init__(self):
@@ -441,3 +614,4 @@ class Check_Node_Log_Warning(Check_Status_Base):
             return options.alarm_general
         else:
             return options.alarm_serious
+
