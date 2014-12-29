@@ -556,10 +556,10 @@ class Check_Database_User(Check_Status_Base):
         logging.info("_user_zk_src_list: " + str(_user_zk_src_list))
         for list_iter in _user_zk_src_list:
             if list_iter[0] in _user_mysql_src_dict_keys:
-                if long(list_iter[1]["max_queries_per_hour"]) == _user_mysql_src_dict[list_iter[0]][0] and  \
+                if long(list_iter[1]["max_user_connections"]) == _user_mysql_src_dict[list_iter[0]][0] and  \
                        long(list_iter[1]["max_connections_per_hour"])==  _user_mysql_src_dict[list_iter[0]][1] and \
                            long(list_iter[1]["max_updates_per_hour"]) ==  _user_mysql_src_dict[list_iter[0]][2] and \
-                               long(list_iter[1]["max_user_connections"]) == _user_mysql_src_dict[list_iter[0]][3] :
+                               long(list_iter[1]["max_queries_per_hour"]) == _user_mysql_src_dict[list_iter[0]][3] :
                     _count_dict["success"] = _count_dict["success"] + 1
                     continue
                 else:
