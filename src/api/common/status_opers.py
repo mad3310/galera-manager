@@ -571,6 +571,7 @@ class Check_Database_User(Check_Status_Base):
             else: 
                 inner_dict = {}
                 inner_dict.setdefault("message", "unknown")
+                logging.info("list_iter[0] :" + str(list_iter[0]))
                 _differ_dict_set.setdefault(list_iter[0], inner_dict)
                 _count_dict["failed"] = _count_dict["failed"] + 1
         
@@ -583,6 +584,7 @@ class Check_Database_User(Check_Status_Base):
                 inner_dict = {}
                 inner_dict.setdefault("message" , "lost")
                 _differ_dict_set.setdefault(_user_mysql_list_iter, inner_dict)
+                _count_dict["failed"] = _count_dict["failed"] + 1
          
                   
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
