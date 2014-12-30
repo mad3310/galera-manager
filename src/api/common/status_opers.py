@@ -508,25 +508,6 @@ class Check_Database_User(Check_Status_Base):
 
             alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
             
-
-        elif len(user_zk_src_list) == 0 and len(user_mysql_src_dict) != 0:
-            count_dict_set.setdefault("total", 0)
-            count_dict_set.setdefault("failed", 0)
-            count_dict_set.setdefault("success", 0) 
-            error_record = "no database users in zk"
-            differ_dict_set.setdefault("different", str(user_mysql_src_dict))
-
-            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
-            
-        elif len(user_zk_src_list) != 0 and len(user_mysql_src_dict) == 0:
-            count_dict_set.setdefault("total", 0)
-            count_dict_set.setdefault("failed", 0)
-            count_dict_set.setdefault("success", 0) 
-            error_record = "no database users in mysql"
-            differ_dict_set.setdefault("different", str(user_zk_src_list))
-
-            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
-            
         else: 
             count_dict_set.setdefault("total" , 0)
             count_dict_set.setdefault("failed" , 0)
