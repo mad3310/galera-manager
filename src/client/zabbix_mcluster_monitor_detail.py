@@ -33,7 +33,7 @@ def check_monitor_detail(serious_dict, general_dict, nothing_dict):
             return_code = monitor_return_json_value['response'][monitor_type][monitor_item]['alarm']
             error_record = monitor_return_json_value['response'][monitor_type][monitor_item]['error_record']
             return_message = monitor_return_json_value['response'][monitor_type][monitor_item]['message']
-            return_message += error_record
+            return_message += str(error_record)
             create_time_str = monitor_return_json_value['response'][monitor_type][monitor_item]['ctime']
             t = time.strptime(create_time_str, TIME_FORMAT)
             create_time = datetime.datetime(*t[:6]) 
