@@ -10,7 +10,6 @@ import datetime
 import threading
 import multiprocessing
 import tornado.httpclient
-
 from Queue import Empty
 from Queue import Queue
 
@@ -19,12 +18,13 @@ from os.path import isfile
 
 from base import APIHandler
 from tornado.options import options
+from tornado.httpclient import HTTPRequest
 from tornado.web import asynchronous
 from common.invokeCommand import InvokeCommand
 from common.utils.exceptions import HTTPAPIError
 from handlers.backup_thread import backup_thread
+from common.helper import _retrieve_userName_passwd, is_monitoring
 from common.tornado_basic_auth import require_basic_auth
-
 
 # Start backing up database data.
 #eq curl --user root:root "http://localhost:8888/backup" backup data by full dose.
@@ -35,12 +35,49 @@ queue = multiprocessing.Queue()
 class BackUp(APIHandler):
     
 #    global store_list
+    @tornado.gen.engine
     @asynchronous
     def get(self):
+        dict = {}
+        url_post = "/inner/backup"
+        online_node_list = self.zkOper.retrieve_started_nodes()
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(socket.gethostname())
+        adminUser, adminPasswd = _retrieve_userName_passwd()
+        obj =  re.search("-n-3", hostname)
+        if obj == None:
+            local_ip = socket.gethostbyname(socket.gethostname())
+            logging.info("local ip :" + str(local_ip))
+            online_node_list.remove(local_ip)
+            http_client = tornado.httpclient.AsyncHTTPClient()
+            for node_ip in online_node_list:
+                requesturi = "http://"+ node_ip +":"+str(options.port)+ url_post
+                request = HTTPRequest(url=requesturi, method='GET', auth_username=adminUser, auth_password = adminPasswd)
+                logging.info("url is " + requesturi)
+                http_client.fetch(request, callback=None)
+            dict.setdefault("message", "Process is running ,wait")
+        else:
+            requesturi = "http://"+ local_ip +":"+str(options.port)+ url_post
+            request = HTTPRequest(url=requesturi, method='GET', auth_username=adminUser, auth_password = adminPasswd)
+            logging.info("url is " + requesturi)
+            http_client.fetch(request, callback=None)
+            dict.setdefault("message", "Process is running ,wait")
+        self.finish(dict)
+ 
 
-        backup_worker = backup_thread(queue)
+@require_basic_auth
+class BackUper(APIHandler):
+    @asynchronous
+    def get(self):
+       	hostname = socket.gethostname()
+        obj = re.search("-n-3", hostname)
+        dict = {}
+        if obj == None:
+            dict.setdefault("message", "not n-3 node")
+        else:
+            backup_worker = backup_thread(queue)
 #        global store_list  
-#       p_dict = {}
+#        p_dict = {}
 #        try:
 #            args = self.request.arguments
 #            for key in args:
@@ -53,17 +90,17 @@ class BackUp(APIHandler):
 #            logging.info("Arguments in Http requests is " + value)
 #        except Exception, e:
 #            logging.error(e)
-#       p_dict.setdefault("flag", value)
+#        p_dict.setdefault("flag", value)
         
-        backup_worker.flag = "full"
-        backup_worker.start()
-        sub_p = queue.get()
+            backup_worker.flag = "full"
+            backup_worker.start()
+            sub_p = queue.get()
 #       p_dict.setdefault("pid", sub_p)
         
 #       print sub_p.pid
         
 #        store_list.append(p_dict)
-        dict = {}
+        
         #if sub_p == -1: 
 #            if value == "inc":
 #                raise HTTPAPIError(status_code= 411, error_detail="Increment backup process starts wrong",
@@ -80,7 +117,7 @@ class BackUp(APIHandler):
 #                               log_message= "Full backup process starts wrong",
 #                               response =  "Full backup process starts wrong")
         #else:
-        dict.setdefault("message", "Process is running ,wait")
+            dict.setdefault("message", "Process is running ,wait")
         self.finish(dict)
          
 #eq curl  "http://localhost:8888/backup/inner/check" backup data by full dose.
@@ -89,6 +126,9 @@ class BackUpChecker(APIHandler):
 #    global store_list	
     @asynchronous
     def get(self):
+        if not is_monitoring():
+            self.finish("true")
+            return
         hostname = socket.gethostname()
         obj =  re.search("-n-3", hostname)
         if obj == None:

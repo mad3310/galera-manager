@@ -9,12 +9,13 @@ from tornado.httpclient import HTTPError
 from common.invokeCommand import InvokeCommand
 
 confOpers = ConfigFileOpers()
+zkOper = ZkOpers('127.0.0.1',2181)
 
 def issue_mycnf_changed(self):
     keyList = []
     keyList.append('wsrep_cluster_address')
     
-    zkOper = ZkOpers('127.0.0.1',2181)
+    #zkOper = ZkOpers('127.0.0.1',2181)
     
     clusterUUID = zkOper.getClusterUUID()
     sourceText,stat = zkOper.retrieveMysqlProp(clusterUUID, issue_mycnf_changed)
@@ -96,6 +97,27 @@ def getDictFromText(sourceText, keyList):
 def check_leader():
     invokeCommand = InvokeCommand()
     ret_str, ret_val = invokeCommand._runSysCmd(options.check_zk_leader)
+    invokeCommand = None
     if ret_str.find('leader') == -1:
         return False
     return True
+
+def is_monitoring(host_ip=None):
+    try:
+        stat = zkOper.retrieveClusterStatus()
+        logging.info("is_monitoring: stat: %s, host_ip: %s" % (str(stat), str(host_ip)))
+        if not stat or '_status' not in stat:
+            return False
+        elif stat.get('_status') == 'initializing' and ( not host_ip or host_ip not in zkOper.retrieve_started_nodes() ):
+            return False
+        return True
+    except:
+        logging.info("is_monitoring: except False")
+        return False
+
+def get_localhost_ip():
+    cmd="""ifconfig $(route -n|grep '^0.0.0.0'|awk '{print $NF}')|awk '/inet addr/,gsub("addr:",""){print $2}'"""
+    invokeCommand = InvokeCommand()
+    ret_str, ret_val = invokeCommand._runSysCmd(cmd)
+    invokeCommand = None
+    return ret_str

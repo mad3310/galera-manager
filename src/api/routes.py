@@ -62,6 +62,7 @@ handlers = [
             (r"/inner/node/check/log/health", DataNodeMonitorLogHealth),
             (r"/inner/node_port/check", PortCheck),
             (r"/backup", BackUp),
+            (r"/inner/backup", BackUper),
             (r"/backup/check", BackUpCheck),
             (r"/backup/inner/check", BackUpChecker)
 ]
