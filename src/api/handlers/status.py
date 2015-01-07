@@ -6,7 +6,6 @@ Created on 2013-7-21
 @author: asus
 '''
 from base import APIHandler
-import logging
 import json
 
 # retrieve the status value of special monitor type, the monitor type include cluster,node,db.

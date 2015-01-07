@@ -15,7 +15,6 @@ from Queue import Queue
 
 from os import listdir
 from os.path import isfile
-
 from base import APIHandler
 from tornado.options import options
 from tornado.httpclient import HTTPRequest
