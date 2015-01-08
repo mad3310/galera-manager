@@ -64,5 +64,6 @@ handlers = [
             (r"/backup", BackUp),
             (r"/inner/backup", BackUper),
             (r"/backup/check", BackUpCheck),
+            (r"/backup/checker", BackUp_Checker),
             (r"/backup/inner/check", BackUpChecker)
 ]
