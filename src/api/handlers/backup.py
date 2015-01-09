@@ -80,12 +80,19 @@ class BackUper(APIHandler):
             backup_worker = backup_thread(queue)
 #        global store_list  
 #        p_dict = {}
-#       p_dict.setdefault("flag", value)
-        
-        backup_worker.flag = "full"
-        backup_worker.start()
-        sub_p = queue.get()
-#       p_dict.setdefault("flag", value)
+#        try:
+#            args = self.request.arguments
+#            for key in args:
+#                value = args[key][0]
+#            if value != 'inc' and value != 'full':
+#                    raise HTTPAPIError(status_code=-1, error_detail="arguments are wrong",
+#                               notification = "direct",
+#                               log_message= "arguments are wrong",
+#                               response =  "arguments are wrong, retry again.")
+#            logging.info("Arguments in Http requests is " + value)
+#        except Exception, e:
+#            logging.error(e)
+#        p_dict.setdefault("flag", value)
         
             backup_worker.flag = "full"
             backup_worker.start()
