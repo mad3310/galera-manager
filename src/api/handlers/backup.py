@@ -47,11 +47,11 @@ class BackUp(APIHandler):
         local_ip = socket.gethostbyname(socket.gethostname())
         adminUser, adminPasswd = _retrieve_userName_passwd()
         obj =  re.search("-n-3", hostname)
+        http_client = tornado.httpclient.AsyncHTTPClient()
         if obj == None:
             local_ip = socket.gethostbyname(socket.gethostname())
             logging.info("local ip :" + str(local_ip))
             online_node_list.remove(local_ip)
-            http_client = tornado.httpclient.AsyncHTTPClient()
             for node_ip in online_node_list:
                 requesturi = "http://"+ node_ip +":"+str(options.port)+ url_post
                 request = HTTPRequest(url=requesturi, method='GET', auth_username=adminUser, auth_password = adminPasswd)
