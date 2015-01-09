@@ -5,11 +5,7 @@ from common.zkOpers import ZkOpers
 from tornado.gen import Callback, Wait
 from tornado.options import options
 from abc import abstractmethod
-<<<<<<< HEAD
-from common.helper import check_leader
-=======
 from common.helper import check_leader, is_monitoring, get_localhost_ip
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
 
 import logging
 import tornado.httpclient
@@ -232,13 +228,9 @@ class Check_DB_Anti_Item(Check_Status_Base):
     dba_opers = DBAOpers()
     
     def check(self, data_node_info_list):
-<<<<<<< HEAD
-        
-=======
 
         if not is_monitoring(get_localhost_ip()):
             return
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
         leader_flag = check_leader()
         if leader_flag == False:
             return
@@ -246,11 +238,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
 
         monitor_type = "db"
         monitor_key = "existed_db_anti_item"
-<<<<<<< HEAD
-        error_record = ""
-=======
         error_record = {}
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
         
         anti_item_count = 0
         failed_count = 0
@@ -266,11 +254,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
             failed_count += 1
             if failed_count > 4:
                 anti_item_count = 500
-<<<<<<< HEAD
-                error_record ="no way to connect to db"
-=======
                 error_record.setdefault("msg", "no way to connect to db")
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
         else:
             try:
                 failed_count = 0
@@ -281,11 +265,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
                 conn.close()
         
             if anti_item_count > 0:
-<<<<<<< HEAD
-                error_record = "mcluster existed on Myisam,Nopk,FullText,SPATIAL,please check which db right now."
-=======
                 error_record.setdefault("msg", "mcluster existed on Myisam,Nopk,FullText,SPATIAL,please check which db right now.")
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
                 logging.info(error_record)
     
        
@@ -379,19 +359,12 @@ class Check_Node_Active(Check_Status_Base):
     def check(self, data_node_info_list):
         started_nodes_list = self.zkOper.retrieve_started_nodes()
         
-<<<<<<< HEAD
-        error_record = ''
-        for data_node_ip in started_nodes_list:
-            error_record += data_node_ip + ";"
-            
-=======
         error_record = {}
         ip = []
         for data_node_ip in started_nodes_list:
             ip.append(data_node_ip)
             
         error_record.setdefault("online_ip", ip)
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
         total_count = len(data_node_info_list)
         success_count = len(started_nodes_list)
         failed_count = total_count - success_count
@@ -486,11 +459,8 @@ class Check_Database_User(Check_Status_Base):
     @tornado.gen.engine
     def check(self, data_node_info_list):
         #url_post = "/dbuser/inner/check"
-<<<<<<< HEAD
-=======
         if not is_monitoring(get_localhost_ip()):
             return
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
         monitor_type = "db"
         monitor_key = "dbuser"
         
@@ -534,20 +504,12 @@ class Check_Database_User(Check_Status_Base):
         
         differ_dict_set = {}
         count_dict_set = {}
-<<<<<<< HEAD
-        error_record = ""
-=======
         error_record = {}
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
         if len(user_zk_src_list) == 0 and len(user_mysql_src_dict) == 0:
             count_dict_set.setdefault("total", 0)
             count_dict_set.setdefault("failed", 0)
             count_dict_set.setdefault("success", 0) 
-<<<<<<< HEAD
-            error_record = "no database users in zk neither in mysql"
-=======
             error_record.setdefault("msg", "no database users in zk neither in mysql")
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
             differ_dict_set.setdefault("Empty","" )
 
             alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
@@ -564,11 +526,7 @@ class Check_Database_User(Check_Status_Base):
         total_count = count_dict_set["total"]
         failed_count = count_dict_set["failed"]
         success_count = count_dict_set["success"]
-<<<<<<< HEAD
-        error_record = error_record + str(differ_dict_set)
-=======
         error_record.setdefault("dif", differ_dict_set)
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
        
         logging.info("Check_db_user -----> error_record" + str(error_record))
         logging.info("Check_db_user <------> " + str(count_dict_set))

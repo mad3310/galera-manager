@@ -368,15 +368,9 @@ if __name__ == "__main__":
         print("Version: %s, data: %s" % (stat.version, data.decode("utf-8")))
 
     # List the children
-<<<<<<< HEAD
-    children = zkOpers.zk.get_children(path)
-    print("There are %s children with names %s" % (len(children), children))
-        
-=======
         while True:
             children = zkOpers.ensureinstance().get_children(path)
             #children = zkOpers.zk.get_children(path)
             print("There are %s children with names %s" % (len(children), children))
     except TimeoutError, e:
         print e
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068

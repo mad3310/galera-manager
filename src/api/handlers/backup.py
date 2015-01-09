@@ -4,37 +4,18 @@ import re
 import os
 import time
 import Queue
-<<<<<<< HEAD
-=======
 import json
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
 import socket
 import logging
 import datetime
 import threading
 import multiprocessing
 import tornado.httpclient
-<<<<<<< HEAD
-
-=======
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
 from Queue import Empty
 from Queue import Queue
 
 from os import listdir
 from os.path import isfile
-<<<<<<< HEAD
-
-from base import APIHandler
-from tornado.options import options
-from tornado.web import asynchronous
-from common.invokeCommand import InvokeCommand
-from common.utils.exceptions import HTTPAPIError
-from handlers.backup_thread import backup_thread
-from common.tornado_basic_auth import require_basic_auth
-
-
-=======
 from base import APIHandler
 from tornado.gen import Callback, Wait
 from tornado.options import options
@@ -47,7 +28,6 @@ from handlers.backup_thread import backup_thread
 from common.helper import _retrieve_userName_passwd, is_monitoring
 from common.tornado_basic_auth import require_basic_auth
 
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
 # Start backing up database data.
 #eq curl --user root:root "http://localhost:8888/backup" backup data by full dose.
 
@@ -57,14 +37,6 @@ queue = multiprocessing.Queue()
 class BackUp(APIHandler):
     
 #    global store_list
-<<<<<<< HEAD
-    @asynchronous
-    def get(self):
-
-        backup_worker = backup_thread(queue)
-#        global store_list  
-#       p_dict = {}
-=======
     @tornado.gen.engine
     @asynchronous
     def get(self):
@@ -108,42 +80,22 @@ class BackUper(APIHandler):
             backup_worker = backup_thread(queue)
 #        global store_list  
 #        p_dict = {}
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
-#        try:
-#            args = self.request.arguments
-#            for key in args:
-#                value = args[key][0]
-#            if value != 'inc' and value != 'full':
-#                    raise HTTPAPIError(status_code=-1, error_detail="arguments are wrong",
-#                               notification = "direct",
-#                               log_message= "arguments are wrong",
-#                               response =  "arguments are wrong, retry again.")
-#            logging.info("Arguments in Http requests is " + value)
-#        except Exception, e:
-#            logging.error(e)
-<<<<<<< HEAD
 #       p_dict.setdefault("flag", value)
         
         backup_worker.flag = "full"
         backup_worker.start()
         sub_p = queue.get()
-=======
-#        p_dict.setdefault("flag", value)
+#       p_dict.setdefault("flag", value)
         
             backup_worker.flag = "full"
             backup_worker.start()
             sub_p = queue.get()
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
 #       p_dict.setdefault("pid", sub_p)
         
 #       print sub_p.pid
         
 #        store_list.append(p_dict)
-<<<<<<< HEAD
-        dict = {}
-=======
         
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
         #if sub_p == -1: 
 #            if value == "inc":
 #                raise HTTPAPIError(status_code= 411, error_detail="Increment backup process starts wrong",
@@ -160,11 +112,7 @@ class BackUper(APIHandler):
 #                               log_message= "Full backup process starts wrong",
 #                               response =  "Full backup process starts wrong")
         #else:
-<<<<<<< HEAD
-        dict.setdefault("message", "Process is running ,wait")
-=======
             dict.setdefault("message", "Process is running ,wait")
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
         self.finish(dict)
          
 #eq curl  "http://localhost:8888/backup/inner/check" backup data by full dose.
@@ -173,12 +121,9 @@ class BackUpChecker(APIHandler):
 #    global store_list	
     @asynchronous
     def get(self):
-<<<<<<< HEAD
-=======
         if not is_monitoring():
             self.finish("true")
             return
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
         hostname = socket.gethostname()
         obj =  re.search("-n-3", hostname)
         if obj == None:
@@ -212,11 +157,7 @@ class BackUpChecker(APIHandler):
             status_dict.setdefault("status","expected")
             flag = "true"
             start_lines = os.popen("grep  '== Mysql backup  is starting  ==' " + log_filepath).readlines()
-<<<<<<< HEAD
-            logging.info(str(start_lines))
-=======
             #logging.info(str(start_lines))
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
             if (len(start_lines) == 1):
                 failed_lines = os.popen(" grep '== script is failed ==' " + log_filepath).readlines()
                 if (len(failed_lines) != 0):
@@ -274,8 +215,6 @@ class BackUpChecker(APIHandler):
 
 #eq curl  "http://localhost:8888/backup/check" backup data by full dose.
 class BackUpCheck(APIHandler):
-<<<<<<< HEAD
-=======
     @tornado.gen.engine
     @asynchronous
     def get(self):
@@ -329,22 +268,10 @@ class BackUpCheck(APIHandler):
 
 #eq curl "http://localhost:8888/backup/checker"
 class BackUp_Checker(APIHandler):
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
 
 #    global store_list	
     @asynchronous
     def get(self):
-<<<<<<< HEAD
-        date_id = self.get_latest_date_id('/var/log/mcluster-manager/mcluster-backup/')
-        if date_id == "empty":
-             raise HTTPAPIError(status_code=411, error_detail="Full backup ended less than one time",
-                           notification = "direct",
-                           log_message= "Full backup process ended less than one time",
-                           response =  "Full backup process ended less than one time")
-                
-
-        logging.info("date_id" + str(date_id))
-=======
         hostname = socket.gethostname()
         obj =  re.search("-n-3", hostname)
         if obj == None:
@@ -363,7 +290,6 @@ class BackUp_Checker(APIHandler):
                 
 
             logging.info("date_id" + str(date_id))
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
         #value = p_dict['flag']
 #       if value != 'inc' and value != 'full':
 #           raise HTTPAPIError(status_code=-1, error_detail="arguments are wrong",
@@ -373,64 +299,6 @@ class BackUp_Checker(APIHandler):
 #       if p_dict['flag'] == "inc":
 #          log_filepath = "/var/log/mcluster-manager/mcluster-backup/" + _id + "_script.log" 
 #       else :
-<<<<<<< HEAD
-        log_filepath = "/var/log/mcluster-manager/mcluster-backup/" + date_id +"_script.log"
-        dict = {}
-        time_partition_list = []
-        time_partition_list = self.resolve_time(date_id)
-
-        log_datetime = datetime.datetime(int(time_partition_list[0]), int(time_partition_list[1]), 
-						int(time_partition_list[2]), int(time_partition_list[3]), int(time_partition_list[4]), int(time_partition_list[5]))
-       
-        now_time = datetime.datetime.now()
-        time_expire = datetime.timedelta(hours = 30)
-        expire_time = log_datetime + time_expire
-        logging.info("expire_time :" +str(expire_time))
-        logging.info("now_time :" + str(now_time))
-        logging.info("result:" + str(now_time > expire_time))
-        if now_time > expire_time:
-            dict.setdefault("message","expired") 
-       #     self.zkOper.write_db_backup_info(status_dict)
-        else:
-            start_lines = os.popen("grep  '== Mysql backup  is starting  ==' " + log_filepath).readlines()
-            logging.info(str(start_lines))
-            if (len(start_lines) == 1):
-                failed_lines = os.popen(" grep '== script is failed ==' " + log_filepath).readlines()
-                if (len(failed_lines) != 0):
-                    logging.error(str(failed_lines))
-                    raise HTTPAPIError(status_code=411, error_detail=str(failed_lines),
-                               notification = "direct",
-                               log_message= "Full backup failed",
-                               response =  "Full backup failed")
-                end_lines = os.popen("grep '== the script is ok ==' "+ log_filepath).readlines()
-                if (len(end_lines) == 1):
-                    dict.setdefault("message", "back up success")
-                elif(len(end_lines) == 0):
-                    dict.setdefault("message", "back up is processing")
-                else:
-                    logging.error(str(end_lines))
-                    raise HTTPAPIError(status_code=411, error_detail="Full backup ended more than one time",
-                               notification = "direct",
-                               log_message= "Full backup process ended more than one time",
-                               response =  "Full backup process ended more than one time")
-                
-#          if end_flag == True:
-#            if len(re_obj) == 0:
-#                dict["message"] = "back up failed"
-#                    if p_dict['flag'] == "inc":
-#                        raise HTTPAPIError(status_code= 411, error_detail="Increment backup process starts wrong",
-#                               notification = "direct",
-#                               log_message= "Increment backup process starts wrong",
-#                               response =  "Increment backup process starts wrong")
-#                    else:
-            else:
-                raise HTTPAPIError(status_code=411, error_detail="Full backup process starts more than one time",
-                               notification = "direct",
-                               log_message= "Full backup process starts more than one time",
-                               response =  "Full backup process starts more than one time")
-                     
-        self.finish(dict)
-=======
             log_filepath = "/var/log/mcluster-manager/mcluster-backup/" + date_id +"_script.log"
             dict = {}
             time_partition_list = []
@@ -475,7 +343,6 @@ class BackUp_Checker(APIHandler):
                                   response =  "Full backup process starts more than one time")
                      
             self.finish(dict)
->>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068
 
     
     def get_latest_date_id(self, _path):
