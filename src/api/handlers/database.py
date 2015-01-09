@@ -15,7 +15,7 @@ from common.utils.exceptions import HTTPAPIError
 from common.db_stat_opers import DBStatOpers
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
-from common.helper import check_leader
+from common.helper import check_leader, is_monitoring, get_localhost_ip
 from common.my_logging import debug_log
 
 import socket
@@ -149,6 +149,9 @@ class Inner_DB_Check_CurConns(APIHandler):
     dba_opers = DBAOpers()
     
     def get(self):
+        if not is_monitoring(get_localhost_ip()):
+            self.finish("true")
+            return
         conn = self.dba_opers.get_mysql_connection()
         
         if conn is None:
@@ -183,6 +186,9 @@ class Inner_DB_Check_WsrepStatus(APIHandler):
     dba_opers = DBAOpers()
     
     def get(self):
+        if not is_monitoring(get_localhost_ip()):
+            self.finish("true")
+            return
         try:
             check_result = self.dba_opers.retrieve_wsrep_status()
         except:
@@ -213,8 +219,7 @@ class Inner_DB_Check_WR(APIHandler):
 
 #     
     def get(self):
-
-       
+        
         dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = dataNodeProKeyValue['dataNodeIp']
         self.logger.info('data_node_ip is :' + str(data_node_ip))
@@ -231,6 +236,10 @@ class Inner_DB_Check_WR(APIHandler):
                 self.finish("false")
                 return
             self.zkOper.write_started_node(data_node_ip)
+
+            if not is_monitoring(get_localhost_ip()):
+                self.finish("true")
+                return
             
             dbName = 'monitor'
             n_time = datetime.datetime.now()

@@ -6,8 +6,12 @@ Created on 2013-7-11
 
 @author: asus
 '''
+import json
+
 from kazoo.client import KazooClient
 from kazoo.exceptions import SessionExpiredError
+from kazoo.handlers.threading import TimeoutError
+from kazoo.retry import KazooRetry
 
 import logging
 import threading
@@ -31,38 +35,31 @@ class ZkOpers(object):
 #         self.logger = self.log_obj.get_logger_object()
         self.zkaddress = zkAddress
         self.zkport = zkPort
-        self.zk = self.instance(self.zkaddress, self.zkport)
-        #self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport))
-        #self.zk.start()
+        self.retry = KazooRetry(max_tries=3, delay=0.5)
+        self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
+        self.zk.start()
+        #self.zk = self.ensureinstance()
+        logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
         
-    def my_listener(self, stat):
-        if stat == KazooClient.LOST:
-            self.zk = self.instance(self.zkaddress, self.zkport)
-        elif stat == KazooClient.SUSPENDED:
-            self.zk = self.instance(self.zkaddress, self.zkport)
-        else:
-            pass
-            
-    def instance(self, address, port):
-        self.__zkc = KazooClient(hosts=address+":"+str(port))
-        self.__zkc.add_listener(self.my_listener)
-        self.__zkc.start()
-        logging.info("instance zk client (%s:%s)" % (address, port))
-        return self.__zkc
-        
-    def ensureinstance(self):
-        count = 0
-        while count < 10:
+    def ensureinstance(self, count=0, zk=None):
+        while count < 5:
             try:
-                clusters = self.zk.get_children(self.rootPath)
+                if not zk:
+                    zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
+                    zk.start()
+                    print ("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
+                clusters = zk.get_children(self.rootPath)
                 if len(clusters) != 0:
-                    return self.zk
+                    return zk
             except SessionExpiredError, e:
-                logging.error("zk client retry time: %s" % (count))
-                self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport))
-                self.zk.start()
-            finally:
-                count += 1
+                zk.stop()
+                print ("zk client retry time: %s" % (count))
+                return self.ensureinstance(count + 1)
+            except TimeoutError, e:
+                zk.stop()
+                print ("zk client retry time: %s" % (count))
+                return self.ensureinstance(count + 1)
+        raise TimeoutError, "zookeeper connection timeout"
         
     def existCluster(self):
         self.zk.ensure_path(self.rootPath)
@@ -98,7 +95,7 @@ class ZkOpers(object):
         self.zk.set(path, str(clusterProps))  
         
     def retrieveClusterStatus(self):
-        self.zk = self.ensureinstance()
+        #self.zk = self.ensureinstance()
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/cluster_status"
         resultValue = self._retrieveSpecialPathProp(path)
@@ -250,7 +247,7 @@ class ZkOpers(object):
             self.zk.delete(path)
             
     def retrieve_started_nodes(self):
-        self.zk = self.ensureinstance()
+        #self.zk = self.ensureinstance()
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/node/started"
         started_nodes = self._return_children_to_list(path)
@@ -352,19 +349,34 @@ class ZkOpers(object):
         
         resultValue = {}
         if data != None and data != '':
-            resultValue = eval(data)
+            resultValue = self._format_data(data)
             
         return resultValue
     
+    def _format_data(self, data):
+        local_data = data.replace("'", "\"").replace("[u\"", "[\"").replace(" u\"", " \"")
+        formatted_data = json.loads(local_data)
+        return formatted_data
         
 if __name__ == "__main__":
-    zkOpers = ZkOpers()
-    path = "/letv/mysql/mcluster/"
-    # Print the version of a node and its data
-    data, stat = zkOpers.zk.get(path)
-    print("Version: %s, data: %s" % (stat.version, data.decode("utf-8")))
+    try:
+        zkOpers = ZkOpers('127.0.0.1', 2181)
+        path = "/letv/mysql/mcluster/"
+        # Print the version of a node and its data
+        data, stat = zkOpers.ensureinstance().get(path)
+        #data, stat = zkOpers.zk.get(path)
+        print("Version: %s, data: %s" % (stat.version, data.decode("utf-8")))
 
     # List the children
+<<<<<<< HEAD
     children = zkOpers.zk.get_children(path)
     print("There are %s children with names %s" % (len(children), children))
         
+=======
+        while True:
+            children = zkOpers.ensureinstance().get_children(path)
+            #children = zkOpers.zk.get_children(path)
+            print("There are %s children with names %s" % (len(children), children))
+    except TimeoutError, e:
+        print e
+>>>>>>> d91bbb241f7c6a9cedb73ffa091df86c34957068

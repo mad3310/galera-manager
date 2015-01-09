@@ -6,6 +6,7 @@ Created on 2013-7-21
 from tornado.options import options
 from common.invokeCommand import InvokeCommand
 from common.abstract_stat_service import Abstract_Stat_Service
+from common.helper import is_monitoring, get_localhost_ip
 
 class NodeStatOpers(Abstract_Stat_Service):
     '''
@@ -45,6 +46,10 @@ class NodeStatOpers(Abstract_Stat_Service):
     
     def _stat_mysql_top(self):
         dict = {}
+        if not is_monitoring(get_localhost_ip()):
+            dict.setdefault('mysql_cpu_partion', 0.0)
+            dict.setdefault('mysql_mem_partion', 0.0)
+            return dict
         
         return_result = self.invokeCommand.run_check_shell(options.stat_top_command)
         mysql_info_list = return_result.split('\n\n\n')[0].split('\n')[7].split()
