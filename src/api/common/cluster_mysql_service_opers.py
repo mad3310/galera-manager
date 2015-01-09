@@ -203,18 +203,18 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
             
     def _issue_start_action(self, lock, cluster_flag):
         
-        status_dict = {}
-        status_dict.setdefault("_status", "initializing")
-        self.zkOper.writeClusterStatus(status_dict)
-        
+                
         data_node_info_list = self.zkOper.retrieve_data_node_list()
         node_num = len(data_node_info_list)
         adminUser, adminPasswd = _retrieve_userName_passwd()
         node_wsrep_status_dict = {}
         data_node_started_flag_dict = {}
         need_start_node_ip_list = []
+        status_dict = {}
         try:
             if cluster_flag == 'new':
+                status_dict.setdefault("_status", "initializing")
+                self.zkOper.writeClusterStatus(status_dict)
                 portstatus_obj = PortStatus()
                 need_start_node_ip_list = portstatus_obj.check_port(data_node_info_list)
                 logging.info("need_start_node_ip_list:" + str(need_start_node_ip_list))
