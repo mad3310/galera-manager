@@ -37,25 +37,16 @@ class DBOnMCluster(APIHandler):
     conf_opers = ConfigFileOpers()
     
     def post(self):
-        dict = {}
         dbName = self.get_argument("dbName", None)
-        dict.setdefault("dbName ", dbName)
         userName = self.get_argument("userName", None)
-        dict.setdefault("userName ", userName)
         ip_address = self.get_argument("ip_address", '%')
-        dict.setdefault("ip_address " ,ip_address)
-        max_queries_per_hour = self.get_argument("max_queries_per_hour", 0)
-        dict.setdefault("max_queries_per_hour " , max_queries_per_hour)
         max_updates_per_hour = self.get_argument("max_updates_per_hour", 0)
-        dict.setdefault("max_updates_per_hour " , max_updates_per_hour)
         max_connections_per_hour = self.get_argument("max_connections_per_hour", 0)
-        dict.setdefault("max_connections_per_hour " , max_connections_per_hour)
         max_user_connections = self.get_argument("max_user_connections", 200)
-        dict.setdefault("max_user_connections" ,max_user_connections)
         userPassword = get_random_password()
-        intg_dict = {}
-        intg_dict.setdefault("args:" , dict)
-        logging.info(str(intg_dict))
+        dict = {}
+        dict = self.request.arguments
+        logging.info(str(dict))
         conn = self.dba_opers.get_mysql_connection()
         
         try:

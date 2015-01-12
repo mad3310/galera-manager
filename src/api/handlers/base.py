@@ -9,6 +9,8 @@ from common.utils.exceptions import HTTPAPIError
 from common.utils.mail import send_email
 from common.my_logging import debug_log
 
+from common.invokeCommand import InvokeCommand
+from common.helper import get_localhost_ip
 import logging
 import traceback
 
@@ -91,10 +93,17 @@ class APIHandler(BaseHandler):
 
     def _send_error_email(self, exception):
         try:
+            local_ip = get_localhost_ip()
+            invokeCommand = InvokeCommand()
+            cmd_str = "rpm -qa mcluster-manager"
+            version_str = invokeCommand._runSysCmd(cmd_str)
+            logging.info("version_str :" + str(version_str)) 
             # send email
-            subject = "[%s]Internal Server Error" % options.sitename
+            subject = "[%s]Internal Server Error " % options.sitename
             body = self.render_string("errors/500_email.html",
                                       exception=exception)
+            
+            body += "\n" + version_str[0] + "\nip:" + local_ip
             
 #            email_from = "%s <noreply@%s>" % (options.sitename, options.domain)
             if options.send_email_switch:
