@@ -40,6 +40,7 @@ class DBOnMCluster(APIHandler):
         dbName = self.get_argument("dbName", None)
         userName = self.get_argument("userName", None)
         ip_address = self.get_argument("ip_address", '%')
+        max_queries_per_hour = self.get_argument("max_queries_per_hour", 0)
         max_updates_per_hour = self.get_argument("max_updates_per_hour", 0)
         max_connections_per_hour = self.get_argument("max_connections_per_hour", 0)
         max_user_connections = self.get_argument("max_user_connections", 200)
