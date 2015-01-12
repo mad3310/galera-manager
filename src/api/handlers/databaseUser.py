@@ -42,27 +42,20 @@ class DBUser(APIHandler):
     conf_opers = ConfigFileOpers()
     
     def post(self):
-        dict = {}
         role = self.get_argument("role", None)
-        dict.setdefault("role", role)
         dbName = self.get_argument("dbName", None)
-        dict.setdefault("dbName " , dbName)
         userName = self.get_argument("userName", None)
-        dict.setdefault("userName", userName)
         user_password = self.get_argument("user_password", None)
         ip_address = self.get_argument("ip_address", '%')
-        dict.setdefault("ip_address " , ip_address)
         max_queries_per_hour = self.get_argument("max_queries_per_hour", 0)
-        dict.setdefault("max_queries_per_hour", max_queries_per_hour)
         max_updates_per_hour = self.get_argument("max_updates_per_hour", 0)
-        dict.setdefault("max_updates_per_hour", max_updates_per_hour)
         max_connections_per_hour = self.get_argument("max_connections_per_hour", 0)
-        dict.setdefault("max_connections_per_hour", max_connections_per_hour)
         max_user_connections = self.get_argument("max_user_connections", 200)
-        dict.setdefault("max_user_connections", max_user_connections)
-        intg_dict = {}
-        intg_dict.setdefault("args:", dict)
-        logging.info(str(intg_dict))
+        dict = {}
+        dict = self.request.arguments
+        if dict.has_key("user_password"):
+            del dict["user_password"]
+        logging.info(str(dict))
         
         if role is None:
             raise HTTPAPIError(status_code=417, error_detail="when create db's user, no specify the user role",\
