@@ -526,7 +526,8 @@ class Check_Database_User(Check_Status_Base):
         total_count = count_dict_set["total"]
         failed_count = count_dict_set["failed"]
         success_count = count_dict_set["success"]
-        error_record.setdefault("dif", differ_dict_set)
+        if differ_dict_set:
+            error_record.setdefault("dif", differ_dict_set)
        
         logging.info("Check_db_user -----> error_record" + str(error_record))
         logging.info("Check_db_user <------> " + str(count_dict_set))
