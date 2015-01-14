@@ -3,6 +3,7 @@ Created on 2013-7-21
 
 @author: asus
 '''
+import logging
 from tornado.options import options
 from common.invokeCommand import InvokeCommand
 from common.abstract_stat_service import Abstract_Stat_Service
@@ -52,8 +53,13 @@ class NodeStatOpers(Abstract_Stat_Service):
             return dict
         
         return_result = self.invokeCommand.run_check_shell(options.stat_top_command)
-        mysql_info_list = return_result.split('\n\n\n')[0].split('\n')[7].split()
+        logging.info("return_result :" + str(return_result))
         
+        mysql_info_list = []
+        try: 
+            mysql_info_list = return_result.split('\n\n\n')[0].split('\n')[7].split()
+        except IndexError:
+            logging.info("mysql pid not found through top -umysql")
         if mysql_info_list is None or mysql_info_list == []:
             mysql_cpu = 0.0
             mysql_mem = 0.0
