@@ -335,7 +335,7 @@ class BackUp_Checker(APIHandler):
                     if (len(end_lines) == 1):
                         dict.setdefault("message", "backup success")
                     elif(len(end_lines) == 0):
-                        dict.setdefault("message", "back up is processing")
+                        dict.setdefault("message", "backup is processing")
                     else:
                         logging.error(str(end_lines))
                         raise HTTPAPIError(status_code=411, error_detail="Full backup ended more than one time",
