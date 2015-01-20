@@ -485,10 +485,10 @@ class Check_Database_User(Check_Status_Base):
             inner_value_list.append(list(t)[-6])
             user_mysql_src_dict.setdefault(dict_key_str, inner_value_list)
 
-        logging.info("list format :" + str(user_mysql_src_dict))    
+        #logging.info("list format :" + str(user_mysql_src_dict))    
         
         db_list = self.zkOper.retrieve_db_list()
-        logging.info("db_list: " + str(db_list)) 
+        #logging.info("db_list: " + str(db_list)) 
         
         user_zk_src_list = []
         for db_name in db_list:
@@ -501,7 +501,7 @@ class Check_Database_User(Check_Status_Base):
                 inner_list.append(prop)
                 user_zk_src_list.append(inner_list)
                 logging.info("result" + str(inner_list))
-        logging.info("user_zk_src_list :" + str(user_zk_src_list))
+        #logging.info("user_zk_src_list :" + str(user_zk_src_list))
         
         differ_dict_set = {}
         count_dict_set = {}
@@ -530,8 +530,8 @@ class Check_Database_User(Check_Status_Base):
         if differ_dict_set:
             error_record.setdefault("dif", differ_dict_set)
        
-        logging.info("Check_db_user -----> error_record" + str(error_record))
-        logging.info("Check_db_user <------> " + str(count_dict_set))
+        #logging.info("Check_db_user -----> error_record" + str(error_record))
+        #logging.info("Check_db_user <------> " + str(count_dict_set))
         super(Check_Database_User, self).write_status(total_count, success_count, \
                                                     failed_count, \
                                                     alarm_level, error_record, monitor_type, \
