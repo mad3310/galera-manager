@@ -259,13 +259,14 @@ class Check_DB_Anti_Item(Check_Status_Base):
             try:
                 failed_count = 0
                 anti_item_count = self.dba_opers.check_existed_myisam_table(conn)
+                anti_item_count += self.dba_opers.check_existed_stored_procedure(conn)
                 anti_item_count += self.dba_opers.check_existed_nopk(conn)
                 anti_item_count += self.dba_opers.check_existed_fulltext_and_spatial(conn)
             finally:
                 conn.close()
         
             if anti_item_count > 0:
-                error_record.setdefault("msg", "mcluster existed on Myisam,Nopk,FullText,SPATIAL,please check which db right now.")
+                error_record.setdefault("msg", "mcluster existed on Myisam,Nopk,FullText,SPATIAL,Procedure,please check which db right now.")
                 logging.info(error_record)
     
        

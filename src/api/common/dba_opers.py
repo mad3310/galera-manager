@@ -320,7 +320,16 @@ class DBAOpers(object):
         rows = cursor.fetchall()
         c = rows[0][0]
         return c
-    
+ 
+    def check_existed_stored_procedure(self, conn):
+        cursor = conn.cursor()
+        cursor.execute("show procedure status")
+        rows = cursor.fetchall()
+        logging.info(str(rows))
+        
+        c = len(rows)
+        return c
+
     def check_existed_nopk(self, conn):
         cursor = conn.cursor()
         cursor.execute("""select count(1)
