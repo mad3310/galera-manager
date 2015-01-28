@@ -320,7 +320,17 @@ class DBAOpers(object):
         rows = cursor.fetchall()
         c = rows[0][0]
         return c
- 
+    
+    def check_triggers(self, conn):
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""select count(*) from information_schema.triggers""")
+        except Exception, e:
+            logging.exception(e)
+        rows = cursor.fetchall()
+        c = rows[0][0]
+        return c
+
     def check_existed_stored_procedure(self, conn):
         cursor = conn.cursor()
         cursor.execute("show procedure status")

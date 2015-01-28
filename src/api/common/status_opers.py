@@ -257,16 +257,34 @@ class Check_DB_Anti_Item(Check_Status_Base):
                 error_record.setdefault("msg", "no way to connect to db")
         else:
             try:
+                msg = ""
                 failed_count = 0
-                anti_item_count = self.dba_opers.check_existed_myisam_table(conn)
-                anti_item_count += self.dba_opers.check_existed_stored_procedure(conn)
-                anti_item_count += self.dba_opers.check_existed_nopk(conn)
-                anti_item_count += self.dba_opers.check_existed_fulltext_and_spatial(conn)
+                anti_item_count = 0
+                anti_item_myisam_count = self.dba_opers.check_existed_myisam_table(conn)
+                anti_item_procedure_count = self.dba_opers.check_existed_stored_procedure(conn)
+                anti_item_trigger_count = self.dba_opers.check_triggers(conn)
+                anti_item_nopk_count = self.dba_opers.check_existed_nopk(conn)
+                anti_item_fulltext_and_spatial_count = self.dba_opers.check_existed_fulltext_and_spatial(conn)
+                if anti_item_myisam_count :
+                    anti_item_count += anti_item_myisam_count
+                    msg += " Myisam,"
+                if anti_item_procedure_count :
+                    anti_item_count += anti_item_procedure_count
+                    msg += " Procedure,"
+                if anti_item_trigger_count :
+                    anti_item_count += anti_item_trigger_count
+                    msg += " Trigger,"
+                if anti_item_nopk_count :
+                    anti_item_count += anti_item_nopk_count
+                    msg += " NOPK,"
+                if anti_item_fulltext_and_spatial_count:
+                    anti_item_count += anti_item_fulltext_and_spatial_count
+                    msg += " SPATIAL,"
             finally:
                 conn.close()
         
             if anti_item_count > 0:
-                error_record.setdefault("msg", "mcluster existed on Myisam,Nopk,FullText,SPATIAL,Procedure,please check which db right now.")
+                error_record.setdefault("msg", "mcluster existed on %s please check which db right now." % (msg) )
                 logging.info(error_record)
     
        
