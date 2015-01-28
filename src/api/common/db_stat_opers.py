@@ -63,7 +63,6 @@ class DBStatOpers(Abstract_Stat_Service):
         confDict = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         local_ip = confDict['dataNodeIp']
 
-        #local_ip = socket.gethostbyname(socket.gethostname())
         logging.info("local ip:" + str(local_ip))
         if cluster_started_nodes.count(local_ip) != 0:
             cluster_started_nodes.remove(local_ip)

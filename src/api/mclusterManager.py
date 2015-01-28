@@ -13,6 +13,7 @@ import tornado.options
 import tornado.web
 from tornado.options import options
 from common.appdefine import mclusterManagerDefine
+from common.helper import get_localhost_ip
 from common.sceduler_opers import Sceduler_Opers
 from common.zkOpers import ZkOpers 
 from common.configFileOpers import ConfigFileOpers
@@ -56,7 +57,7 @@ def main():
        	    clusterUUID = zk_client.getClusterUUID() 
             data, stat = zk_client.retrieveClusterProp(clusterUUID) 
 
-            node_ip_addr = socket.gethostbyname(socket.gethostname())
+            node_ip_addr = get_localhost_ip()
             return_result = zk_client.retrieve_data_node_info(node_ip_addr)
             
             json_str_data = data.replace("'", "\"")

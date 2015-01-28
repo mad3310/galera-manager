@@ -25,7 +25,7 @@ from tornado import escape
 from common.invokeCommand import InvokeCommand
 from common.utils.exceptions import HTTPAPIError
 from handlers.backup_thread import backup_thread
-from common.helper import _retrieve_userName_passwd, is_monitoring
+from common.helper import _retrieve_userName_passwd, is_monitoring, get_localhost_ip 
 from common.tornado_basic_auth import require_basic_auth
 
 # Start backing up database data.
@@ -44,12 +44,11 @@ class BackUp(APIHandler):
         url_post = "/inner/backup"
         online_node_list = self.zkOper.retrieve_started_nodes()
         hostname = socket.gethostname()
-        local_ip = socket.gethostbyname(socket.gethostname())
+        local_ip = get_localhost_ip()
         adminUser, adminPasswd = _retrieve_userName_passwd()
         obj =  re.search("-n-3", hostname)
         http_client = tornado.httpclient.AsyncHTTPClient()
         if obj == None:
-            local_ip = socket.gethostbyname(socket.gethostname())
             logging.info("local ip :" + str(local_ip))
             online_node_list.remove(local_ip)
             for node_ip in online_node_list:
@@ -230,7 +229,7 @@ class BackUpCheck(APIHandler):
         online_node_list = self.zkOper.retrieve_started_nodes()
         hostname = socket.gethostname()
        
-        local_ip = socket.gethostbyname(socket.gethostname())
+        local_ip = get_localhost_ip()
         logging.info("local ip :" + str(local_ip))
         http_client = tornado.httpclient.AsyncHTTPClient()
         key_sets = set()
