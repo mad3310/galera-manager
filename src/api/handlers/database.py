@@ -253,14 +253,18 @@ class Inner_DB_Check_WR(APIHandler):
             tbName = pre_tbname +"_" + str(offset)
             
             del_tbName = ''
-            if  h % 6 == 0 and min <= 4:
+            if  h % 6 == 0 and min <= 59:
+                ft = float(time.time())
+                logging.info("float time : %f" % (ft))
                 int_tbName = (offset + 2 ) % 4
-                        
                 del_tbName = pre_tbname + "_" + str(int_tbName)
                 _count = self.dba_opers.check_tb_data(conn, del_tbName, dbName)
-                if _count != 0:
+                if _count != 0 and (1000000*ft) % 10 == 0:
                     self.dba_opers.delete_tb_contents(conn, del_tbName, dbName)
                     self.logger.info('delete the contents in database (%s) before 12 hours success!' % (del_tbName))
+                    str_time = n_time.strftime(TIME_FORMAT)
+                    self.logger.info("delete contents time is :" + str_time)
+
             
             str_time = n_time.strftime(TIME_FORMAT)
             self.logger.info("time is :" + str_time)
