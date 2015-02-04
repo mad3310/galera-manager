@@ -40,6 +40,10 @@ class Check_Status_Base(object):
             return
             
         pre_stat = self.zkOper.retrieveClusterStatus()
+        ''' The following logic expression means 
+            1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.
+            2. else the pre_stat is not {}, then it must have value in pre_stat dictionary and judge whether it is right or not.
+        '''
         if pre_stat.has_key('_status') and pre_stat['_status'] != 'initializing' or pre_stat == {}:
             node_num = len(data_node_info_list)
             online_node_list = self.zkOper.retrieve_started_nodes()
