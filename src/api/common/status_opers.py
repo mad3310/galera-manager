@@ -40,13 +40,7 @@ class Check_Status_Base(object):
             return
             
         pre_stat = self.zkOper.retrieveClusterStatus()
-        if pre_stat == {}:
-            _dict = {}
-            _dict.setdefault('_status', 'sub_health') 
-            self.zkOper.writeClusterStatus(_dict) 
-            logging.info("create the cluster_status path")
-            pre_stat = _dict
-        if pre_stat.has_key('_status') and pre_stat['_status'] != 'initializing':
+        if pre_stat.has_key('_status') and pre_stat['_status'] != 'initializing' or pre_stat == {}:
             node_num = len(data_node_info_list)
             online_node_list = self.zkOper.retrieve_started_nodes()
             dict = {}
@@ -58,7 +52,7 @@ class Check_Status_Base(object):
                 dict['_status'] = 'sub-health'
             else :
                 dict['_status'] = 'failed' 
-            logging.info(pre_stat['_status'] + " change to " + dict['_status'])
+            logging.info(str(pre_stat) + " change to " + dict['_status'])
             self.zkOper.writeClusterStatus(dict) 
             
         success_count = 0
