@@ -13,7 +13,7 @@ from common.dba_opers import DBAOpers
 from common.configFileOpers import ConfigFileOpers
 from common.utils import get_random_password
 from common.utils.exceptions import HTTPAPIError
-
+from common.helper import get_zk_address
 # create manager user in mcluster
 # eg. curl --user root:root -d "role=manager&dbName=managerTest&userName=zbz" "http://localhost:8888/dbUser"
 
@@ -40,7 +40,8 @@ class DBUser(APIHandler):
     dba_opers = DBAOpers()
     
     conf_opers = ConfigFileOpers()
-    
+    def __init__(self):
+        self.zkOper = None
     def post(self):
         role = self.get_argument("role", None)
         dbName = self.get_argument("dbName", None)
@@ -129,7 +130,10 @@ class DBUser(APIHandler):
         
         #use try catch to close the conn
         conn.close()
-        
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
+
         #check if exist cluster
         clusterUUID = self.zkOper.getClusterUUID()
         
@@ -147,7 +151,7 @@ class DBUser(APIHandler):
         dict.setdefault("user_name", userName)
         dict.setdefault("user_password", user_password)
         self.finish(dict)
-        
+        self.zkOper.close()
     
     
     def put(self):
@@ -182,7 +186,9 @@ class DBUser(APIHandler):
                                 notification = "direct", \
                                 log_message= "when modify db's user, no specify any modified parameter",\
                                 response =  "please specify any one or all of following parameter:[max_queries_per_hour,max_updates_per_hour,max_connections_per_hour,max_user_connections]")
-        
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
         clusterUUID = self.zkOper.getClusterUUID()
         
         user_limit_map = self.zkOper.retrieve_user_limit_props(clusterUUID, dbName, userName, ip_address)
@@ -230,10 +236,15 @@ class DBUser(APIHandler):
         dict.setdefault("db_name", dbName)
         dict.setdefault("user_name", userName)
         self.finish(dict)
+        self.zkOper.close()
         
         
         
     def delete(self, dbName, userName, ipAddress):
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
+
         if not dbName:
             raise HTTPAPIError(status_code=417, error_detail="when remove db's user, no specify the database name",\
                                 notification = "direct", \
@@ -266,4 +277,4 @@ class DBUser(APIHandler):
         dict.setdefault("user_name", userName)
         dict.setdefault("ip_address", ipAddress)
         self.finish(dict)
-        
+        self.zkOper.close()

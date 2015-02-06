@@ -4,13 +4,13 @@ from common.configFileOpers import ConfigFileOpers
 from common.invokeCommand import InvokeCommand
 from base import APIHandler
 from common.tornado_basic_auth import require_basic_auth
-from common.helper import issue_mycnf_changed
+from common.helper import issue_mycnf_changed, get_zk_address
 from common.cluster_mysql_service_opers import Cluster_Mysql_Service_Opers
 from tornado.options import options
 from tornado.web import asynchronous
 from tornado.gen import engine
 from common.utils.exceptions import HTTPAPIError
-#from common.zkOpers import ZkOpers
+from common.zkOpers import ZkOpers
 
 import logging
 import uuid
@@ -31,7 +31,9 @@ class CreateMCluster(APIHandler):
     
     def post(self):
         #check if exist cluster
-        existCluster = self.zkOper.existCluster()
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        existCluster = zkoper_obj.existCluster()
         requestParam = {}
         args = self.request.arguments
         if existCluster:
@@ -61,14 +63,14 @@ class CreateMCluster(APIHandler):
             
         clusterProps = self.confOpers.getValue(options.cluster_property)
         dataNodeProprs = self.confOpers.getValue(options.data_node_property)
-        self.zkOper.writeClusterInfo(clusterUUID, clusterProps)
-        self.zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
+        zkoper_obj.writeClusterInfo(clusterUUID, clusterProps)
+        zkoper_obj.writeDataNodeInfo(clusterUUID, dataNodeProprs)
         
         dict = {}
 #        dict.setdefault("code", '000000')
         dict.setdefault("message", "creating cluster successful!")
         self.finish(dict)
-        
+        zkoper_obj.close()       
         
 # init mcluster
 # eg. curl --user root:root "http://localhost:8888/cluster/init?forceInit=false"
@@ -87,7 +89,11 @@ class InitMCluster(APIHandler):
         lock = None
         
         try:
-            isLock,lock = self.zkOper.lock_init_node_action()
+            zk_address = get_zk_address()
+            zkoper_obj = ZkOpers(zk_address, 2181)
+            existCluster = zkoper_obj.existCluster()
+
+            isLock,lock = zkoper_obj.lock_init_node_action()
         except kazoo.exceptions.LockTimeout:
             raise HTTPAPIError(status_code=578, error_detail="a server is initing, need to wait for the completion of init oper.",\
                                 notification = "direct", \
@@ -104,7 +110,7 @@ class InitMCluster(APIHandler):
             
             #check if cluster has odd data node
             if not forceInit:
-                dataNodeNumber = self.zkOper.getDataNodeNumber(clusterUUID)
+                dataNodeNumber = zkoper_obj.getDataNodeNumber(clusterUUID)
                 if dataNodeNumber/2 == 0:
                     raise HTTPAPIError(status_code=417, error_detail="the server number of cluster should be odd number",\
                                     notification = "direct", \
@@ -120,13 +126,13 @@ class InitMCluster(APIHandler):
             sst_user_password = self.invokeCommand.runBootstrapScript()
             #self.zkOper = ZkOpers('127.0.0.1',2181)
             #logging.info("init zk")
-            self.zkOper.write_started_node(data_node_ip)
+            zkoper_obj.write_started_node(data_node_ip)
                 
             
 #            mysql_cnf_text_test = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
             
             mysql_cnf_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-            self.zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_text, issue_mycnf_changed)
+            zkoper_obj.writeMysqlCnf(clusterUUID, mysql_cnf_text, issue_mycnf_changed)
         except Exception, e:
             logging.error(e)
             raise HTTPAPIError(status_code=500, error_detail="server_error",
@@ -135,14 +141,14 @@ class InitMCluster(APIHandler):
                                response =  "server_error")
             
         finally:
-            self.zkOper.unLock_init_node_action(lock)
+            zkoper_obj.unLock_init_node_action(lock)
         
         dict = {}
 #        dict.setdefault("code", '000000')
         dict.setdefault("message", "init cluster successful!")
         dict.setdefault("sst_user_password", sst_user_password)
         self.finish(dict)
-        
+        zkoper_obj.close()
         
 # sync mcluster
 # eg. curl "http://localhost:8888/cluster/sync"
@@ -151,14 +157,19 @@ class SyncMCluster(APIHandler):
     confOpers = ConfigFileOpers()
     
     def get(self):
-        clusterUUID = self.zkOper.getClusterUUID()
-        data, stat = self.zkOper.retrieveClusterProp(clusterUUID)
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        existCluster = zkoper_obj.existCluster()
+
+        clusterUUID = zkoper_obj.getClusterUUID()
+        data, stat = zkoper_obj.retrieveClusterProp(clusterUUID)
         self.confOpers.setValue(options.cluster_property, eval(data))
         
         dict = {}
  #       dict.setdefault("code", '000000')
         dict.setdefault("message", "sync mcluster info to local successful!")
         self.finish(dict)
+        zkoper_obj.close()
         
         
 # start mysqld service on every data node for entity cluster
@@ -201,8 +212,12 @@ class ClusterStatus(APIHandler):
     @asynchronous
     def get(self):
         try:
-            cluster_status = self.zkOper.retrieveClusterStatus()
-            cluster_started_nodes = self.zkOper.retrieve_started_nodes()
+            zk_address = get_zk_address()
+            zkoper_obj = ZkOpers(zk_address, 2181)
+            existCluster = zkoper_obj.existCluster()
+
+            cluster_status = zkoper_obj.retrieveClusterStatus()
+            cluster_started_nodes = zkoper_obj.retrieve_started_nodes()
         except kazoo.exceptions.LockTimeout:
             raise HTTPAPIError(status_code=578, error_detail="lock by other thread",\
                                 notification = "direct", \
@@ -213,7 +228,8 @@ class ClusterStatus(APIHandler):
         dict['message'] = cluster_status['_status']
         dict['nodelist'] = cluster_started_nodes
         
-        self.finish(dict)    
+        self.finish(dict)
+        zkoper_obj.close()
 
         
 # stop mysqld service on every data node for entity cluster
@@ -235,7 +251,11 @@ class ClusterStop(APIHandler):
         
         status_dict = {}
         status_dict['_status'] = 'stopping'
-        self.zkOper.writeClusterStatus(status_dict)
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        existCluster = zkoper_obj.existCluster()
+
+        zkoper_obj.writeClusterStatus(status_dict)
         
         dict = {}
         #dict.setdefault("code", '000000')

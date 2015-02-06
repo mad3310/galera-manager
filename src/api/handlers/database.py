@@ -15,7 +15,7 @@ from common.utils.exceptions import HTTPAPIError
 from common.db_stat_opers import DBStatOpers
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
-from common.helper import check_leader, is_monitoring, get_localhost_ip
+from common.helper import check_leader, is_monitoring, get_localhost_ip,get_zk_address
 from common.my_logging import debug_log
 
 import socket
@@ -31,7 +31,8 @@ TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 @require_basic_auth
 class DBOnMCluster(APIHandler):
-    
+    def __init__(self):
+        self.zkOper = None
     dba_opers = DBAOpers()
     
     conf_opers = ConfigFileOpers()
@@ -64,7 +65,11 @@ class DBOnMCluster(APIHandler):
         
         #check if exist cluster
         dbProps = {'db_name':dbName}
-        
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
+
+       
         clusterUUID = self.zkOper.getClusterUUID()
         self.zkOper.write_db_info(clusterUUID, dbName, dbProps)
         
@@ -117,7 +122,7 @@ class DBOnMCluster(APIHandler):
         dict.setdefault("removed_db_name", dbName)
         dict.setdefault("removed_user_with_db_name", user_name_list)
         self.finish(dict)
-        
+        self.zkOper.close()
 
 # After mcluster shut down, manager want to recover the cluster, then need to retrieve the node's uuid and seqno. 
 # Though this api, user can get it.
@@ -208,10 +213,16 @@ class Inner_DB_Check_WR(APIHandler):
     logger = log_obj.get_logger_object()
     
     invokeCommand = InvokeCommand()
-
+    def __init__(self):
+        self.zkOper = None
+ 
 #     
     def get(self):
-        
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
+
+  
         dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = dataNodeProKeyValue['dataNodeIp']
         self.logger.info('data_node_ip is :' + str(data_node_ip))
@@ -305,7 +316,8 @@ class Inner_DB_Check_WR(APIHandler):
             return_flag = "false"
         finally: 
             conn.close()
-        self.finish(return_flag)
+        self.finish(return_flag) 
+        self.zkOper.close()
         
 
 # retrieve the database stat with innotop

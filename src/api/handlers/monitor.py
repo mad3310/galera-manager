@@ -9,6 +9,7 @@ Created on 2013-7-21
 from base import APIHandler
 from common.status_opers import *
 
+from common.helper import get_zk_address
 import logging
 
 class Cluster_Info_Sync_Handler:
@@ -114,9 +115,13 @@ class Mcluster_Monitor_Sync(APIHandler):
     node_handler = Node_Info_Sync_Handler()
     
     db_handler = DB_Info_Sync_Handler()
-    
+    def __init__(self):
+        self.zkOper = None
     def get(self):
-        
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
+
         data_node_info_list = self.zkOper.retrieve_data_node_list()
         
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
@@ -128,7 +133,7 @@ class Mcluster_Monitor_Sync(APIHandler):
         dict.setdefault("node",node_status_dict)
         
         self.finish(dict)
-        
+        self.zkOper.close()
         
 # retrieve the status of mcluster on background, these status will record into zk
 # eg. curl "http://localhost:8888/mcluster/monitor/async"        
@@ -138,9 +143,15 @@ class Mcluster_Monitor_Async(APIHandler):
     node_handler = Node_Info_Async_Handler()
     
     db_handler = DB_Info_Async_Handler()
-    
+    def __init__(self):
+        self.zkOper = None
+
     @tornado.web.asynchronous
     def get(self):
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
+
         data_node_info_list = self.zkOper.retrieve_data_node_list()
         
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
@@ -151,3 +162,4 @@ class Mcluster_Monitor_Async(APIHandler):
         dict.setdefault("message", "finished")
         
         self.finish(dict)
+        self.zkOper.close()

@@ -5,7 +5,7 @@ from common.zkOpers import ZkOpers
 from tornado.gen import Callback, Wait
 from tornado.options import options
 from abc import abstractmethod
-from common.helper import check_leader, is_monitoring, get_localhost_ip
+from common.helper import check_leader, is_monitoring, get_localhost_ip,get_zk_address
 
 import logging
 import tornado.httpclient
@@ -16,9 +16,10 @@ TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class Check_Status_Base(object):
     
-    zkOper = ZkOpers('127.0.0.1',2181)
+#    zkOper = ZkOpers('127.0.0.1',2181)
     
     def __init__(self):
+        self.zkOper = None
         if self.__class__ == Check_Status_Base:
             raise NotImplementedError, \
             "Cannot create object of class Check_Status_Base"
@@ -39,6 +40,9 @@ class Check_Status_Base(object):
         if leader_flag == False:
             return
             
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
         pre_stat = self.zkOper.retrieveClusterStatus()
         ''' The following logic expression means 
             1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.
@@ -108,7 +112,10 @@ class Check_Status_Base(object):
                 error_record_dict['msg'] = "expected"
         
         self.write_status(zk_data_node_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key)
-         
+
+		self.zkOper.close()
+        zkoper_obj.close()
+
     def write_status(self, total_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key):
         result_dict = {}
         format_str = "total=%s, success count=%s, failed count=%s"
@@ -124,7 +131,8 @@ class Check_Status_Base(object):
 #                     monitor_key + " monitor_value:" + str(result_dict))
         
         self.zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
-        
+        self.zkOper.close()
+        logging.info("close zk client successfully")
 
 class Check_Cluster_Available(Check_Status_Base):
     
@@ -247,6 +255,9 @@ class Check_DB_Anti_Item(Check_Status_Base):
         anti_item_count = 0
         failed_count = 0
         Path_Value = {}
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
         Path_Value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
         if Path_Value != {}:
 #             str_msg = Path_Value['message']
@@ -278,7 +289,8 @@ class Check_DB_Anti_Item(Check_Status_Base):
                                                     failed_count, \
                                                     alarm_level, error_record, monitor_type, \
                                                     monitor_key)
-        
+        self.zkOper.close()
+        zkoper_obj.close()
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if total_count == 0:
             return options.alarm_nothing
@@ -361,6 +373,11 @@ class Check_Node_Active(Check_Status_Base):
     
     @tornado.gen.engine
     def check(self, data_node_info_list):
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
+        Path_Value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
+
         started_nodes_list = self.zkOper.retrieve_started_nodes()
         
         error_record = {}
@@ -380,7 +397,8 @@ class Check_Node_Active(Check_Status_Base):
                                                     failed_count, \
                                                     alarm_level, error_record, monitor_type, \
                                                     monitor_key)
-        
+        self.zkOper.close()
+        zkoper_obj.close()
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:
             return options.alarm_nothing
@@ -441,11 +459,16 @@ class Check_Backup_Status(Check_Status_Base):
        super(Check_Backup_Status, self).__init__()
     @tornado.gen.engine  
     def check(self, data_node_info_list):
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
         url_post = "/backup/inner/check"
         monitor_type = "db"
         monitor_key = "backup"
         super(Check_Backup_Status, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
-    
+        
+        self.zkOper.close()
+        zkoper_obj.close()
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:
            return options.alarm_nothing
@@ -489,7 +512,9 @@ class Check_Database_User(Check_Status_Base):
             user_mysql_src_dict.setdefault(dict_key_str, inner_value_list)
 
         logging.info("list format :" + str(user_mysql_src_dict))    
-        
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
+
         db_list = self.zkOper.retrieve_db_list()
         logging.info("db_list: " + str(db_list)) 
         
@@ -539,7 +564,8 @@ class Check_Database_User(Check_Status_Base):
                                                     failed_count, \
                                                     alarm_level, error_record, monitor_type, \
                                                     monitor_key)
-        
+        self.zkOper.close()
+        zkoper_obj.close()
 
     def compare_center(self, _user_mysql_src_dict, _user_zk_src_list, _differ_dict_set ,_count_dict):
         _user_mysql_src_dict_keys = _user_mysql_src_dict.keys()

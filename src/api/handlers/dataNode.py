@@ -9,7 +9,7 @@ from common.tornado_basic_auth import require_basic_auth
 from base import APIHandler
 from tornado.options import options
 from common.invokeCommand import InvokeCommand
-from common.helper import issue_mycnf_changed
+from common.helper import issue_mycnf_changed, get_zk_address
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.utils.exceptions import HTTPAPIError
 from common.node_stat_opers import NodeStatOpers
@@ -20,7 +20,9 @@ from common.node_stat_opers import NodeStatOpers
 class AddDataNodeToMCluster(APIHandler):
     
     confOpers = ConfigFileOpers()
-    
+    def __init__(self):
+        self.zkOper = None
+
     def post(self):
         try:
             requestParam = {}
@@ -32,7 +34,9 @@ class AddDataNodeToMCluster(APIHandler):
             
             if requestParam != {}:
                 self.confOpers.setValue(options.data_node_property, requestParam)
-            
+            zk_address = get_zk_address()
+            zkoper_obj = ZkOpers(zk_address, 2181)
+            self.zkOper = zkoper_obj
             dataNodeProprs = self.confOpers.getValue(options.data_node_property)
             clusterUUID = self.zkOper.getClusterUUID()
             self.zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
@@ -83,16 +87,21 @@ class AddDataNodeToMCluster(APIHandler):
 #        dict.setdefault("code", "000000")
         dict.setdefault("message", "add data node into cluster successful!")
         self.finish(dict)
-        
+        self.zkOper.close()
         
 # sync data node info from zk
 # eg. curl "http://localhost:8888/node/sync"
 class SyncDataNode(APIHandler):
     
     confOpers = ConfigFileOpers()
-    
+    def __init__(self):
+        self.zkOper = None
     def get(self,ip_address):
-        try:    
+        try:
+            zk_address = get_zk_address()
+            zkoper_obj = ZkOpers(zk_address, 2181)
+            self.zkOper = zkoper_obj
+ 
             if ip_address is None:
                 error_message="you should specify the ip address need to sync"
                 raise HTTPAPIError(status_code=500, error_detail= error_message,\
@@ -112,7 +121,7 @@ class SyncDataNode(APIHandler):
 #        dict.setdefault("code", "000000")
         dict.setdefault("message", "sync data node info to local successful!")
         self.finish(dict)
-        
+        self.zkOper.close()
 # check data node if there are some errors in log
 # eg. curl "http://localhost:8888/inner/node/check/log/error"
 class DataNodeMonitorLogError(APIHandler):

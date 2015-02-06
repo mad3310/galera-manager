@@ -7,16 +7,20 @@ Created on 2013-7-21
 '''
 from base import APIHandler
 import json
-
+from common.helper import get_zk_address
 # retrieve the status value of special monitor type, the monitor type include cluster,node,db.
 # In different monitor type, there are many of monitor points. 
 # eg. curl "http://localhost:8888/mcluster/status/{cluster,node,db}"         
 class MclusterStatusDetail(APIHandler):
-    
+   
+    def __init__(self):
+        self.zkOper = None
     def get(self, monitor_type):
         if monitor_type == None:
             raise "monitor type should be not null!"
-        
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
         monitor_status_list = self.zkOper.retrieve_monitor_status_list(monitor_type)
         monitor_status_list_count = len(monitor_status_list)
         
@@ -27,11 +31,17 @@ class MclusterStatusDetail(APIHandler):
             dict.setdefault(monitor_status_key, monitor_status_value)
         
         self.finish(dict)
-
+        self.zkOper.close()
 # retrieve the status value of all monitor type 
 # eg. curl "http://localhost:8888/mcluster/status"          
 class MclusterStatus(APIHandler):
+    def __init__(self):
+        self.zkOper = None
+ 
     def get(self):
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
         
         monitor_types = self.zkOper.retrieve_monitor_type()
         dict = {}
@@ -49,4 +59,4 @@ class MclusterStatus(APIHandler):
             dict.setdefault(monitor_type,monitor_type_sub_dict)
         
         self.finish(dict)
-        
+        self.zkOper.close()

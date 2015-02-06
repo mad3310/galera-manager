@@ -40,7 +40,15 @@ class ZkOpers(object):
         self.zk.start()
         #self.zk = self.ensureinstance()
         logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
-        
+
+    def close(self):
+        try:
+            self.zk.stop()
+            self.zk.close()
+            logging.info("stop the zk client successfully")
+        except Exception, e:
+            logging.error(e)
+
     def ensureinstance(self, count=0, zk=None):
         while count < 5:
             try:
