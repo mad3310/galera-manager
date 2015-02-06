@@ -183,11 +183,10 @@ class ClusterStart(APIHandler):
         try:
             self.mysql_service_opers.start(value)
         except kazoo.exceptions.LockTimeout:
-            raise HTTPAPIError(status_code=578, error_detail="lock by other thread",
-                               notification = "direct",
-                               log_message= "lock by other thread",
-                               response =  "current operation is using by other people, please wait a moment to try again!")
-        
+            ex_dict = {}
+            ex_dict.setdefault("message", "The action of restoring database is in process, please wait")
+            self.finish(ex_dict)
+            return 
         dict = {}
  #       dict.setdefault("code", '000000')
         dict.setdefault("message", "due to start cluster need a large of times, please wait to finished and email to you, when cluster have started!")
