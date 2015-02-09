@@ -17,7 +17,7 @@ from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
 from common.helper import check_leader, is_monitoring, get_localhost_ip,get_zk_address
 from common.my_logging import debug_log
-
+from common.zkOpers import ZkOpers
 import socket
 import datetime
 import time
@@ -188,6 +188,7 @@ class Inner_DB_Check_WsrepStatus(APIHandler):
             return
         try:
             check_result = self.dba_opers.retrieve_wsrep_status()
+            logging.info("check_wsrepstatus : %s" %(check_result))
         except:
             error_message = "connection break down"
             raise HTTPAPIError(status_code=417, error_detail= error_message,\
@@ -213,20 +214,17 @@ class Inner_DB_Check_WR(APIHandler):
     logger = log_obj.get_logger_object()
     
     invokeCommand = InvokeCommand()
-    def __init__(self):
-        self.zkOper = None
  
 #     
     def get(self):
         zk_address = get_zk_address()
         zkoper_obj = ZkOpers(zk_address, 2181)
-        self.zkOper = zkoper_obj
 
   
         dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = dataNodeProKeyValue['dataNodeIp']
         self.logger.info('data_node_ip is :' + str(data_node_ip))
-        started_ip_list = self.zkOper.retrieve_started_nodes()
+        started_ip_list = zkoper_obj.retrieve_started_nodes()
         self.logger.info('started_ip_list is: ' + str(started_ip_list))
         identifier = socket.gethostname()
         
@@ -234,11 +232,11 @@ class Inner_DB_Check_WR(APIHandler):
         try:       
             if conn is None:
                 if data_node_ip in started_ip_list:
-                    self.zkOper.remove_started_node(data_node_ip)
+                    zkoper_obj.remove_started_node(data_node_ip)
                     self.invokeCommand.run_check_shell(options.kill_innotop)
                 self.finish("false")
                 return
-            self.zkOper.write_started_node(data_node_ip)
+            zkoper_obj.write_started_node(data_node_ip)
 
             if not is_monitoring(get_localhost_ip()):
                 self.finish("true")
@@ -316,8 +314,8 @@ class Inner_DB_Check_WR(APIHandler):
             return_flag = "false"
         finally: 
             conn.close()
+            zkoper_obj.close()
         self.finish(return_flag) 
-        self.zkOper.close()
         
 
 # retrieve the database stat with innotop

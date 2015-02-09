@@ -16,7 +16,7 @@ from common.appdefine import mclusterManagerDefine
 from common.sceduler_opers import Sceduler_Opers
 from common.zkOpers import ZkOpers 
 from common.configFileOpers import ConfigFileOpers
-
+from common.helper import get_zk_address
 class Application(tornado.web.Application):
     def __init__(self):
         
@@ -49,7 +49,9 @@ def main():
 #         pass 
     tornado.options.parse_command_line()
     try:
-        zk_client = ZkOpers('127.0.0.1', 2181)
+        zk_address = get_zk_address()
+        logging.info("zk_address %s" %(zk_address))
+        zk_client = ZkOpers(zk_address, 2181)
         config_file_obj = ConfigFileOpers()
         if (zk_client.existCluster()):
 		
@@ -64,6 +66,7 @@ def main():
             if type(return_result) is dict and type(dict_data) is dict:
                 config_file_obj.setValue(options.data_node_property, return_result)
                 config_file_obj.setValue(options.cluster_property, dict_data) 
+                zk_client.close()
             else:
                 logging.info("write data into configuration failed")
         else:

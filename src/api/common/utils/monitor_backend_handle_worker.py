@@ -32,7 +32,7 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
         if zk_address == "": 
             logging.info("zk address is none") 
             return
-        else
+        else:
             if check_leader() == False: 
                 return 
         logging.info("This node is leader of zookeeper.")
