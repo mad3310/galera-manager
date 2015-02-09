@@ -20,8 +20,6 @@ from common.node_stat_opers import NodeStatOpers
 class AddDataNodeToMCluster(APIHandler):
     
     confOpers = ConfigFileOpers()
-    def __init__(self):
-        self.zkOper = None
 
     def post(self):
         try:
@@ -87,8 +85,6 @@ class AddDataNodeToMCluster(APIHandler):
 #        dict.setdefault("code", "000000")
         dict.setdefault("message", "add data node into cluster successful!")
         self.finish(dict)
-        self.zkOper.close()
-        
 # sync data node info from zk
 # eg. curl "http://localhost:8888/node/sync"
 class SyncDataNode(APIHandler):

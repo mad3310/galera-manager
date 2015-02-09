@@ -9,6 +9,7 @@ import tornado
 import sys
 
 from common.invokeCommand import InvokeCommand
+from common.helper import get_zk_address
 from tornado.options import options
 from tornado.httpclient import AsyncHTTPClient, HTTPClient
 from tornado.httpclient import HTTPRequest
@@ -33,6 +34,7 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
     invokeCommand = InvokeCommand()
     
     def __init__(self):
+        self.zkOper = None
         '''
         Constructor
         '''
@@ -57,12 +59,20 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         
         
     def start(self, isNewCluster):
+
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
         isLock,lock = self.zkOper.lock_node_start_stop_action()
         
         node_start_action = Node_start_action(isNewCluster, lock)
         node_start_action.start()
         
     def stop(self):
+        
+        zk_address = get_zk_address()
+        zkoper_obj = ZkOpers(zk_address, 2181)
+        self.zkOper = zkoper_obj
         isLock,lock = self.zkOper.lock_node_start_stop_action()
         
         # Start a thread to run the events
@@ -99,7 +109,11 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
             
                 finished_flag = self._check_start_status(data_node_ip)
         finally:
-            self.zkOper.unLock_node_start_stop_action(lock)
+
+            zk_address = get_zk_address()
+            zkoper_obj = ZkOpers(zk_address, 2181)
+            zkoper_obj.unLock_node_start_stop_action(lock)
+            zkoper_obj.close()
         
         if finished_flag:    
             self._send_email(data_node_ip, " mysql service start operation finished")
@@ -124,9 +138,11 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
             time.sleep(2)
 
         
-        if finished_flag:    
-            self.zkOper.write_started_node(data_node_ip)
-            
+        if finished_flag:   
+            zk_address = get_zk_address()
+            zkoper_obj = ZkOpers(zk_address, 2181)
+            zkoper_obj.write_started_node(data_node_ip)
+            zkoper_obj.close()
         return finished_flag
             
         
@@ -153,8 +169,11 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
             result = self.invokeCommand.mysql_service_stop()
             finished_flag = self._check_stop_status(data_node_ip)
         finally:
-            self.zkOper.unLock_node_start_stop_action(lock)
-        
+
+            zk_address = get_zk_address()
+            zkoper_obj = ZkOpers(zk_address, 2181)
+            zkoper_obj.unLock_node_start_stop_action(lock)
+            zkoper_obj.close()
         if finished_flag:    
             self._send_email(data_node_ip, " mysql service stop operation finished")
         
@@ -175,8 +194,10 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
                 
             time.sleep(2)
         
-        if finished_flag:    
+        if finished_flag:
+            zk_address = get_zk_address()
+            zkoper_obj = ZkOpers(zk_address, 2181)
             self.zkOper.remove_started_node(data_node_ip)
-            
+            zkoper_obj.close()
         return finished_flag
             
