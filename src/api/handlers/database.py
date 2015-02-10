@@ -15,7 +15,7 @@ from common.utils.exceptions import HTTPAPIError
 from common.db_stat_opers import DBStatOpers
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
-from common.helper import check_leader, is_monitoring, get_localhost_ip,get_zk_address
+from common.helper import check_leader, is_monitoring, get_localhost_ip
 from common.my_logging import debug_log
 from common.zkOpers import ZkOpers
 import socket
@@ -31,8 +31,6 @@ TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 @require_basic_auth
 class DBOnMCluster(APIHandler):
-    def __init__(self):
-        self.zkOper = None
     dba_opers = DBAOpers()
     
     conf_opers = ConfigFileOpers()
@@ -65,8 +63,7 @@ class DBOnMCluster(APIHandler):
         
         #check if exist cluster
         dbProps = {'db_name':dbName}
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
 
        
@@ -217,8 +214,7 @@ class Inner_DB_Check_WR(APIHandler):
  
 #     
     def get(self):
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
 
   
         dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])

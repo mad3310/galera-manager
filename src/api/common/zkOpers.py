@@ -12,7 +12,6 @@ from kazoo.client import KazooClient
 from kazoo.exceptions import SessionExpiredError
 from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
-
 import logging
 import threading
 from common.my_logging import debug_log
@@ -24,22 +23,29 @@ class ZkOpers(object):
     log_obj = debug_log('root')
     logger = log_obj.get_logger_object()
     
+    confOpers = ConfigFileOpers()
     '''
     classdocs
     '''
-    def __init__(self,zkAddress,zkPort):
+    def __init__(self):
         '''
         Constructor
         '''
 #         self.log_obj = debug_log('root')
 #         self.logger = self.log_obj.get_logger_object()
-        self.zkaddress = zkAddress
-        self.zkport = zkPort
+        self.zkaddress = local_get_zk_address()
+        self.zkport = 2181 
         self.retry = KazooRetry(max_tries=3, delay=0.5)
         self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
         self.zk.start()
         #self.zk = self.ensureinstance()
         logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
+
+    def local_get_zk_address(self):
+        ret_dict = confOpers.getValue(options.zk_address, ['zkAddress'])
+        logging.info("local get ret_dict "+ str(ret_dict))
+        address = ret_dict['zkAddress']
+        return address
 
     def close(self):
         try:

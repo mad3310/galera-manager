@@ -39,7 +39,7 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
         isLock = False
         lock = None
 
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
         try:
             isLock,lock = self.zkOper.lock_async_monitor_action()

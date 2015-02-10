@@ -4,7 +4,7 @@ from common.configFileOpers import ConfigFileOpers
 from common.invokeCommand import InvokeCommand
 from base import APIHandler
 from common.tornado_basic_auth import require_basic_auth
-from common.helper import issue_mycnf_changed, get_zk_address
+from common.helper import issue_mycnf_changed
 from common.cluster_mysql_service_opers import Cluster_Mysql_Service_Opers
 from tornado.options import options
 from tornado.web import asynchronous
@@ -31,8 +31,7 @@ class CreateMCluster(APIHandler):
     
     def post(self):
         #check if exist cluster
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         existCluster = zkoper_obj.existCluster()
         requestParam = {}
         args = self.request.arguments
@@ -89,8 +88,7 @@ class InitMCluster(APIHandler):
         lock = None
         
         try:
-            zk_address = get_zk_address()
-            zkoper_obj = ZkOpers(zk_address, 2181)
+            zkoper_obj = ZkOpers()
             existCluster = zkoper_obj.existCluster()
 
             isLock,lock = zkoper_obj.lock_init_node_action()
@@ -148,7 +146,6 @@ class InitMCluster(APIHandler):
         dict.setdefault("message", "init cluster successful!")
         dict.setdefault("sst_user_password", sst_user_password)
         self.finish(dict)
-        zkoper_obj.close()
         
 # sync mcluster
 # eg. curl "http://localhost:8888/cluster/sync"
@@ -157,8 +154,7 @@ class SyncMCluster(APIHandler):
     confOpers = ConfigFileOpers()
     
     def get(self):
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         existCluster = zkoper_obj.existCluster()
 
         clusterUUID = zkoper_obj.getClusterUUID()
@@ -212,8 +208,7 @@ class ClusterStatus(APIHandler):
     @asynchronous
     def get(self):
         try:
-            zk_address = get_zk_address()
-            zkoper_obj = ZkOpers(zk_address, 2181)
+            zkoper_obj = ZkOpers()
             existCluster = zkoper_obj.existCluster()
 
             cluster_status = zkoper_obj.retrieveClusterStatus()
@@ -251,8 +246,7 @@ class ClusterStop(APIHandler):
         
         status_dict = {}
         status_dict['_status'] = 'stopping'
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         existCluster = zkoper_obj.existCluster()
 
         zkoper_obj.writeClusterStatus(status_dict)

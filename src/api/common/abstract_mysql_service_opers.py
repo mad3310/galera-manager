@@ -12,8 +12,6 @@ from tornado.httpclient import AsyncHTTPClient, HTTPClient
 from tornado.httpclient import HTTPRequest
 from tornado.gen import Wait, Callback, engine
 from abc import ABCMeta, abstractmethod
-from common.zkOpers import ZkOpers
-from common.helper import  get_zk_address
 
 '''
 Created on 2013-7-21

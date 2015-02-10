@@ -17,7 +17,6 @@ from common.appdefine import mclusterManagerDefine
 from common.sceduler_opers import Sceduler_Opers
 from common.zkOpers import ZkOpers 
 from common.configFileOpers import ConfigFileOpers
-from common.helper import get_zk_address
 class Application(tornado.web.Application):
     def __init__(self):
         
@@ -50,9 +49,7 @@ def main():
 #         pass 
     tornado.options.parse_command_line()
     try:
-        zk_address = get_zk_address()
-        logging.info("zk_address %s" %(zk_address))
-        zk_client = ZkOpers(zk_address, 2181)
+        zk_client = ZkOpers()
         config_file_obj = ConfigFileOpers()
         if (zk_client.existCluster()):
 		

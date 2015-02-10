@@ -13,7 +13,6 @@ from common.dba_opers import DBAOpers
 from common.configFileOpers import ConfigFileOpers
 from common.utils import get_random_password
 from common.utils.exceptions import HTTPAPIError
-from common.helper import get_zk_address
 # create manager user in mcluster
 # eg. curl --user root:root -d "role=manager&dbName=managerTest&userName=zbz" "http://localhost:8888/dbUser"
 
@@ -130,8 +129,7 @@ class DBUser(APIHandler):
         
         #use try catch to close the conn
         conn.close()
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
 
         #check if exist cluster
@@ -186,8 +184,7 @@ class DBUser(APIHandler):
                                 notification = "direct", \
                                 log_message= "when modify db's user, no specify any modified parameter",\
                                 response =  "please specify any one or all of following parameter:[max_queries_per_hour,max_updates_per_hour,max_connections_per_hour,max_user_connections]")
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
         clusterUUID = self.zkOper.getClusterUUID()
         
@@ -241,8 +238,7 @@ class DBUser(APIHandler):
         
         
     def delete(self, dbName, userName, ipAddress):
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
 
         if not dbName:

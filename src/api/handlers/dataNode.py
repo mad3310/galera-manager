@@ -9,11 +9,11 @@ from common.tornado_basic_auth import require_basic_auth
 from base import APIHandler
 from tornado.options import options
 from common.invokeCommand import InvokeCommand
-from common.helper import issue_mycnf_changed, get_zk_address
+from common.helper import issue_mycnf_changed
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.utils.exceptions import HTTPAPIError
 from common.node_stat_opers import NodeStatOpers
-
+from common.zkOpers import ZkOpers
 # add data node into mcluster
 # eg. curl --user root:root -d "dataNodeIp=192.168.0.20&dataNodeName=letv_mcluster_test_1_node_2" "http://localhost:8888/cluster/node"
 @require_basic_auth
@@ -32,8 +32,7 @@ class AddDataNodeToMCluster(APIHandler):
             
             if requestParam != {}:
                 self.confOpers.setValue(options.data_node_property, requestParam)
-            zk_address = get_zk_address()
-            zkoper_obj = ZkOpers(zk_address, 2181)
+            zkoper_obj = ZkOpers()
             self.zkOper = zkoper_obj
             dataNodeProprs = self.confOpers.getValue(options.data_node_property)
             clusterUUID = self.zkOper.getClusterUUID()
@@ -94,8 +93,7 @@ class SyncDataNode(APIHandler):
         self.zkOper = None
     def get(self,ip_address):
         try:
-            zk_address = get_zk_address()
-            zkoper_obj = ZkOpers(zk_address, 2181)
+            zkoper_obj = ZkOpers()
             self.zkOper = zkoper_obj
  
             if ip_address is None:

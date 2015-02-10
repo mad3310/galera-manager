@@ -39,8 +39,7 @@ class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         self.zkOper = None
     
     def start(self, cluster_flag):
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
         isLock,lock = self.zkOper.lock_cluster_start_stop_action()
         
@@ -49,7 +48,7 @@ class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         cluster_start_action.start()
         
     def stop(self):
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
         isLock,lock = self.zkOper.lock_cluster_start_stop_action()
         
@@ -123,7 +122,7 @@ class StopIssue(BaseHandler):
         while True:
             isLock = False
             lock = None
-            zkoper_obj = ZkOpers(zk_address, 2181)
+            zkoper_obj = ZkOpers()
             self.zkOper = zkoper_obj
 
             try:
@@ -214,7 +213,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
             
     def _issue_start_action(self, lock, cluster_flag):
         
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
 
        

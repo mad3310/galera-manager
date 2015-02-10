@@ -9,7 +9,6 @@ Created on 2013-7-21
 from base import APIHandler
 from common.status_opers import *
 
-from common.helper import get_zk_address
 import logging
 
 class Cluster_Info_Sync_Handler:
@@ -118,8 +117,7 @@ class Mcluster_Monitor_Sync(APIHandler):
     def __init__(self):
         self.zkOper = None
     def get(self):
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
 
         data_node_info_list = self.zkOper.retrieve_data_node_list()
@@ -148,8 +146,7 @@ class Mcluster_Monitor_Async(APIHandler):
 
     @tornado.web.asynchronous
     def get(self):
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
 
         data_node_info_list = self.zkOper.retrieve_data_node_list()

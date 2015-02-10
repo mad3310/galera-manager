@@ -72,9 +72,7 @@ class Abstract_Stat_Service(object):
         return sub_dict
     
     def _check_mysql_processor_exist(self):
-        zk_address = get_zk_address()
-        logging.info("zookeeper address : %s" %(zk_address))
-        zkOper = ZkOpers(zk_address, 2181)
+        zkOper = ZkOpers()
         started_nodes = zkOper.retrieve_started_nodes()
         zkOper.close()
         logging.info("close zk client connection successfully") 

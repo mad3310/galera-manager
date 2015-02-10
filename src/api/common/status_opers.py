@@ -41,8 +41,7 @@ class Check_Status_Base(object):
             return
         FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
         logging.basicConfig(format=FORMAT) 
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, '2181')
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
         pre_stat = self.zkOper.retrieveClusterStatus()
         ''' The following logic expression means 
@@ -256,8 +255,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
         failed_count = 0
         Path_Value = {}
         logging.info("existed_db_anti_item  here")
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
         Path_Value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
         if Path_Value != {}:
@@ -375,10 +373,8 @@ class Check_Node_Active(Check_Status_Base):
     
     @tornado.gen.engine
     def check(self, data_node_info_list):
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
-        logging.info("check_node_active zk_address %s" %(zk_address))
 
         started_nodes_list = self.zkOper.retrieve_started_nodes()
         
@@ -511,8 +507,7 @@ class Check_Database_User(Check_Status_Base):
 
         logging.info("list format :" + str(user_mysql_src_dict))  
           
-        zk_address = get_zk_address()
-        zkoper_obj = ZkOpers(zk_address, 2181)
+        zkoper_obj = ZkOpers()
         self.zkOper = zkoper_obj
 
         db_list = self.zkOper.retrieve_db_list()

@@ -8,15 +8,14 @@ from tornado.httpclient import HTTPClient
 from tornado.httpclient import HTTPError
 from common.invokeCommand import InvokeCommand
 
+from common.configFileOpers import ConfigFileOpers
 confOpers = ConfigFileOpers()
 
 def issue_mycnf_changed(self):
     keyList = []
     keyList.append('wsrep_cluster_address')
     
-    zk_address = get_zk_address()
-    logging.info("zookeeper address : %s" %(zk_address))
-    zkOper = ZkOpers(zk_address, 2181)
+    zkOper = ZkOpers()
     
     clusterUUID = zkOper.getClusterUUID()
     sourceText,stat = zkOper.retrieveMysqlProp(clusterUUID, issue_mycnf_changed)
@@ -107,9 +106,7 @@ def check_leader():
 
 def is_monitoring(host_ip=None):
     try:
-        zk_address = get_zk_address()
-        logging.info("zookeeper address : %s" %(zk_address))
-        zkOper = ZkOpers(zk_address, 2181)
+        zkOper = ZkOpers()
   
         stat = zkOper.retrieveClusterStatus()
         logging.info("is_monitoring: stat: %s, host_ip: %s" % (str(stat), str(host_ip)))
