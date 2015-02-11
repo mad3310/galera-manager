@@ -138,7 +138,7 @@ class DBUser(APIHandler):
                          'max_updates_per_hour':max_updates_per_hour,
                          'max_connections_per_hour':max_connections_per_hour,
                          'max_user_connections':max_user_connections}
-        self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
+            self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
         finally:
             self.zkOper.close()
         dict = {}

@@ -8,6 +8,8 @@ Created on 2013-7-11
 '''
 import json
 
+from tornado.options import options
+from common.configFileOpers import ConfigFileOpers
 from kazoo.client import KazooClient
 from kazoo.exceptions import SessionExpiredError
 from kazoo.handlers.threading import TimeoutError
@@ -33,7 +35,7 @@ class ZkOpers(object):
         '''
 #         self.log_obj = debug_log('root')
 #         self.logger = self.log_obj.get_logger_object()
-        self.zkaddress = local_get_zk_address()
+        self.zkaddress = self.local_get_zk_address()
         self.zkport = 2181 
         self.retry = KazooRetry(max_tries=3, delay=0.5)
         self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
@@ -42,7 +44,7 @@ class ZkOpers(object):
         logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
 
     def local_get_zk_address(self):
-        ret_dict = confOpers.getValue(options.zk_address, ['zkAddress'])
+        ret_dict = self.confOpers.getValue(options.zk_address, ['zkAddress'])
         logging.info("local get ret_dict "+ str(ret_dict))
         address = ret_dict['zkAddress']
         return address
