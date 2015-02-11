@@ -33,7 +33,7 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
     invokeCommand = InvokeCommand()
     
     def __init__(self):
-        self.zkOper = ZkOpers()
+        self.zkOper = None
         '''
         Constructor
         '''
@@ -59,11 +59,12 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         
     def start(self, isNewCluster):
 
+        self.zkOper = ZkOpers()
         isLock,lock = self.zkOper.lock_node_start_stop_action()
         
         node_start_action = Node_start_action(isNewCluster, lock)
         node_start_action.start()
-        
+        self.zkOper.close() 
     def stop(self):
         
         isLock,lock = self.zkOper.lock_node_start_stop_action()
@@ -72,6 +73,7 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         node_stop_action = Node_stop_action(lock)
         node_stop_action.start()
     
+        self.zkOper.close() 
 class Node_start_action(Abstract_Mysql_Service_Action_Thread):
     lock = None
     isNewCluster = False
@@ -83,7 +85,7 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
         self.lock = lock
         self.isNewCluster = isNewCluster
         
-        self.zkOper = ZkOpers()
+        self.zkOper = None
     def run(self):
         try:
             self._issue_start_action(self.isNewCluster, self.lock)
@@ -91,6 +93,7 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
             self.threading_exception_queue.put(sys.exc_info())
         
     def _issue_start_action(self, isNewCluster, lock):
+        self.zkOper.close() 
         dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = dataNodeProKeyValue['dataNodeIp']
         

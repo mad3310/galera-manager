@@ -19,7 +19,7 @@ class Check_Status_Base(object):
 #    zkOper = ZkOpers('127.0.0.1',2181)
     
     def __init__(self):
-        self.zkOper = ZkOpers()
+        self.zkOper = None
         if self.__class__ == Check_Status_Base:
             raise NotImplementedError, \
             "Cannot create object of class Check_Status_Base"
@@ -39,6 +39,7 @@ class Check_Status_Base(object):
         leader_flag = check_leader()
         if leader_flag == False:
             return
+        self.zkOper = ZkOpers()
         pre_stat = self.zkOper.retrieveClusterStatus()
         ''' The following logic expression means 
             1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.

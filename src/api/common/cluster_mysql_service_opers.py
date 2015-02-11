@@ -36,9 +36,10 @@ class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         '''
         Constructor
         '''
-        self.zkOper = ZkOpers()
+        self.zkOper = None
     
     def start(self, cluster_flag):
+        self.zkOper = ZkOpers()
         isLock,lock = self.zkOper.lock_cluster_start_stop_action()
         
         # Start a thread to run the events
@@ -46,6 +47,7 @@ class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         cluster_start_action.start()
         
     def stop(self):
+        self.zkOper = ZkOpers()
         isLock,lock = self.zkOper.lock_cluster_start_stop_action()
         
         # Start a thread to run the events
