@@ -35,8 +35,7 @@ class ZkOpers(object):
         '''
 #         self.log_obj = debug_log('root')
 #         self.logger = self.log_obj.get_logger_object()
-        self.zkaddress = self.local_get_zk_address()
-        self.zkport = 2181 
+        self.zkaddress, self.zkport = self.local_get_zk_address()
         self.retry = KazooRetry(max_tries=3, delay=0.5)
         self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
         self.zk.start()
@@ -44,10 +43,11 @@ class ZkOpers(object):
         logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
 
     def local_get_zk_address(self):
-        ret_dict = self.confOpers.getValue(options.zk_address, ['zkAddress'])
+        ret_dict = self.confOpers.getValue(options.zk_address, ['zkAddress','zkPort'])
         logging.info("local get ret_dict "+ str(ret_dict))
-        address = ret_dict['zkAddress']
-        return address
+        zk_address = ret_dict['zkAddress']
+        zk_port = ret_dict['zkPort'] 
+        return zk_address, zk_port
 
     def close(self):
         try:

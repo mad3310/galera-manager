@@ -96,8 +96,8 @@ def getDictFromText(sourceText, keyList):
 
 def check_leader():
     invokeCommand = InvokeCommand()
-    zk_address = get_zk_address()
-    cmd = "echo stat |nc %s 2181| grep Mode" %(zk_address)
+    zk_address, zk_port = get_zk_address()
+    cmd = "echo stat |nc %s %s| grep Mode" %(zk_address, zk_port)
     ret_str, ret_val = invokeCommand._runSysCmd(cmd)
     invokeCommand = None
     if ret_str.find('leader') == -1:
@@ -129,7 +129,7 @@ def get_localhost_ip():
     return ret_str
 
 def get_zk_address():
-     ret_dict = confOpers.getValue(options.zk_address, ['zkAddress'])
-     logging.info("ret_dict "+ str(ret_dict))
-     address = ret_dict['zkAddress']
-     return address
+     ret_dict = confOpers.getValue(options.zk_address, ['zkAddress','zkPort'])
+     zk_address = ret_dict['zkAddress']
+     zk_port = ret_dict['zkPort']
+     return zk_address ,zk_port
