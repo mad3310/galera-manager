@@ -20,11 +20,9 @@ class Abstract_Mysql_Service_Action_Thread(threading.Thread):
     
     def __init__(self):
         threading.Thread.__init__(self)
-        self.zkOper = None
+        self.zkOper = ZkOpers()
     #duplicate Cluster_stop_action._check_stop_status
     def _check_stop_status(self, data_node_ip):
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
         while True:
             isLock = False
             try:
@@ -36,7 +34,6 @@ class Abstract_Mysql_Service_Action_Thread(threading.Thread):
                 if isLock:
                     self.zkOper.unLock_node_start_stop_action(lock)
                     self.zkOper.close()
-                    zkoper_obj.close()
         stop_finished = False
         while not stop_finished:
             

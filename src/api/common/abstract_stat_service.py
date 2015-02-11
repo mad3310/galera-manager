@@ -73,8 +73,10 @@ class Abstract_Stat_Service(object):
     
     def _check_mysql_processor_exist(self):
         zkOper = ZkOpers()
-        started_nodes = zkOper.retrieve_started_nodes()
-        zkOper.close()
+        try:
+            started_nodes = zkOper.retrieve_started_nodes()
+        finally:
+            zkOper.close()
         logging.info("close zk client connection successfully") 
         confDict = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = confDict['dataNodeIp']

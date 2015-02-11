@@ -36,11 +36,9 @@ class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         '''
         Constructor
         '''
-        self.zkOper = None
+        self.zkOper = ZkOpers()
     
     def start(self, cluster_flag):
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
         isLock,lock = self.zkOper.lock_cluster_start_stop_action()
         
         # Start a thread to run the events
@@ -48,8 +46,6 @@ class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         cluster_start_action.start()
         
     def stop(self):
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
         isLock,lock = self.zkOper.lock_cluster_start_stop_action()
         
         # Start a thread to run the events
@@ -105,7 +101,7 @@ class StopIssue(BaseHandler):
         """
         constructor
         """
-        self.zkOper = None 
+        self.zkOper = ZkOpers()
     def issue_stop(self, s_node_wsrep_status_dict, s_data_node_stop_finished_flag_dict, adminUser, adminPasswd):
         url_post = "/node/stop"
         logging.info('/node/stop start')    
@@ -122,8 +118,6 @@ class StopIssue(BaseHandler):
         while True:
             isLock = False
             lock = None
-            zkoper_obj = ZkOpers()
-            self.zkOper = zkoper_obj
 
             try:
                 isLock,lock = self.zkOper.lock_node_start_stop_action()
@@ -204,7 +198,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
         super(Cluster_start_action, self).__init__()
         self.lock = lock
         self.cluster_flag = cluster_flag
-        self.zkOper = None
+        self.zkOper = ZkOpers()
     def run(self):
         try:
             self._issue_start_action(self.lock, self.cluster_flag)
@@ -213,8 +207,6 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
             
     def _issue_start_action(self, lock, cluster_flag):
         
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
 
        
         data_node_info_list = self.zkOper.retrieve_data_node_list()

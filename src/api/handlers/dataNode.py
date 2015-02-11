@@ -32,8 +32,7 @@ class AddDataNodeToMCluster(APIHandler):
             
             if requestParam != {}:
                 self.confOpers.setValue(options.data_node_property, requestParam)
-            zkoper_obj = ZkOpers()
-            self.zkOper = zkoper_obj
+            self.zkOper = ZkOpers()
             dataNodeProprs = self.confOpers.getValue(options.data_node_property)
             clusterUUID = self.zkOper.getClusterUUID()
             self.zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
@@ -89,12 +88,9 @@ class AddDataNodeToMCluster(APIHandler):
 class SyncDataNode(APIHandler):
     
     confOpers = ConfigFileOpers()
-    def __init__(self):
-        self.zkOper = None
     def get(self,ip_address):
+        self.zkOper = ZkOpers()
         try:
-            zkoper_obj = ZkOpers()
-            self.zkOper = zkoper_obj
  
             if ip_address is None:
                 error_message="you should specify the ip address need to sync"
@@ -111,11 +107,12 @@ class SyncDataNode(APIHandler):
                                     notification = "direct", \
                                     log_message= error_message,\
                                     response =  error_message)
+        finally:
+            self.zkOper.close()
         dict = {}
 #        dict.setdefault("code", "000000")
         dict.setdefault("message", "sync data node info to local successful!")
         self.finish(dict)
-        self.zkOper.close()
 # check data node if there are some errors in log
 # eg. curl "http://localhost:8888/inner/node/check/log/error"
 class DataNodeMonitorLogError(APIHandler):

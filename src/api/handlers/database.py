@@ -63,20 +63,19 @@ class DBOnMCluster(APIHandler):
         
         #check if exist cluster
         dbProps = {'db_name':dbName}
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
-
-       
-        clusterUUID = self.zkOper.getClusterUUID()
-        self.zkOper.write_db_info(clusterUUID, dbName, dbProps)
+        self.zkOper = ZkOpers()
+        try: 
+            clusterUUID = self.zkOper.getClusterUUID()
+            self.zkOper.write_db_info(clusterUUID, dbName, dbProps)
         
-        userProps = {'role':'manager',
-                     'max_queries_per_hour':max_queries_per_hour,
-                     'max_updates_per_hour':max_updates_per_hour,
-                     'max_connections_per_hour':max_connections_per_hour,
-                     'max_user_connections':max_user_connections}
-        self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
-        
+            userProps = {'role':'manager',
+                         'max_queries_per_hour':max_queries_per_hour,
+                         'max_updates_per_hour':max_updates_per_hour,
+                         'max_connections_per_hour':max_connections_per_hour,
+                         'max_user_connections':max_user_connections}
+            self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
+        finally:
+            self.zkOper.close()   
         dict = {}
         dict.setdefault("message", "database create successful")
         dict.setdefault("manager_user_name", userName)
@@ -92,34 +91,36 @@ class DBOnMCluster(APIHandler):
                                 log_message= "when remove the db, no have database name",\
                                 response =  "please provide database name you want to removed!")
         
-        clusterUUID = self.zkOper.getClusterUUID()
-        user_ipAddress_map = self.zkOper.retrieve_db_user_prop(clusterUUID, dbName)
-        
-        conn = self.dba_opers.get_mysql_connection()
-        
+        self.zkOper = ZkOpers()
         try:
+            clusterUUID = self.zkOper.getClusterUUID()
+            user_ipAddress_map = self.zkOper.retrieve_db_user_prop(clusterUUID, dbName)
+        
+            conn = self.dba_opers.get_mysql_connection()
+        
+            try:
+                if user_ipAddress_map is not None:
+                    for (user_name,ip_address) in user_ipAddress_map.items():
+                        self.dba_opers.delete_user(conn, user_name, ip_address)
+        
+                    self.dba_opers.drop_database(conn, dbName)
+            finally:
+                conn.close()
+        
+            user_name_list = ''
             if user_ipAddress_map is not None:
                 for (user_name,ip_address) in user_ipAddress_map.items():
-                    self.dba_opers.delete_user(conn, user_name, ip_address)
-        
-                self.dba_opers.drop_database(conn, dbName)
-        finally:
-            conn.close()
-        
-        user_name_list = ''
-        if user_ipAddress_map is not None:
-            for (user_name,ip_address) in user_ipAddress_map.items():
-                self.zkOper.remove_db_user(clusterUUID, dbName, user_name, ip_address)
-                user_name_list += user_name + ","
+                    self.zkOper.remove_db_user(clusterUUID, dbName, user_name, ip_address)
+                    user_name_list += user_name + ","
                 
-        self.zkOper.remove_db(clusterUUID, dbName)
-        
+            self.zkOper.remove_db(clusterUUID, dbName)
+        finally:
+            self.zkOper.close()
         dict = {}
         dict.setdefault("message", "database remove successful!")
         dict.setdefault("removed_db_name", dbName)
         dict.setdefault("removed_user_with_db_name", user_name_list)
         self.finish(dict)
-        self.zkOper.close()
 
 # After mcluster shut down, manager want to recover the cluster, then need to retrieve the node's uuid and seqno. 
 # Though this api, user can get it.

@@ -19,7 +19,7 @@ class Check_Status_Base(object):
 #    zkOper = ZkOpers('127.0.0.1',2181)
     
     def __init__(self):
-        self.zkOper = None
+        self.zkOper = ZkOpers()
         if self.__class__ == Check_Status_Base:
             raise NotImplementedError, \
             "Cannot create object of class Check_Status_Base"
@@ -39,10 +39,6 @@ class Check_Status_Base(object):
         leader_flag = check_leader()
         if leader_flag == False:
             return
-        FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-        logging.basicConfig(format=FORMAT) 
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
         pre_stat = self.zkOper.retrieveClusterStatus()
         ''' The following logic expression means 
             1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.
@@ -114,7 +110,6 @@ class Check_Status_Base(object):
         
         self.write_status(zk_data_node_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key)
 
-        #zkoper_obj.close()
 
     def write_status(self, total_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key):
         result_dict = {}
@@ -129,9 +124,10 @@ class Check_Status_Base(object):
         
         logging.info("monitor_type:" + monitor_type + " monitor_key:" + 
                       monitor_key + " monitor_value:" + str(result_dict))
-        
-        self.zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
-        self.zkOper.close()
+        try: 
+            self.zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
+        finally:
+            self.zkOper.close()
         logging.info("close zk client successfully")
 
 class Check_Cluster_Available(Check_Status_Base):
@@ -255,8 +251,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
         failed_count = 0
         Path_Value = {}
         logging.info("existed_db_anti_item  here")
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
+        self.zkOper = ZkOpers()
         Path_Value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
         if Path_Value != {}:
 #             str_msg = Path_Value['message']
@@ -289,8 +284,6 @@ class Check_DB_Anti_Item(Check_Status_Base):
                                                     failed_count, \
                                                     alarm_level, error_record, monitor_type, \
                                                     monitor_key)
-      #  self.zkOper.close()
-#        zkoper_obj.close()
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if total_count == 0:
             return options.alarm_nothing
@@ -373,9 +366,7 @@ class Check_Node_Active(Check_Status_Base):
     
     @tornado.gen.engine
     def check(self, data_node_info_list):
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
-
+        self.zkOper = ZkOpers()
         started_nodes_list = self.zkOper.retrieve_started_nodes()
         
         logging.info("check_node_active started_nodes_list %s" %(started_nodes_list))
@@ -396,8 +387,6 @@ class Check_Node_Active(Check_Status_Base):
                                                     failed_count, \
                                                     alarm_level, error_record, monitor_type, \
                                                     monitor_key)
-        self.zkOper.close()
-#        zkoper_obj.close()
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:
             return options.alarm_nothing
@@ -507,8 +496,7 @@ class Check_Database_User(Check_Status_Base):
 
         logging.info("list format :" + str(user_mysql_src_dict))  
           
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
+        self.zkOper = ZkOpers()
 
         db_list = self.zkOper.retrieve_db_list()
         logging.info("db_list: " + str(db_list)) 
@@ -559,8 +547,6 @@ class Check_Database_User(Check_Status_Base):
                                                     failed_count, \
                                                     alarm_level, error_record, monitor_type, \
                                                     monitor_key)
-#        self.zkOper.close()
-#        zkoper_obj.close()
 
     def compare_center(self, _user_mysql_src_dict, _user_zk_src_list, _differ_dict_set ,_count_dict):
         _user_mysql_src_dict_keys = _user_mysql_src_dict.keys()

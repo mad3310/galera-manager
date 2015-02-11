@@ -114,14 +114,12 @@ class Mcluster_Monitor_Sync(APIHandler):
     node_handler = Node_Info_Sync_Handler()
     
     db_handler = DB_Info_Sync_Handler()
-    def __init__(self):
-        self.zkOper = None
     def get(self):
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
-
-        data_node_info_list = self.zkOper.retrieve_data_node_list()
-        
+        self.zkOper = ZkOpers()
+        try:
+            data_node_info_list = self.zkOper.retrieve_data_node_list()
+        finally:
+            self.zkOper.close()
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)
         db_status_dict = self.db_handler.retrieve_info(data_node_info_list)
@@ -131,7 +129,6 @@ class Mcluster_Monitor_Sync(APIHandler):
         dict.setdefault("node",node_status_dict)
         
         self.finish(dict)
-        self.zkOper.close()
         
 # retrieve the status of mcluster on background, these status will record into zk
 # eg. curl "http://localhost:8888/mcluster/monitor/async"        
@@ -141,16 +138,14 @@ class Mcluster_Monitor_Async(APIHandler):
     node_handler = Node_Info_Async_Handler()
     
     db_handler = DB_Info_Async_Handler()
-    def __init__(self):
-        self.zkOper = None
 
     @tornado.web.asynchronous
     def get(self):
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
-
-        data_node_info_list = self.zkOper.retrieve_data_node_list()
-        
+        self.zkOper = ZkOpers()
+        try:
+            data_node_info_list = self.zkOper.retrieve_data_node_list()
+        finally:
+            self.zkOper.close()
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)
         db_status_dict = self.db_handler.retrieve_info(data_node_info_list)
@@ -159,4 +154,3 @@ class Mcluster_Monitor_Async(APIHandler):
         dict.setdefault("message", "finished")
         
         self.finish(dict)
-        self.zkOper.close()

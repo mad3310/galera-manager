@@ -21,7 +21,6 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
     invokeCommand = InvokeCommand()
 
     def __init__(self):
-        self.zkOper = None
         super(Monitor_Backend_Handle_Worker,self).__init__()
             
             
@@ -39,8 +38,7 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
         isLock = False
         lock = None
 
-        zkoper_obj = ZkOpers()
-        self.zkOper = zkoper_obj
+        self.zkOper = ZkOpers()
         try:
             isLock,lock = self.zkOper.lock_async_monitor_action()
         except kazoo.exceptions.LockTimeout:

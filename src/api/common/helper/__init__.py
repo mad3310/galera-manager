@@ -105,8 +105,8 @@ def check_leader():
     return True
 
 def is_monitoring(host_ip=None):
+    zkOper = ZkOpers()
     try:
-        zkOper = ZkOpers()
   
         stat = zkOper.retrieveClusterStatus()
         logging.info("is_monitoring: stat: %s, host_ip: %s" % (str(stat), str(host_ip)))
