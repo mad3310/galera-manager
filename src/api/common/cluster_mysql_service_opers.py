@@ -7,6 +7,7 @@ import urllib
 import tornado
 import json
 import sys
+import re
 
 from common.invokeCommand import InvokeCommand
 from tornado.options import options
@@ -37,11 +38,11 @@ class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         Constructor
         '''
     
-    def start(self, cluster_flag):
+    def start(self, cluster_flag, cluster_mode):
         isLock,lock = self.zkOper.lock_cluster_start_stop_action()
         
         # Start a thread to run the events
-        cluster_start_action = Cluster_start_action(lock, cluster_flag)
+        cluster_start_action = Cluster_start_action(lock, cluster_flag, cluster_mode)
         cluster_start_action.start()
         
     def stop(self):
@@ -186,7 +187,46 @@ class GaleraStatus():
         logging.info("Before sort, the uuid_seqno_dict value is %s" % str(self.c_uuid_seqno_dict))
         return self.c_uuid_seqno_dict
 
-        
+class Arbitrator(Abstract_Stat_Service):
+{
+    confOpers = ConfigFileOpers()
+    '''
+	classdoc
+    '''
+    def __init__(self):
+        '''
+        Constructor
+        '''
+    
+    def communicate(self, peer_ip, url):
+        http_client = tornado.httpclient.HTTPClient()
+        requesturi = "http://" + peer_ip+":"+str(options.port)+url
+        try:
+            response = http_client.fetch(requesturi)
+        except tornado.httpclient.HTTPError as e:
+            logging.error(str(e))
+            http_client.close()
+            return "error"
+        logging.info(str(response.body))
+        return response.body
+
+    def get_ip(self, data_node_ip_list):
+		ret_dict = self.confOpers.getValue(options.data_node_property, ['dataNodeName','dataNodeIp'])
+        node_name = ret_dict['dataNodeName']
+        obj = re.search("-n-2", node_name)
+        if obj != None:
+            return ret_dict['dataNodeIp']
+        else:
+            tem_ip_list = data_node_ip_list
+            tem_ip_list.remove(ret_dict['dataNodeIp'])
+            result = ""
+            for ip in tem_ip_list:
+                url_post = "/inner/arbitrator/ip"
+                result = self.communicate(ip, url_post)
+                if result != "false":
+                    break
+            return result 
+            
 class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
     
     lock = None
@@ -195,21 +235,24 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
         super(Cluster_start_action, self).__init__()
         self.lock = lock
         self.cluster_flag = cluster_flag
+        self.cluster_mode = cluster_mode
     def run(self):
         try:
-            self._issue_start_action(self.lock, self.cluster_flag)
+            self._issue_start_action(self.lock, self.cluster_flag, self.cluster_mode)
         except:
             self.threading_exception_queue.put(sys.exc_info())
             
-    def _issue_start_action(self, lock, cluster_flag):
+    def _issue_start_action(self, lock, cluster_flag, cluster_mode):
         
-                
         data_node_info_list = self.zkOper.retrieve_data_node_list()
         node_num = len(data_node_info_list)
         adminUser, adminPasswd = _retrieve_userName_passwd()
+        mode_dict.setdefault("cluster_mode", cluster_mode)
+        self.zkOper.writeClusterMode(mode_dict)
         node_wsrep_status_dict = {}
         data_node_started_flag_dict = {}
         need_start_node_ip_list = []
+        arbitrator_node_ip = []
         status_dict = {}
         try:
             if cluster_flag == 'new':
@@ -227,8 +270,14 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                                        notification = "direct",
                                        log_message = error_message,
                                        response = error_message)
-                logging.info('check_port done!')     
                 
+                logging.info('check_port done!')     
+                if cluster_mode == "asymmetric":
+                   arbitrator_node = ArbitratorNode()
+                   arbitrator_ip = arbitrator_node.get_ip(data_node_info_list)
+                   arbitrator_ip_list.append(arbitrator_ip)
+                   need_start_node_ip_list.remove(arbitrator_ip)
+                   
             else:
                 wsrepstatus_obj = WsrepStatus()
                 w_num = wsrepstatus_obj.check_wsrep(data_node_info_list, node_wsrep_status_dict, node_num)
@@ -270,7 +319,8 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 
                 need_start_node_ip_list = self._sort_seqno(uuid_seqno_dict)
                 logging.info("After sort, the uuid_seqno_dict value is %s" % str(need_start_node_ip_list))
-    
+  
+                            
             url_post = "/node/start"
             logging.info("/node/start start issue!")
             logging.info("need_start_node_ip_list:" + str(need_start_node_ip_list))
@@ -306,6 +356,22 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 logging.info("check started nodes ok!")        
                 data_node_started_flag_dict.setdefault(data_node_ip, start_finished)
 
+                if cluster_mode == "asymmetric":
+                    arbitrator_ip = arbitrator_ip_list[0]
+                    url_post = "arbitrator/node/start"
+                    requesturi = "http://%s:%s%s" %(arbitrator_ip, options.port,url_post)
+                    request = HTTPRequest(url=requesturi, method='POST', body=urllib.urlencode(args_dict),
+                                      auth_username = adminUser, auth_password = adminPasswd)
+                logging.info("issue " + requesturi)
+                return_result = _request_fetch(request)
+                if return_result  == False:
+                    raise HTTPAPIError("Garbd arbitrator start failed", \
+                    notification = "direct", \
+                    log_message="garbd arbitrator start failed",
+                    response = "garbd arbitrator start failed")
+                else:
+                    self.zkOper.write_started_node(arbitrator_ip)
+                
             cluster_started_nodes_list = self.zkOper.retrieve_started_nodes()
             nodes_online = len(cluster_started_nodes_list)
 

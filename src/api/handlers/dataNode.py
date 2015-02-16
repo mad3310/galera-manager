@@ -130,6 +130,21 @@ class DataNodeMonitorLogWarning(APIHandler):
     invokeCommand = InvokeCommand()
     
     def get(self):
+        ret_dict = self.confOpers.getValue(options.data_node_property, ['dataNodeName','dataNodeIp'])
+        node_name = ret_dict['dataNodeName']
+        obj = re.search("-n-2", node_name)
+        if obj != None:
+            cmd = "ps -ef |pgrep 'garbd' |wc -l"
+            invokeCommand = InvokeCommand()
+            count = invokeCommand._runSysCmd(cmd) 
+            if count == 1:
+                self.finish("true")
+		    else
+                self.finish("false")
+             return 
+        reuslt = self.invokeCommand.run_chek_shell(options.check_arbitrator_warning)
+           self.finish(result)
+        
         result = self.invokeCommand.run_check_shell(options.check_datanode_warning)
         self.finish(result)
         
@@ -141,6 +156,19 @@ class DataNodeMonitorLogHealth(APIHandler):
     invokeCommand = InvokeCommand()
     
     def get(self):
+        ret_dict = self.confOpers.getValue(options.data_node_property, ['dataNodeName','dataNodeIp'])
+        node_name = ret_dict['dataNodeName']
+        obj = re.search("-n-2", node_name)
+        if obj != None:
+            cmd = "ps -ef |pgrep 'garbd' |wc -l"
+            invokeCommand = InvokeCommand()
+            count = invokeCommand._runSysCmd(cmd) 
+            if count == 1:
+                self.finish("true")
+		    else
+                self.finish("false")
+             return 
+
         result = self.invokeCommand.run_check_shell(options.check_datanode_health)
         self.finish(result)
         

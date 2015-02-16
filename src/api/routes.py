@@ -11,6 +11,7 @@ from handlers.databaseUser import *
 from handlers.monitor import *
 from handlers.status import *
 from handlers.backup import *
+from handlers.arbitrator import *
 handlers = [
             (r"/generateConfigFile", GenerateConfigFileHandler),
             (r"/copyConfigFileInfo", CopyConfigFileInfoHandler),
@@ -65,5 +66,8 @@ handlers = [
             (r"/inner/backup", BackUper),
             (r"/backup/check", BackUpCheck),
             (r"/backup/checker", BackUp_Checker),
-            (r"/backup/inner/check", BackUpChecker)
+            (r"/backup/inner/check", BackUpChecker),
+            (r"/arbitrator/node/start", ArbitratorStart), 
+            (r"/inner/arbitrator/ip", ArbitratorIP),
+            (r"/arbitrator/check", ArbitratorCheck)
 ]
