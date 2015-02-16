@@ -257,9 +257,9 @@ class Check_DB_Anti_Item(Check_Status_Base):
                 error_record.setdefault("msg", "no way to connect to db")
         else:
             try:
-                msg = ""
                 failed_count = 0
                 anti_item_count = 0
+                msg = ""
                 anti_item_myisam_count = self.dba_opers.check_existed_myisam_table(conn)
                 anti_item_procedure_count = self.dba_opers.check_existed_stored_procedure(conn)
                 anti_item_trigger_count = self.dba_opers.check_triggers(conn)
