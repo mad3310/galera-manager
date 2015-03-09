@@ -331,6 +331,9 @@ class DBAOpers(object):
         c = rows[0][0]
         return c
 
+    '''
+    @todo: stored procedure need check?
+    '''
     def check_existed_stored_procedure(self, conn):
         cursor = conn.cursor()
         cursor.execute("show procedure status")

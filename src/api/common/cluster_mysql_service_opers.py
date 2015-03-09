@@ -37,7 +37,9 @@ class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         '''
         Constructor
         '''
-    
+    '''
+    @todo: arbitrator need to add one cluster_mode param?
+    '''
     def start(self, cluster_flag, cluster_mode):
         isLock,lock = self.zkOper.lock_cluster_start_stop_action()
         
@@ -187,6 +189,9 @@ class GaleraStatus():
         logging.info("Before sort, the uuid_seqno_dict value is %s" % str(self.c_uuid_seqno_dict))
         return self.c_uuid_seqno_dict
 
+'''
+@todo: Arbitrator class need to review
+'''
 class Arbitrator(Abstract_Stat_Service):
 {
     confOpers = ConfigFileOpers()
@@ -270,8 +275,11 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                                        notification = "direct",
                                        log_message = error_message,
                                        response = error_message)
-                
                 logging.info('check_port done!')     
+                
+                '''
+                @todo: for arbitrator mode? need this code?
+                ''' 
                 if cluster_mode == "asymmetric":
                    arbitrator_node = ArbitratorNode()
                    arbitrator_ip = arbitrator_node.get_ip(data_node_info_list)
@@ -319,8 +327,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 
                 need_start_node_ip_list = self._sort_seqno(uuid_seqno_dict)
                 logging.info("After sort, the uuid_seqno_dict value is %s" % str(need_start_node_ip_list))
-  
-                            
+    
             url_post = "/node/start"
             logging.info("/node/start start issue!")
             logging.info("need_start_node_ip_list:" + str(need_start_node_ip_list))
@@ -356,6 +363,9 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 logging.info("check started nodes ok!")        
                 data_node_started_flag_dict.setdefault(data_node_ip, start_finished)
 
+                '''
+                @todo: for arbitrator need this code?
+                '''
                 if cluster_mode == "asymmetric":
                     arbitrator_ip = arbitrator_ip_list[0]
                     url_post = "arbitrator/node/start"

@@ -218,12 +218,7 @@ class Inner_DB_Check_WR(APIHandler):
         started_ip_list = self.zkOper.retrieve_started_nodes()
         self.logger.info('started_ip_list is: ' + str(started_ip_list))
         identifier = socket.gethostname()
-        ret_dict = self.confOpers.getValue(options.data_node_property, ['dataNodeName','dataNodeIp'])
-		node_name = ret_dict['dataNodeName']
-		obj = re.search("-n-2", node_name)
-		if obj != None:
-             self.finish("true") 
-             return
+        
         conn = self.dba_opers.get_mysql_connection()
         try:       
             if conn is None:
