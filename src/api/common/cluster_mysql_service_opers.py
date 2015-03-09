@@ -192,8 +192,7 @@ class GaleraStatus():
 '''
 @todo: Arbitrator class need to review
 '''
-class Arbitrator(Abstract_Stat_Service):
-{
+class Arbitrator(object):
     confOpers = ConfigFileOpers()
     '''
 	classdoc

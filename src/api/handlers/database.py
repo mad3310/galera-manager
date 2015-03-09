@@ -219,6 +219,16 @@ class Inner_DB_Check_WR(APIHandler):
         self.logger.info('started_ip_list is: ' + str(started_ip_list))
         identifier = socket.gethostname()
         
+        '''
+        @todo: review the comment code for arbitrator way
+        '''
+#         ret_dict = self.confOpers.getValue(options.data_node_property, ['dataNodeName','dataNodeIp'])
+#         node_name = ret_dict['dataNodeName']
+#         obj = re.search("-n-2", node_name)
+#         if obj != None:
+#              self.finish("true") 
+#              return
+        
         conn = self.dba_opers.get_mysql_connection()
         try:       
             if conn is None:

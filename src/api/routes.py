@@ -68,6 +68,6 @@ handlers = [
             (r"/backup/checker", BackUp_Checker),
             (r"/backup/inner/check", BackUpChecker),
             (r"/arbitrator/node/start", ArbitratorStart), 
-            (r"/inner/arbitrator/ip", ArbitratorIP),
-            (r"/arbitrator/check", ArbitratorCheck)
+            (r"/inner/arbitrator/ip", ArbitratorIP)
+#             (r"/arbitrator/check", ArbitratorCheck)
 ]

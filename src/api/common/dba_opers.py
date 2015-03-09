@@ -325,7 +325,7 @@ class DBAOpers(object):
     def check_triggers(self, conn):
         cursor = conn.cursor()
         try:
-            cursor.execute("""select count(*) from information_schema.triggers""")
+            cursor.execute("""select count(1) from information_schema.triggers""")
         except Exception, e:
             logging.exception(e)
         rows = cursor.fetchall()

@@ -276,8 +276,9 @@ class Check_DB_Anti_Item(Check_Status_Base):
                     anti_item_count += anti_item_myisam_count
                     msg += " Myisam,"
                 if anti_item_procedure_count :
-                    anti_item_count += anti_item_procedure_count
-                    msg += " Procedure,"
+#                     anti_item_count += anti_item_procedure_count
+#                     msg += " Procedure,"
+                    logging.warn("[status_opers] check db status, existed stored procedure. Item's count:%s"%(str(anti_item_procedure_count)))
                 if anti_item_trigger_count :
                     anti_item_count += anti_item_trigger_count
                     msg += " Trigger,"
@@ -286,7 +287,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
                     msg += " NOPK,"
                 if anti_item_fulltext_and_spatial_count:
                     anti_item_count += anti_item_fulltext_and_spatial_count
-                    msg += " SPATIAL,"
+                    msg += " FullText, SPATIAL,"
             finally:
                 conn.close()
         
