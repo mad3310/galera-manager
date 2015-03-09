@@ -1,8 +1,10 @@
 #-*- coding: utf-8 -*-
+import sys
 
-from tornado.ioloop import IOLoop, PeriodicCallback
+from tornado.ioloop import PeriodicCallback
 from common.utils.threading_exception_handle_worker import Thread_Exception_Handler_Worker
 from common.utils.monitor_backend_handle_worker import Monitor_Backend_Handle_Worker
+from common.utils.threading_exception_queue import Threading_Exception_Queue
 
 '''
 Created on 2013-7-21
@@ -10,10 +12,11 @@ Created on 2013-7-21
 @author: asus
 '''
 
-class Sceduler_Opers(object):
+class Scheduler_Opers(object):
     '''
     classdocs
     '''
+    threading_exception_queue = Threading_Exception_Queue()
 
     def __init__(self):
         '''
@@ -33,7 +36,10 @@ class Sceduler_Opers(object):
             
     def __create_worker_check_monitor(self):
         monitor_backend_worker = Monitor_Backend_Handle_Worker()
-        monitor_backend_worker.start()
+        try:
+            monitor_backend_worker.start()
+        except Exception:
+            self.threading_exception_queue.put(sys.exc_info())
             
     def thread_exception_hanlder(self, action_timeout = 5):
         if action_timeout > 0:

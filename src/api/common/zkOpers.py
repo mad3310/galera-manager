@@ -16,6 +16,8 @@ from kazoo.retry import KazooRetry
 import logging
 import threading
 from common.my_logging import debug_log
+from common.utils.exceptions import CommonException
+
 class ZkOpers(object):
     
     zk = None
@@ -74,12 +76,14 @@ class ZkOpers(object):
         return dataNodeNumber
     
     def getClusterUUID(self):
-        self.logger.debug(self.rootPath)
         try: 
             dataNodeName = self.zk.get_children(self.rootPath)
-        except SessionExpiredError, e:
-             dataNodeName = self.zk.get_children(self.rootPath)
-        self.logger.debug(dataNodeName)
+        except SessionExpiredError:
+            dataNodeName = self.zk.get_children(self.rootPath)
+            
+        if dataNodeName is None or dataNodeName.__len__() == 0:
+            raise CommonException('cluster uuid is null.please check the zk connection or check if existed cluster uuid.')
+        
         return dataNodeName[0]
         
         
