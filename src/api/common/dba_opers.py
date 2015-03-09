@@ -321,6 +321,25 @@ class DBAOpers(object):
         c = rows[0][0]
         return c
     
+    def check_triggers(self, conn):
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""select count(1) from information_schema.triggers""")
+        except Exception, e:
+            logging.exception(e)
+        rows = cursor.fetchall()
+        c = rows[0][0]
+        return c
+
+    def check_existed_stored_procedure(self, conn):
+        cursor = conn.cursor()
+        cursor.execute("show procedure status")
+        rows = cursor.fetchall()
+        logging.info(str(rows))
+        
+        c = len(rows)
+        return c
+    
     def check_existed_nopk(self, conn):
         cursor = conn.cursor()
         cursor.execute("""select count(1)
@@ -414,10 +433,7 @@ class DBAOpers(object):
         
     def _check_wsrep_ready(self,key_value):
         if key_value == {}:
-            raise HTTPAPIError(status_code=500, error_detail="the param should be not null",\
-                                notification = "direct", \
-                                log_message= "the param should be not null",\
-                                response =  "the param should be not null")
+            raise CommonException("the param should be not null")
         
         value = key_value.get('wsrep_ready')
         if 'ON' != value:
@@ -439,26 +455,5 @@ class DBAOpers(object):
             logging.error("wsrep local state comment is " + value)
             return False
         
-        value = key_value.get('wsrep_flow_control_paused')
-        if float(value) > 1:
-            logging.error("wsrep flow control paused is " + value)
-            return False
-        
-        value = key_value.get('wsrep_flow_control_sent')
-        if float(value) > 200:
-            logging.error("wsrep flow control sent is " + value)
-            return False
-        
-        value = key_value.get('wsrep_local_recv_queue_avg')
-        if float(value) > 40:
-            logging.error("wsrep local recv queue avg is " + value)
-            return False
-        
-        value = key_value.get('wsrep_local_send_queue_avg')
-        send_qu_threshold = options.x_queue_avg_threshold
-        if float(value) >= send_qu_threshold:
-            logging.error("wsrep local send queue avg is " + value)
-            return False
-        logging.info("wsrep local send queue avg is " + value)
         return True
         
