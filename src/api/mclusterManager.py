@@ -14,7 +14,7 @@ import tornado.web
 from tornado.options import options
 from common.appdefine import mclusterManagerDefine
 from common.helper import get_localhost_ip
-from common.sceduler_opers import Sceduler_Opers
+from common.scheduler_opers import Scheduler_Opers
 from common.zkOpers import ZkOpers 
 from common.configFileOpers import ConfigFileOpers
 
@@ -49,33 +49,31 @@ def main():
 #     else :
 #         pass 
     tornado.options.parse_command_line()
-    try:
-        zk_client = ZkOpers('127.0.0.1', 2181)
-        config_file_obj = ConfigFileOpers()
-        if (zk_client.existCluster()):
-		
-       	    clusterUUID = zk_client.getClusterUUID() 
-            data, stat = zk_client.retrieveClusterProp(clusterUUID) 
-
-            node_ip_addr = get_localhost_ip()
-            return_result = zk_client.retrieve_data_node_info(node_ip_addr)
-            
-            json_str_data = data.replace("'", "\"")
-            dict_data = json.loads(json_str_data)            
-            if type(return_result) is dict and type(dict_data) is dict:
-                config_file_obj.setValue(options.data_node_property, return_result)
-                config_file_obj.setValue(options.cluster_property, dict_data) 
-            else:
-                logging.info("write data into configuration failed")
+    
+    zk_client = ZkOpers('127.0.0.1', 2181)
+    
+    cluster_existed = zk_client.existCluster()
+    if cluster_existed:
+        clusterUUID = zk_client.getClusterUUID() 
+        data = zk_client.retrieveClusterProp(clusterUUID) 
+        
+        node_ip_addr = get_localhost_ip()
+        return_result = zk_client.retrieve_data_node_info(node_ip_addr)
+        
+        json_str_data = data.replace("'", "\"")
+        dict_data = json.loads(json_str_data)
+        if type(return_result) is dict and type(dict_data) is dict:
+            config_file_obj = ConfigFileOpers()
+            config_file_obj.setValue(options.data_node_property, return_result)
+            config_file_obj.setValue(options.cluster_property, dict_data)
+            logging.debug("program has re-written zk data into configuration file")
         else:
-             logging.info("Cluster does not exist")
-    except Exception, e:
-        logging.info("No write ")
-        logging.error(e)
+            logging.info("write data into configuration failed")
+        
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(options.port)
      
-    sceduler_opers = Sceduler_Opers()
+    Scheduler_Opers()
     
     tornado.ioloop.IOLoop.instance().start()
     

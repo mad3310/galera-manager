@@ -15,7 +15,7 @@ define('sitename', default = "mcluster manager", help = 'site name')
 define('domain', default = "letv.com", help = 'domain name')
 
 define('send_email_switch', default = True, type = bool, help = 'the flag of if send error email')
-define('admins', default = ("zhoubingzheng <zhoubingzheng@letv.com>", "zhangzeng <zhangzeng@letv.com>","duanwei1 <duanwei1@letv.com>", "wangzhen3 <wangzhen3@letv.com>", "liuhao1 <liuhao1@letv.com>", "yaofaliang <yaofaliang@letv.com>", "yaokuo <yaokuo@letv.com>", "zhangxiang <zhangxiang@letv.com>", ), help = 'admin email address')
+define('admins', default = ("zhoubingzheng <zhoubingzheng@letv.com>", "zhangzeng <zhangzeng@letv.com>", "liuhao1 <liuhao1@letv.com>", "yaokuo <yaokuo@letv.com>", "zhangxiang <zhangxiang@letv.com>", ), help = 'admin email address')
 define('smtp_host', default = "mail.letv.com", help = 'smtp host')
 define('smtp_port', default = 587, help = 'smtp port')
 define('smtp_user', default = "mcluster", help = 'smtp user')

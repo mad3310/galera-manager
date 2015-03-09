@@ -2,10 +2,10 @@ import logging
 import kazoo
 import threading
 
-from tornado.ioloop import PeriodicCallback
 from handlers.monitor import Cluster_Info_Async_Handler, Node_Info_Async_Handler, DB_Info_Async_Handler
 from common.zkOpers import ZkOpers
 from common.helper import check_leader
+from common.utils.exceptions import CommonException
 class Monitor_Backend_Handle_Worker(threading.Thread):
     
     cluster_handler = Cluster_Info_Async_Handler()
@@ -26,8 +26,8 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
         
         leader_flag = check_leader()
         if leader_flag == False:
-            logging.info('This node is not leader of zookeeper!')
-            return
+            raise CommonException('This node is not leader of zookeeper!')
+            
         logging.info("This node is leader of zookeeper.")
         isLock = False
         lock = None

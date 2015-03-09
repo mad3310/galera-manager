@@ -262,9 +262,6 @@ class Check_DB_Anti_Item(Check_Status_Base):
         else:
             try:
                 failed_count = 0
-                '''
-                @todo: need to review this code for different type description
-                '''
                 anti_item_count = 0
                 msg = ""
                 anti_item_myisam_count = self.dba_opers.check_existed_myisam_table(conn)

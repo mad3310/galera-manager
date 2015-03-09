@@ -332,9 +332,6 @@ class DBAOpers(object):
         c = rows[0][0]
         return c
 
-    '''
-    @todo: stored procedure need check?
-    '''
     def check_existed_stored_procedure(self, conn):
         cursor = conn.cursor()
         cursor.execute("show procedure status")
@@ -343,7 +340,7 @@ class DBAOpers(object):
         
         c = len(rows)
         return c
-
+    
     def check_existed_nopk(self, conn):
         cursor = conn.cursor()
         cursor.execute("""select count(1)
