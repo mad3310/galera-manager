@@ -1,0 +1,1 @@
+docker run -i -t --rm --privileged --memory="512m" -h test -v /srv/mcluster/  --env "IP=192.168.116.210" --env "HOSTNAME=test" --env "NETMASK=255.255.252.0"  --env "GATEWAY=192.168.116.2"  --name test letv:centos6 /bin/bash
