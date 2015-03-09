@@ -8,6 +8,7 @@ import logging
 
 from tornado.options import options
 from common.helper import retrieve_kv_from_db_rows
+from common.utils.exceptions import CommonException
 
 class DBAOpers(object):
     '''
@@ -68,7 +69,7 @@ class DBAOpers(object):
         cursor = conn.cursor()
         sql = "INSERT INTO %s (time, identifier ) VALUES('%s','%s')" % (tb_name, time_data, identifier)
         try:
-             cursor.execute(sql)
+            cursor.execute(sql)
         
         except Exception,e:
             logging.exception(e)
@@ -143,7 +144,7 @@ class DBAOpers(object):
     def drop_table(self, conn, tb_name, db_name ):
         conn.select_db(db_name)
         cursor = conn.cursor()
-     	
+    
         try:
             sql = "DROP table `%s`" %(tb_name)
             cursor.execute(sql)
@@ -436,10 +437,7 @@ class DBAOpers(object):
         
     def _check_wsrep_ready(self,key_value):
         if key_value == {}:
-            raise HTTPAPIError(status_code=500, error_detail="the param should be not null",\
-                                notification = "direct", \
-                                log_message= "the param should be not null",\
-                                response =  "the param should be not null")
+            raise CommonException("the param should be not null")
         
         value = key_value.get('wsrep_ready')
         if 'ON' != value:
@@ -461,26 +459,5 @@ class DBAOpers(object):
             logging.error("wsrep local state comment is " + value)
             return False
         
-        value = key_value.get('wsrep_flow_control_paused')
-        if float(value) > 1:
-            logging.error("wsrep flow control paused is " + value)
-            return False
-        
-        value = key_value.get('wsrep_flow_control_sent')
-        if float(value) > 200:
-            logging.error("wsrep flow control sent is " + value)
-            return False
-        
-        value = key_value.get('wsrep_local_recv_queue_avg')
-        if float(value) > 40:
-            logging.error("wsrep local recv queue avg is " + value)
-            return False
-        
-        value = key_value.get('wsrep_local_send_queue_avg')
-        send_qu_threshold = options.x_queue_avg_threshold
-        if float(value) >= send_qu_threshold:
-            logging.error("wsrep local send queue avg is " + value)
-            return False
-        logging.info("wsrep local send queue avg is " + value)
         return True
         

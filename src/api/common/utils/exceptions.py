@@ -41,6 +41,20 @@ class HTTPAPIError(HTTPError):
             v = getattr(self, name)
             if v:
                 err[name] = v
+                
+                
+class CommonException(Exception):
+    
+    def __init__(self, value):
+        self.value = value
+    
+    def __str__(self):
+        return repr(self.value)
+    
+class UserVisiableException(CommonException):
+    
+    def __init__(self, value):
+        super(UserVisiableException, self).__init__(value)
 
 
 _error_types = {400: "param_error",
