@@ -54,7 +54,7 @@ def main():
     cluster_existed = zk_client.existCluster()
     if cluster_existed:
         clusterUUID = zk_client.getClusterUUID() 
-        data = zk_client.retrieveClusterProp(clusterUUID) 
+        data, _ = zk_client.retrieveClusterProp(clusterUUID) 
         
         node_ip_addr = socket.gethostbyname(socket.gethostname())
         return_result = zk_client.retrieve_data_node_info(node_ip_addr)
