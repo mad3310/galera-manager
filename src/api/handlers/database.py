@@ -17,7 +17,7 @@ from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
 from common.helper import check_leader, is_monitoring, get_localhost_ip
 from common.my_logging import debug_log
-
+from common.zkOpers import ZkOpers
 import socket
 import datetime
 import time
@@ -31,7 +31,6 @@ TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 @require_basic_auth
 class DBOnMCluster(APIHandler):
-    
     dba_opers = DBAOpers()
     
     conf_opers = ConfigFileOpers()
@@ -64,17 +63,19 @@ class DBOnMCluster(APIHandler):
         
         #check if exist cluster
         dbProps = {'db_name':dbName}
+        self.zkOper = ZkOpers()
+        try: 
+            clusterUUID = self.zkOper.getClusterUUID()
+            self.zkOper.write_db_info(clusterUUID, dbName, dbProps)
         
-        clusterUUID = self.zkOper.getClusterUUID()
-        self.zkOper.write_db_info(clusterUUID, dbName, dbProps)
-        
-        userProps = {'role':'manager',
-                     'max_queries_per_hour':max_queries_per_hour,
-                     'max_updates_per_hour':max_updates_per_hour,
-                     'max_connections_per_hour':max_connections_per_hour,
-                     'max_user_connections':max_user_connections}
-        self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
-        
+            userProps = {'role':'manager',
+                         'max_queries_per_hour':max_queries_per_hour,
+                         'max_updates_per_hour':max_updates_per_hour,
+                         'max_connections_per_hour':max_connections_per_hour,
+                         'max_user_connections':max_user_connections}
+            self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
+        finally:
+            self.zkOper.close()   
         dict = {}
         dict.setdefault("message", "database create successful")
         dict.setdefault("manager_user_name", userName)
@@ -90,34 +91,36 @@ class DBOnMCluster(APIHandler):
                                 log_message= "when remove the db, no have database name",\
                                 response =  "please provide database name you want to removed!")
         
-        clusterUUID = self.zkOper.getClusterUUID()
-        user_ipAddress_map = self.zkOper.retrieve_db_user_prop(clusterUUID, dbName)
-        
-        conn = self.dba_opers.get_mysql_connection()
-        
+        self.zkOper = ZkOpers()
         try:
+            clusterUUID = self.zkOper.getClusterUUID()
+            user_ipAddress_map = self.zkOper.retrieve_db_user_prop(clusterUUID, dbName)
+        
+            conn = self.dba_opers.get_mysql_connection()
+        
+            try:
+                if user_ipAddress_map is not None:
+                    for (user_name,ip_address) in user_ipAddress_map.items():
+                        self.dba_opers.delete_user(conn, user_name, ip_address)
+        
+                    self.dba_opers.drop_database(conn, dbName)
+            finally:
+                conn.close()
+        
+            user_name_list = ''
             if user_ipAddress_map is not None:
                 for (user_name,ip_address) in user_ipAddress_map.items():
-                    self.dba_opers.delete_user(conn, user_name, ip_address)
-        
-                self.dba_opers.drop_database(conn, dbName)
-        finally:
-            conn.close()
-        
-        user_name_list = ''
-        if user_ipAddress_map is not None:
-            for (user_name,ip_address) in user_ipAddress_map.items():
-                self.zkOper.remove_db_user(clusterUUID, dbName, user_name, ip_address)
-                user_name_list += user_name + ","
+                    self.zkOper.remove_db_user(clusterUUID, dbName, user_name, ip_address)
+                    user_name_list += user_name + ","
                 
-        self.zkOper.remove_db(clusterUUID, dbName)
-        
+            self.zkOper.remove_db(clusterUUID, dbName)
+        finally:
+            self.zkOper.close()
         dict = {}
         dict.setdefault("message", "database remove successful!")
         dict.setdefault("removed_db_name", dbName)
         dict.setdefault("removed_user_with_db_name", user_name_list)
         self.finish(dict)
-        
 
 # After mcluster shut down, manager want to recover the cluster, then need to retrieve the node's uuid and seqno. 
 # Though this api, user can get it.
@@ -183,6 +186,7 @@ class Inner_DB_Check_WsrepStatus(APIHandler):
             return
         try:
             check_result = self.dba_opers.retrieve_wsrep_status()
+            logging.info("check_wsrepstatus : %s" %(check_result))
         except:
             error_message = "connection break down"
             raise HTTPAPIError(status_code=417, error_detail= error_message,\
@@ -208,14 +212,16 @@ class Inner_DB_Check_WR(APIHandler):
     logger = log_obj.get_logger_object()
     
     invokeCommand = InvokeCommand()
-
+ 
 #     
     def get(self):
-        
+        zkoper_obj = ZkOpers()
+
+  
         dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = dataNodeProKeyValue['dataNodeIp']
         self.logger.info('data_node_ip is :' + str(data_node_ip))
-        started_ip_list = self.zkOper.retrieve_started_nodes()
+        started_ip_list = zkoper_obj.retrieve_started_nodes()
         self.logger.info('started_ip_list is: ' + str(started_ip_list))
         identifier = socket.gethostname()
         
@@ -233,11 +239,11 @@ class Inner_DB_Check_WR(APIHandler):
         try:       
             if conn is None:
                 if data_node_ip in started_ip_list:
-                    self.zkOper.remove_started_node(data_node_ip)
+                    zkoper_obj.remove_started_node(data_node_ip)
                     self.invokeCommand.run_check_shell(options.kill_innotop)
                 self.finish("false")
                 return
-            self.zkOper.write_started_node(data_node_ip)
+            zkoper_obj.write_started_node(data_node_ip)
 
             if not is_monitoring(get_localhost_ip()):
                 self.finish("true")
@@ -315,7 +321,8 @@ class Inner_DB_Check_WR(APIHandler):
             return_flag = "false"
         finally: 
             conn.close()
-        self.finish(return_flag)
+            zkoper_obj.close()
+        self.finish(return_flag) 
         
 
 # retrieve the database stat with innotop

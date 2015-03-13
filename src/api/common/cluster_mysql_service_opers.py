@@ -33,14 +33,18 @@ Created on 2013-7-21
 '''
 class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
     
+    zkOper = None
+    
     def __init__(self):
         '''
         Constructor
         '''
+        
     '''
     @todo: arbitrator need to add one cluster_mode param?
     '''
     def start(self, cluster_flag, cluster_mode):
+        self.zkOper = ZkOpers()
         isLock,lock = self.zkOper.lock_cluster_start_stop_action()
         
         # Start a thread to run the events
@@ -48,6 +52,7 @@ class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         cluster_start_action.start()
         
     def stop(self):
+        self.zkOper = ZkOpers()
         isLock,lock = self.zkOper.lock_cluster_start_stop_action()
         
         # Start a thread to run the events
@@ -71,7 +76,7 @@ class PortStatus():
             request = HTTPRequest(url=requesturi, method = 'GET')
             return_request = _request_fetch(request)
             if return_request == 'false':
-               self.c_start_node_ip_list.append(data_node_ip) 
+                self.c_start_node_ip_list.append(data_node_ip) 
 #                 c_node_wsrep_status_dict.setdefault(data_node_ip, return_request)
         return self.c_start_node_ip_list
                   
@@ -103,6 +108,7 @@ class StopIssue(BaseHandler):
         """
         constructor
         """
+        self.zkOper = ZkOpers()
     def issue_stop(self, s_node_wsrep_status_dict, s_data_node_stop_finished_flag_dict, adminUser, adminPasswd):
         url_post = "/node/stop"
         logging.info('/node/stop start')    
@@ -119,6 +125,7 @@ class StopIssue(BaseHandler):
         while True:
             isLock = False
             lock = None
+
             try:
                 isLock,lock = self.zkOper.lock_node_start_stop_action()
                 break
@@ -240,6 +247,8 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
         self.lock = lock
         self.cluster_flag = cluster_flag
         self.cluster_mode = cluster_mode
+        self.zkOper = ZkOpers()
+        
     def run(self):
         try:
             self._issue_start_action(self.lock, self.cluster_flag, self.cluster_mode)
@@ -247,7 +256,6 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
             self.threading_exception_queue.put(sys.exc_info())
             
     def _issue_start_action(self, lock, cluster_flag, cluster_mode):
-        
         data_node_info_list = self.zkOper.retrieve_data_node_list()
         node_num = len(data_node_info_list)
         adminUser, adminPasswd = _retrieve_userName_passwd()
@@ -280,10 +288,10 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 @todo: for arbitrator mode? need this code?
                 ''' 
                 if cluster_mode == "asymmetric":
-                   arbitrator_node = ArbitratorNode()
-                   arbitrator_ip = arbitrator_node.get_ip(data_node_info_list)
-                   arbitrator_ip_list.append(arbitrator_ip)
-                   need_start_node_ip_list.remove(arbitrator_ip)
+                    arbitrator_node = ArbitratorNode()
+                    arbitrator_ip = arbitrator_node.get_ip(data_node_info_list)
+                    arbitrator_ip_list.append(arbitrator_ip)
+                    need_start_node_ip_list.remove(arbitrator_ip)
                    
             else:
                 wsrepstatus_obj = WsrepStatus()

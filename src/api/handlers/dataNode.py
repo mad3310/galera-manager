@@ -13,14 +13,14 @@ from common.helper import issue_mycnf_changed
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.utils.exceptions import HTTPAPIError
 from common.node_stat_opers import NodeStatOpers
-
+from common.zkOpers import ZkOpers
 # add data node into mcluster
 # eg. curl --user root:root -d "dataNodeIp=192.168.0.20&dataNodeName=letv_mcluster_test_1_node_2" "http://localhost:8888/cluster/node"
 @require_basic_auth
 class AddDataNodeToMCluster(APIHandler):
     
     confOpers = ConfigFileOpers()
-    
+
     def post(self):
         try:
             requestParam = {}
@@ -32,7 +32,7 @@ class AddDataNodeToMCluster(APIHandler):
             
             if requestParam != {}:
                 self.confOpers.setValue(options.data_node_property, requestParam)
-            
+            self.zkOper = ZkOpers()
             dataNodeProprs = self.confOpers.getValue(options.data_node_property)
             clusterUUID = self.zkOper.getClusterUUID()
             self.zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
@@ -83,16 +83,15 @@ class AddDataNodeToMCluster(APIHandler):
 #        dict.setdefault("code", "000000")
         dict.setdefault("message", "add data node into cluster successful!")
         self.finish(dict)
-        
-        
 # sync data node info from zk
 # eg. curl "http://localhost:8888/node/sync"
 class SyncDataNode(APIHandler):
     
     confOpers = ConfigFileOpers()
-    
     def get(self,ip_address):
-        try:    
+        self.zkOper = ZkOpers()
+        try:
+ 
             if ip_address is None:
                 error_message="you should specify the ip address need to sync"
                 raise HTTPAPIError(status_code=500, error_detail= error_message,\
@@ -108,11 +107,12 @@ class SyncDataNode(APIHandler):
                                     notification = "direct", \
                                     log_message= error_message,\
                                     response =  error_message)
+        finally:
+            self.zkOper.close()
         dict = {}
 #        dict.setdefault("code", "000000")
         dict.setdefault("message", "sync data node info to local successful!")
         self.finish(dict)
-        
 # check data node if there are some errors in log
 # eg. curl "http://localhost:8888/inner/node/check/log/error"
 class DataNodeMonitorLogError(APIHandler):

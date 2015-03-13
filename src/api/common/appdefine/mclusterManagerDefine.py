@@ -29,6 +29,7 @@ define("base_dir", default=base_dir, help="project base dir")
 define("mysql_cnf_file_name", default="/opt/letv/mcluster/root/etc/my.cnf", help="mysql cnf file name")
 define("mcluster_manager_cnf",default=join(base_dir, "config","mclusterManager.cnf"), help="mcluster manager config file")
 define("data_node_property",default=join(base_dir,"config","dataNode.property"), help="data node config file")
+define ('zk_address', default=join(base_dir,"config","mclusterManager.cnf"),help = "zookeeper address config file")
 define("cluster_property",default=join(base_dir,"config","cluster.property"), help="cluster config file")
 
 

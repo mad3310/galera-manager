@@ -11,13 +11,13 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.options
 import tornado.web
+from common.helper import get_localhost_ip
 from tornado.options import options
 from common.appdefine import mclusterManagerDefine
 from common.helper import get_localhost_ip
 from common.scheduler_opers import Scheduler_Opers
 from common.zkOpers import ZkOpers 
 from common.configFileOpers import ConfigFileOpers
-
 class Application(tornado.web.Application):
     def __init__(self):
         
@@ -50,7 +50,7 @@ def main():
 #         pass 
     tornado.options.parse_command_line()
     
-    zk_client = ZkOpers('127.0.0.1', 2181)
+    zk_client = ZkOpers()
     
     cluster_existed = zk_client.existCluster()
     if cluster_existed:

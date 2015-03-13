@@ -33,6 +33,7 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
     invokeCommand = InvokeCommand()
     
     def __init__(self):
+        self.zkOper = None
         '''
         Constructor
         '''
@@ -57,18 +58,22 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         
         
     def start(self, isNewCluster):
+
+        self.zkOper = ZkOpers()
         isLock,lock = self.zkOper.lock_node_start_stop_action()
         
         node_start_action = Node_start_action(isNewCluster, lock)
         node_start_action.start()
-        
+        self.zkOper.close() 
     def stop(self):
+        
         isLock,lock = self.zkOper.lock_node_start_stop_action()
         
         # Start a thread to run the events
         node_stop_action = Node_stop_action(lock)
         node_stop_action.start()
     
+        self.zkOper.close() 
 class Node_start_action(Abstract_Mysql_Service_Action_Thread):
     lock = None
     isNewCluster = False
@@ -80,6 +85,7 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
         self.lock = lock
         self.isNewCluster = isNewCluster
         
+        self.zkOper = None
     def run(self):
         try:
             self._issue_start_action(self.isNewCluster, self.lock)
@@ -87,6 +93,7 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
             self.threading_exception_queue.put(sys.exc_info())
         
     def _issue_start_action(self, isNewCluster, lock):
+        self.zkOper.close() 
         dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = dataNodeProKeyValue['dataNodeIp']
         
@@ -100,6 +107,7 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
                 finished_flag = self._check_start_status(data_node_ip)
         finally:
             self.zkOper.unLock_node_start_stop_action(lock)
+            self.zkOper.close()
         
         if finished_flag:    
             self._send_email(data_node_ip, " mysql service start operation finished")
@@ -124,9 +132,10 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
             time.sleep(2)
 
         
-        if finished_flag:    
-            self.zkOper.write_started_node(data_node_ip)
-            
+        if finished_flag:   
+            zkoper_obj = ZkOpers()
+            zkoper_obj.write_started_node(data_node_ip)
+            zkoper_obj.close()
         return finished_flag
             
         
@@ -153,8 +162,10 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
             result = self.invokeCommand.mysql_service_stop()
             finished_flag = self._check_stop_status(data_node_ip)
         finally:
-            self.zkOper.unLock_node_start_stop_action(lock)
-        
+
+            zkoper_obj = ZkOpers()
+            zkoper_obj.unLock_node_start_stop_action(lock)
+            zkoper_obj.close()
         if finished_flag:    
             self._send_email(data_node_ip, " mysql service stop operation finished")
         
@@ -175,8 +186,9 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
                 
             time.sleep(2)
         
-        if finished_flag:    
+        if finished_flag:
+            zkoper_obj = ZkOpers()
             self.zkOper.remove_started_node(data_node_ip)
-            
+            zkoper_obj.close()
         return finished_flag
             

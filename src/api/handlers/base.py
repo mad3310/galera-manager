@@ -17,7 +17,7 @@ import traceback
 
 class BaseHandler(RequestHandler):
     
-    zkOper = ZkOpers('127.0.0.1',2181)
+#    zkOper = ZkOpers('127.0.0.1',2181)
     
     log_obj = debug_log('root')
     logger = log_obj.get_logger_object()

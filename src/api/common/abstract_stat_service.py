@@ -3,14 +3,14 @@ from abc import ABCMeta, abstractmethod
 from common.configFileOpers import ConfigFileOpers
 from common.zkOpers import ZkOpers
 from tornado.options import options
-
+import logging
 class Abstract_Stat_Service(object):
     
     invokeCommand = InvokeCommand()
     
     confOpers = ConfigFileOpers()
     
-    zkOper = ZkOpers('127.0.0.1',2181)
+#    zkOper = ZkOpers('127.0.0.1',2181)
     
     def __init__(self):
         '''
@@ -72,8 +72,12 @@ class Abstract_Stat_Service(object):
         return sub_dict
     
     def _check_mysql_processor_exist(self):
-        started_nodes = self.zkOper.retrieve_started_nodes()
-        
+        zkOper = ZkOpers()
+        try:
+            started_nodes = zkOper.retrieve_started_nodes()
+        finally:
+            zkOper.close()
+        logging.info("close zk client connection successfully") 
         confDict = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = confDict['dataNodeIp']
         

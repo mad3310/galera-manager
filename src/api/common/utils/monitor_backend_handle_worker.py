@@ -1,37 +1,47 @@
 import logging
 import kazoo
 import threading
-
+from tornado.options import options
+from common.configFileOpers import ConfigFileOpers
+from tornado.ioloop import PeriodicCallback
 from handlers.monitor import Cluster_Info_Async_Handler, Node_Info_Async_Handler, DB_Info_Async_Handler
 from common.zkOpers import ZkOpers
 from common.helper import check_leader
 from common.utils.exceptions import CommonException
+from common.helper import check_leader, get_zk_address
+from common.invokeCommand import InvokeCommand
 class Monitor_Backend_Handle_Worker(threading.Thread):
     
     cluster_handler = Cluster_Info_Async_Handler()
   
-   
     node_handler = Node_Info_Async_Handler()
     
     db_handler = DB_Info_Async_Handler()
-    
 
-    zkOper = ZkOpers('127.0.0.1',2181)
-    
+#    zkOper = ZkOpers('127.0.0.1',2181)
+    confOpers = ConfigFileOpers()
+    invokeCommand = InvokeCommand()
+
     def __init__(self):
         super(Monitor_Backend_Handle_Worker,self).__init__()
             
             
     def run(self):
-        
-        leader_flag = check_leader()
-        if leader_flag == False:
-            raise CommonException('This node is not leader of zookeeper!')
+        zk_address = get_zk_address()
+        logging.info("zk address " + str(zk_address))
+        if zk_address == "": 
+            logging.info("zk address is none") 
+            return
+        else:
+            leader_flag = check_leader()
+            if leader_flag == False:
+                raise CommonException('This node is not leader of zookeeper!')
             
         logging.info("This node is leader of zookeeper.")
         isLock = False
         lock = None
-        
+
+        self.zkOper = ZkOpers()
         try:
             isLock,lock = self.zkOper.lock_async_monitor_action()
         except kazoo.exceptions.LockTimeout:
@@ -44,7 +54,8 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
                 logging.error(e)
             finally:
                 self.zkOper.unLock_aysnc_monitor_action(lock)
-                
+                self.zkOper.close()
+                logging.info("close zk client connection successfully")
                 
     def __action_monitor_async(self):
         data_node_info_list = self.zkOper.retrieve_data_node_list()

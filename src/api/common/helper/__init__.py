@@ -8,14 +8,14 @@ from tornado.httpclient import HTTPClient
 from tornado.httpclient import HTTPError
 from common.invokeCommand import InvokeCommand
 
+from common.configFileOpers import ConfigFileOpers
 confOpers = ConfigFileOpers()
-zkOper = ZkOpers('127.0.0.1',2181)
 
 def issue_mycnf_changed(self):
     keyList = []
     keyList.append('wsrep_cluster_address')
     
-    #zkOper = ZkOpers('127.0.0.1',2181)
+    zkOper = ZkOpers()
     
     clusterUUID = zkOper.getClusterUUID()
     sourceText,stat = zkOper.retrieveMysqlProp(clusterUUID, issue_mycnf_changed)
@@ -96,14 +96,18 @@ def getDictFromText(sourceText, keyList):
 
 def check_leader():
     invokeCommand = InvokeCommand()
-    ret_str, ret_val = invokeCommand._runSysCmd(options.check_zk_leader)
+    zk_address, zk_port = get_zk_address()
+    cmd = "echo stat |nc %s %s| grep Mode" %(zk_address, zk_port)
+    ret_str, ret_val = invokeCommand._runSysCmd(cmd)
     invokeCommand = None
     if ret_str.find('leader') == -1:
         return False
     return True
 
 def is_monitoring(host_ip=None):
+    zkOper = ZkOpers()
     try:
+  
         stat = zkOper.retrieveClusterStatus()
         logging.info("is_monitoring: stat: %s, host_ip: %s" % (str(stat), str(host_ip)))
         if not stat or '_status' not in stat:
@@ -114,6 +118,8 @@ def is_monitoring(host_ip=None):
     except:
         logging.info("is_monitoring: except False")
         return False
+    finally:
+        zkOper.close()
 
 def get_localhost_ip():
     cmd="""ifconfig $(route -n|grep '^0.0.0.0'|awk '{print $NF}')|awk '/inet addr/,gsub("addr:",""){print $2}'"""
@@ -121,3 +127,9 @@ def get_localhost_ip():
     ret_str, ret_val = invokeCommand._runSysCmd(cmd)
     invokeCommand = None
     return ret_str
+
+def get_zk_address():
+     ret_dict = confOpers.getValue(options.zk_address, ['zkAddress','zkPort'])
+     zk_address = ret_dict['zkAddress']
+     zk_port = ret_dict['zkPort']
+     return zk_address ,zk_port
