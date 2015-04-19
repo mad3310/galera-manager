@@ -89,6 +89,7 @@ class DBAOpers(object):
         rows = cursor.fetchall()
         ret = rows[0][0]
         return ret
+    
     def delete_tb_contents(self, conn, tb_name, db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
@@ -113,6 +114,7 @@ class DBAOpers(object):
         rows = cursor.fetchall()   
         ret = rows[0][0]
         return ret
+    
     def check_tb_data(self, conn, tb_name, db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
@@ -151,6 +153,7 @@ class DBAOpers(object):
         except Exception, e:
             logging.exception(e)
         logging.info('drop ' + tb_name + 'success')
+        
     def create_user(self, conn, username, passwd, ip_address='%',dbName = None):
         cursor = conn.cursor()
         cursor.execute("""select count(*) as c from mysql.user where user='{username}' and host='{ip_address}'"""

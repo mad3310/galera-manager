@@ -8,7 +8,6 @@ from common.helper import issue_mycnf_changed
 from common.cluster_mysql_service_opers import Cluster_Mysql_Service_Opers
 from tornado.options import options
 from tornado.web import asynchronous
-from tornado.gen import engine
 from common.utils.exceptions import HTTPAPIError
 from common.zkOpers import ZkOpers
 
@@ -31,45 +30,47 @@ class CreateMCluster(APIHandler):
     
     def post(self):
         #check if exist cluster
-        zkoper_obj = ZkOpers()
-        existCluster = zkoper_obj.existCluster()
-        requestParam = {}
-        args = self.request.arguments
-        if existCluster:
-            raise HTTPAPIError(status_code=417, error_detail="server has belong to a cluster,should be not create new cluster!",\
-                                notification = "direct", \
-                                log_message= "server has belong to a cluster,should be not create new cluster!",\
-                                response =  "the server has belonged to a cluster,should be not create new cluster!")
-        
-        requestParam = {}
-        args = self.request.arguments
-        logging.info("args :" + str(args))
-        for key in args:
-            value = args[key][0]
-            requestParam.setdefault(key,value)
-        cluster_name = requestParam['clusterName']
-        if len(cluster_name) >= 33:
-            raise HTTPAPIError(status_code=403, error_detail="Cluster name is too long, please use name whoes length is less than 33 characters",\
-                                notification = "direct", \
-                                log_message= "Cluster name is too long, please use name whoes length is less than 33 characters",\
-                                response =  "Cluster name is too long, please use name whoes length is less than 33 characters!")
-        clusterUUID = str(uuid.uuid1())
-        requestParam.setdefault("clusterUUID",clusterUUID)
-        
-        if requestParam != {}:
-            self.confOpers.setValue(options.cluster_property, requestParam)
-            self.confOpers.setValue(options.data_node_property, requestParam)
+        zkOper = ZkOpers()
+        try:
+            existCluster = zkOper.existCluster()
+            requestParam = {}
+            args = self.request.arguments
+            if existCluster:
+                raise HTTPAPIError(status_code=417, error_detail="server has belong to a cluster,should be not create new cluster!",\
+                                    notification = "direct", \
+                                    log_message= "server has belong to a cluster,should be not create new cluster!",\
+                                    response =  "the server has belonged to a cluster,should be not create new cluster!")
             
-        clusterProps = self.confOpers.getValue(options.cluster_property)
-        dataNodeProprs = self.confOpers.getValue(options.data_node_property)
-        zkoper_obj.writeClusterInfo(clusterUUID, clusterProps)
-        zkoper_obj.writeDataNodeInfo(clusterUUID, dataNodeProprs)
+            requestParam = {}
+            args = self.request.arguments
+            logging.info("args :" + str(args))
+            for key in args:
+                value = args[key][0]
+                requestParam.setdefault(key,value)
+            cluster_name = requestParam['clusterName']
+            if len(cluster_name) >= 33:
+                raise HTTPAPIError(status_code=403, error_detail="Cluster name is too long, please use name whoes length is less than 33 characters",\
+                                    notification = "direct", \
+                                    log_message= "Cluster name is too long, please use name whoes length is less than 33 characters",\
+                                    response =  "Cluster name is too long, please use name whoes length is less than 33 characters!")
+            clusterUUID = str(uuid.uuid1())
+            requestParam.setdefault("clusterUUID",clusterUUID)
+            
+            if requestParam != {}:
+                self.confOpers.setValue(options.cluster_property, requestParam)
+                self.confOpers.setValue(options.data_node_property, requestParam)
+                
+            clusterProps = self.confOpers.getValue(options.cluster_property)
+            dataNodeProprs = self.confOpers.getValue(options.data_node_property)
+            zkOper.writeClusterInfo(clusterUUID, clusterProps)
+            zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
+        finally:
+            zkOper.close()
         
-        dict = {}
+        result = {}
 #        dict.setdefault("code", '000000')
-        dict.setdefault("message", "creating cluster successful!")
-        self.finish(dict)
-        zkoper_obj.close()       
+        result.setdefault("message", "creating cluster successful!")
+        self.finish(result)
         
 # init mcluster
 # eg. curl --user root:root "http://localhost:8888/cluster/init?forceInit=false"
@@ -87,18 +88,12 @@ class InitMCluster(APIHandler):
         isLock = False
         lock = None
         
+        zkOper = ZkOpers()
         try:
-            zkoper_obj = ZkOpers()
-            existCluster = zkoper_obj.existCluster()
+            existCluster = zkOper.existCluster()
 
-            isLock,lock = zkoper_obj.lock_init_node_action()
-        except kazoo.exceptions.LockTimeout:
-            raise HTTPAPIError(status_code=578, error_detail="a server is initing, need to wait for the completion of init oper.",\
-                                notification = "direct", \
-                                log_message= "a server is initing, need to wait for the completion of init oper.",\
-                                response =  "the mysql cluster is initing,please wait for the completion of other machine join this cluster.")
+            isLock,lock = zkOper.lock_init_node_action()
         
-        try:
             dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp','dataNodeName'])
             data_node_ip = dataNodeProKeyValue['dataNodeIp']
             data_node_name = dataNodeProKeyValue['dataNodeName']
@@ -108,7 +103,7 @@ class InitMCluster(APIHandler):
             
             #check if cluster has odd data node
             if not forceInit:
-                dataNodeNumber = zkoper_obj.getDataNodeNumber(clusterUUID)
+                dataNodeNumber = zkOper.getDataNodeNumber(clusterUUID)
                 if dataNodeNumber/2 == 0:
                     raise HTTPAPIError(status_code=417, error_detail="the server number of cluster should be odd number",\
                                     notification = "direct", \
@@ -122,30 +117,26 @@ class InitMCluster(APIHandler):
             self.confOpers.setValue(options.mysql_cnf_file_name, requestParam)
             
             sst_user_password = self.invokeCommand.runBootstrapScript()
-            #self.zkOper = ZkOpers('127.0.0.1',2181)
-            #logging.info("init zk")
-            zkoper_obj.write_started_node(data_node_ip)
-                
+            zkOper.write_started_node(data_node_ip)
             
 #            mysql_cnf_text_test = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
             
             mysql_cnf_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-            zkoper_obj.writeMysqlCnf(clusterUUID, mysql_cnf_text, issue_mycnf_changed)
-        except Exception, e:
-            logging.error(e)
-            raise HTTPAPIError(status_code=500, error_detail="server_error",
-                               notification = "direct",
-                               log_message= "server_error",
-                               response =  "server_error")
-            
+            zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_text, issue_mycnf_changed)
+        except kazoo.exceptions.LockTimeout:
+            raise HTTPAPIError(status_code=578, error_detail="a server is initing, need to wait for the completion of init oper.",\
+                                notification = "direct", \
+                                log_message= "a server is initing, need to wait for the completion of init oper.",\
+                                response =  "the mysql cluster is initing,please wait for the completion of other machine join this cluster.")
         finally:
-            zkoper_obj.unLock_init_node_action(lock)
+            zkOper.unLock_init_node_action(lock)
+            zkOper.close()
         
-        dict = {}
+        result = {}
 #        dict.setdefault("code", '000000')
-        dict.setdefault("message", "init cluster successful!")
-        dict.setdefault("sst_user_password", sst_user_password)
-        self.finish(dict)
+        result.setdefault("message", "init cluster successful!")
+        result.setdefault("sst_user_password", sst_user_password)
+        self.finish(result)
         
 # sync mcluster
 # eg. curl "http://localhost:8888/cluster/sync"
@@ -154,18 +145,22 @@ class SyncMCluster(APIHandler):
     confOpers = ConfigFileOpers()
     
     def get(self):
-        zkoper_obj = ZkOpers()
-        existCluster = zkoper_obj.existCluster()
-
-        clusterUUID = zkoper_obj.getClusterUUID()
-        data, stat = zkoper_obj.retrieveClusterProp(clusterUUID)
-        self.confOpers.setValue(options.cluster_property, eval(data))
+        zkOper = ZkOpers()
         
-        dict = {}
- #       dict.setdefault("code", '000000')
-        dict.setdefault("message", "sync mcluster info to local successful!")
-        self.finish(dict)
-        zkoper_obj.close()
+        try:
+            existCluster = zkOper.existCluster()
+
+            clusterUUID = zkOper.getClusterUUID()
+            data, _ = zkOper.retrieveClusterProp(clusterUUID)
+            self.confOpers.setValue(options.cluster_property, eval(data))
+        finally:
+            zkOper.close()
+        
+        result = {}
+#       dict.setdefault("code", '000000')
+        result.setdefault("message", "sync mcluster info to local successful!")
+        self.finish(result)
+        
         
         
 # start mysqld service on every data node for entity cluster
@@ -194,11 +189,10 @@ class ClusterStart(APIHandler):
                                notification = "direct",
                                log_message= "lock by other thread",
                                response =  "current operation is using by other people, please wait a moment to try again!")
-        dict = {}
+        result = {}
  #       dict.setdefault("code", '000000')
-        dict.setdefault("message", "due to start cluster need a large of times, please wait to finished and email to you, when cluster have started!")
-        
-        self.finish(dict)
+        result.setdefault("message", "due to start cluster need a large of times, please wait to finished and email to you, when cluster have started!")
+        self.finish(result)
                 
 # cluster status. Return information about the cluster status.
 #eq curl --user root:root "http://localhost:8888/cluster/check/online_node"
@@ -207,8 +201,8 @@ class ClusterStatus(APIHandler):
     
     @asynchronous
     def get(self):
+        zkoper_obj = ZkOpers()
         try:
-            zkoper_obj = ZkOpers()
             existCluster = zkoper_obj.existCluster()
 
             cluster_status = zkoper_obj.retrieveClusterStatus()
@@ -218,13 +212,16 @@ class ClusterStatus(APIHandler):
                                 notification = "direct", \
                                 log_message= "lock by other thread",\
                                 response =  "current operation is using by other people, please wait a moment to try again!")
-        dict = {}
- #       dict.setdefault("code", '000000')
-        dict['message'] = cluster_status['_status']
-        dict['nodelist'] = cluster_started_nodes
+        finally:
+            zkoper_obj.close()
+            
+        result = {}
+#       dict.setdefault("code", '000000')
+        result['message'] = cluster_status['_status']
+        result['nodelist'] = cluster_started_nodes
         
-        self.finish(dict)
-        zkoper_obj.close()
+        self.finish(result)
+        
 
         
 # stop mysqld service on every data node for entity cluster
@@ -246,14 +243,17 @@ class ClusterStop(APIHandler):
         
         status_dict = {}
         status_dict['_status'] = 'stopping'
-        zkoper_obj = ZkOpers()
-        existCluster = zkoper_obj.existCluster()
+        zkOper = ZkOpers()
+        
+        try:
+            existCluster = zkOper.existCluster()
 
-        zkoper_obj.writeClusterStatus(status_dict)
+            zkOper.writeClusterStatus(status_dict)
+        finally:
+            zkOper.close()
         
-        dict = {}
+        result = {}
         #dict.setdefault("code", '000000')
-        dict.setdefault("message", "due to stop cluster need a large of times, please wait to finished and email to you, when cluster have stoped!")
-        
-        self.finish(dict)
+        result.setdefault("message", "due to stop cluster need a large of times, please wait to finished and email to you, when cluster have stoped!")
+        self.finish(result)
         

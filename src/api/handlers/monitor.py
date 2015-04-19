@@ -105,6 +105,8 @@ class DB_Info_Async_Handler:
         self.check_db_anti_itme.check(data_node_info_list)
         self.check_db_backup.check(data_node_info_list)
         self.check_db_user.check(data_node_info_list)
+        
+    
 # retrieve the status of mcluster
 # eg. curl "http://localhost:8888/mcluster/monitor"
 class Mcluster_Monitor_Sync(APIHandler):
@@ -115,20 +117,20 @@ class Mcluster_Monitor_Sync(APIHandler):
     
     db_handler = DB_Info_Sync_Handler()
     def get(self):
-        self.zkOper = ZkOpers()
+        zkOper = ZkOpers()
         try:
-            data_node_info_list = self.zkOper.retrieve_data_node_list()
+            data_node_info_list = zkOper.retrieve_data_node_list()
         finally:
-            self.zkOper.close()
+            zkOper.close()
+            
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)
         db_status_dict = self.db_handler.retrieve_info(data_node_info_list)
         
-        dict = {}
-        dict.setdefault("cluster",cluster_status_dict)
-        dict.setdefault("node",node_status_dict)
-        
-        self.finish(dict)
+        result = {}
+        result.setdefault("cluster",cluster_status_dict)
+        result.setdefault("node",node_status_dict)
+        self.finish(result)
         
 # retrieve the status of mcluster on background, these status will record into zk
 # eg. curl "http://localhost:8888/mcluster/monitor/async"        
@@ -141,16 +143,16 @@ class Mcluster_Monitor_Async(APIHandler):
 
     @tornado.web.asynchronous
     def get(self):
-        self.zkOper = ZkOpers()
+        zkOper = ZkOpers()
         try:
-            data_node_info_list = self.zkOper.retrieve_data_node_list()
+            data_node_info_list = zkOper.retrieve_data_node_list()
         finally:
-            self.zkOper.close()
+            zkOper.close()
+            
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)
         db_status_dict = self.db_handler.retrieve_info(data_node_info_list)
     
-        dict = {}
-        dict.setdefault("message", "finished")
-        
-        self.finish(dict)
+        result = {}
+        result.setdefault("message", "finished")
+        self.finish(result)

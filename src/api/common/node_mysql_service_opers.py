@@ -1,26 +1,14 @@
 #-*- coding: utf-8 -*-
-import base64
-import logging
-import threading
-import sched
 import time
-import urllib
-import tornado
 import sys
 
 from common.invokeCommand import InvokeCommand
 from tornado.options import options
-from tornado.httpclient import AsyncHTTPClient, HTTPClient
-from tornado.httpclient import HTTPRequest
-from tornado.gen import Wait, Callback, engine
 from common.dba_opers import DBAOpers
-from common.utils.mail import send_email
-from common.configFileOpers import ConfigFileOpers
-from abc import ABCMeta, abstractmethod
 from common.zkOpers import ZkOpers
 from common.abstract_mysql_service_opers import Abstract_Mysql_Service_Opers
-from common.utils.threading_exception_queue import Threading_Exception_Queue
 from common.abstract_mysql_service_action_thread import Abstract_Mysql_Service_Action_Thread
+from common.utils.exceptions import CommonException
 
 '''
 Created on 2013-7-21
@@ -43,9 +31,9 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         uuid = self.__find_special_value(result, "uuid:", 37)
         seqno = self.__find_special_value(result, "seqno:", 65535)
         
-        dict = {}
-        dict.setdefault("uuid", uuid)
-        dict.setdefault("seqno", seqno)        
+        result = {}
+        result.setdefault("uuid", uuid)
+        result.setdefault("seqno", seqno)
         
         return dict
     
@@ -58,22 +46,38 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         
         
     def start(self, isNewCluster):
-
-        self.zkOper = ZkOpers()
-        isLock,lock = self.zkOper.lock_node_start_stop_action()
+        zkOper = ZkOpers()
         
-        node_start_action = Node_start_action(isNewCluster, lock)
-        node_start_action.start()
-        self.zkOper.close() 
+        '''
+        @todo: check only pass lock to below action and close the zkOper object, real action if can release the lock
+        '''
+        try:
+            isLock,lock = zkOper.lock_node_start_stop_action()
+            
+            if not isLock:
+                raise CommonException("When start node, can't retrieve the start atcion lock!")
+                
+            node_start_action = Node_start_action(isNewCluster, lock)
+            node_start_action.start()
+        finally:
+            zkOper.close()
+         
     def stop(self):
+        zkOper = ZkOpers()
         
-        isLock,lock = self.zkOper.lock_node_start_stop_action()
+        try:
+            isLock,lock = zkOper.lock_node_start_stop_action()
+            
+            if not isLock:
+                raise CommonException("When stop node, can't retrieve the stop action lock!")
+            
+            # Start a thread to run the events
+            node_stop_action = Node_stop_action(lock)
+            node_stop_action.start()
+        finally:
+            zkOper.close()
         
-        # Start a thread to run the events
-        node_stop_action = Node_stop_action(lock)
-        node_stop_action.start()
-    
-        self.zkOper.close() 
+        
 class Node_start_action(Abstract_Mysql_Service_Action_Thread):
     lock = None
     isNewCluster = False
@@ -132,10 +136,13 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
             time.sleep(2)
 
         
-        if finished_flag:   
-            zkoper_obj = ZkOpers()
-            zkoper_obj.write_started_node(data_node_ip)
-            zkoper_obj.close()
+        if finished_flag:
+            zkoper = ZkOpers()
+            try:
+                zkoper.write_started_node(data_node_ip)
+            finally:
+                zkoper.close()
+            
         return finished_flag
             
         
@@ -158,14 +165,14 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
         dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = dataNodeProKeyValue['dataNodeIp']
         
+        zkoper = ZkOpers()
         try:
             result = self.invokeCommand.mysql_service_stop()
             finished_flag = self._check_stop_status(data_node_ip)
         finally:
-
-            zkoper_obj = ZkOpers()
-            zkoper_obj.unLock_node_start_stop_action(lock)
-            zkoper_obj.close()
+            zkoper.unLock_node_start_stop_action(lock)
+            zkoper.close()
+            
         if finished_flag:    
             self._send_email(data_node_ip, " mysql service stop operation finished")
         
@@ -187,8 +194,12 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
             time.sleep(2)
         
         if finished_flag:
-            zkoper_obj = ZkOpers()
-            self.zkOper.remove_started_node(data_node_ip)
-            zkoper_obj.close()
+            zkOper = ZkOpers()
+            try:
+                zkOper.remove_started_node(data_node_ip)
+            finally:
+                zkOper.close()
+            
+            
         return finished_flag
             

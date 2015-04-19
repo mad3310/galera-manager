@@ -2,10 +2,8 @@
 #-*- coding: utf-8 -*-
 import os.path
 import logging
-# import logging
 import logging.config
 from tornado.options import options
-from common.appdefine import mclusterManagerDefine
 
 class debug_log():
     

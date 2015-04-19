@@ -5,7 +5,7 @@ from common.zkOpers import ZkOpers
 from tornado.gen import Callback, Wait
 from tornado.options import options
 from abc import abstractmethod
-from common.helper import check_leader, is_monitoring, get_localhost_ip, get_zk_address
+from common.helper import check_leader, is_monitoring, get_localhost_ip
 
 import logging
 import tornado.httpclient
@@ -15,8 +15,6 @@ import re
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class Check_Status_Base(object):
-    
-#    zkOper = ZkOpers('127.0.0.1',2181)
     
     def __init__(self):
         self.zkOper = None
@@ -39,26 +37,33 @@ class Check_Status_Base(object):
         leader_flag = check_leader()
         if leader_flag == False:
             return
-        self.zkOper = ZkOpers()
+        
+        
         pre_stat = self.zkOper.retrieveClusterStatus()
         ''' The following logic expression means 
             1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.
             2. else the pre_stat is not {}, then it must have value in pre_stat dictionary and judge whether it is right or not.
         '''
         if pre_stat.has_key('_status') and pre_stat['_status'] != 'initializing' or pre_stat == {}:
-            node_num = len(data_node_info_list)
-            online_node_list = self.zkOper.retrieve_started_nodes()
-            dict = {}
-        
-            online_num = len(online_node_list)
-            if node_num == online_num:
-                dict['_status'] = 'running'   
-            elif node_num / 2 + 1 <= online_num < node_num:
-                dict['_status'] = 'sub-health'
-            else :
-                dict['_status'] = 'failed' 
-            logging.info(str(pre_stat) + " change to " + dict['_status'])
-            self.zkOper.writeClusterStatus(dict) 
+            zkOper = ZkOpers()
+            
+            try:
+                node_num = len(data_node_info_list)
+                online_node_list = zkOper.retrieve_started_nodes()
+                result = {}
+            
+                online_num = len(online_node_list)
+                if node_num == online_num:
+                    result['_status'] = 'running'   
+                elif node_num / 2 + 1 <= online_num < node_num:
+                    result['_status'] = 'sub-health'
+                else :
+                    result['_status'] = 'failed' 
+                logging.info(str(pre_stat) + " change to " + dict['_status'])
+                zkOper.writeClusterStatus(result) 
+            finally:
+                zkOper.close()
+            
             
         success_count = 0
         failed_count = 0
@@ -125,10 +130,12 @@ class Check_Status_Base(object):
         
         logging.info("monitor_type:" + monitor_type + " monitor_key:" + 
                       monitor_key + " monitor_value:" + str(result_dict))
+        
+        zkOper = ZkOpers()
         try: 
-            self.zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
+            zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
         finally:
-            self.zkOper.close()
+            zkOper.close()
         logging.info("close zk client successfully")
 
 class Check_Cluster_Available(Check_Status_Base):
@@ -250,16 +257,19 @@ class Check_DB_Anti_Item(Check_Status_Base):
         
         anti_item_count = 0
         failed_count = 0
-        Path_Value = {}
+        _path_value = {}
         logging.info("existed_db_anti_item  here")
-        self.zkOper = ZkOpers()
-        Path_Value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
-        if Path_Value != {}:
-#             str_msg = Path_Value['message']
-#             r_list = str_msg[::-1].split('=')
-#             r_value = r_list[0]
-#             value = int(r_value[::-1])
-            failed_count = int(re.findall(r'failed count=(\d)', Path_Value['message'])[0])
+        
+        
+        zkOper = ZkOpers()
+        try:
+            _path_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
+        finally:
+            zkOper.close()
+        
+        if _path_value != {}:
+            failed_count = int(re.findall(r'failed count=(\d)', _path_value['message'])[0])
+            
         if conn == None:
             failed_count += 1
             if failed_count > 4:
@@ -305,6 +315,8 @@ class Check_DB_Anti_Item(Check_Status_Base):
                                                     failed_count, \
                                                     alarm_level, error_record, monitor_type, \
                                                     monitor_key)
+        
+        
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if total_count == 0:
             return options.alarm_nothing
@@ -387,8 +399,12 @@ class Check_Node_Active(Check_Status_Base):
     
     @tornado.gen.engine
     def check(self, data_node_info_list):
-        self.zkOper = ZkOpers()
-        started_nodes_list = self.zkOper.retrieve_started_nodes()
+        zkOper = ZkOpers()
+        try:
+            started_nodes_list = zkOper.retrieve_started_nodes()
+        finally:
+            zkOper.close()
+        
         
         logging.info("check_node_active started_nodes_list %s" %(started_nodes_list))
         error_record = {}
@@ -463,9 +479,9 @@ class Check_Node_Log_Error(Check_Status_Base):
         
  #eq curl  "http://localhost:8888/backup/inner/check" backup data by full dose.
 class Check_Backup_Status(Check_Status_Base):
-
+    
     def __init__(self):
-       super(Check_Backup_Status, self).__init__()
+        super(Check_Backup_Status, self).__init__()
     @tornado.gen.engine  
     def check(self, data_node_info_list):
         url_post = "/backup/inner/check"
@@ -475,9 +491,9 @@ class Check_Backup_Status(Check_Status_Base):
         
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:
-           return options.alarm_nothing
+            return options.alarm_nothing
         elif failed_count == 1:
-           return options.alarm_general
+            return options.alarm_general
         else:
             return options.alarm_serious
 
@@ -485,7 +501,7 @@ class Check_Database_User(Check_Status_Base):
     dba_opers = DBAOpers()
    
     def __init__(self):
-       super(Check_Database_User, self).__init__()
+        super(Check_Database_User, self).__init__()
 
     @tornado.gen.engine
     def check(self, data_node_info_list):
@@ -519,7 +535,6 @@ class Check_Database_User(Check_Status_Base):
         self.zkOper = ZkOpers()
 
         db_list = self.zkOper.retrieve_db_list()
-        #logging.info("db_list: " + str(db_list)) 
         
         user_zk_src_list = []
         for db_name in db_list:

@@ -44,9 +44,6 @@ class DBOnMCluster(APIHandler):
         max_connections_per_hour = self.get_argument("max_connections_per_hour", 0)
         max_user_connections = self.get_argument("max_user_connections", 200)
         userPassword = get_random_password()
-        dict = {}
-        dict = self.request.arguments
-        logging.info(str(dict))
         conn = self.dba_opers.get_mysql_connection()
         
         try:
@@ -63,9 +60,9 @@ class DBOnMCluster(APIHandler):
         
         #check if exist cluster
         dbProps = {'db_name':dbName}
-        self.zkOper = ZkOpers()
+        zkOper = ZkOpers()
         try: 
-            clusterUUID = self.zkOper.getClusterUUID()
+            clusterUUID = zkOper.getClusterUUID()
             self.zkOper.write_db_info(clusterUUID, dbName, dbProps)
         
             userProps = {'role':'manager',
@@ -73,14 +70,15 @@ class DBOnMCluster(APIHandler):
                          'max_updates_per_hour':max_updates_per_hour,
                          'max_connections_per_hour':max_connections_per_hour,
                          'max_user_connections':max_user_connections}
-            self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
+            zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
         finally:
-            self.zkOper.close()   
-        dict = {}
-        dict.setdefault("message", "database create successful")
-        dict.setdefault("manager_user_name", userName)
-        dict.setdefault("manager_user_password", userPassword)
-        self.finish(dict)
+            zkOper.close()
+            
+        result = {}
+        result.setdefault("message", "database create successful")
+        result.setdefault("manager_user_name", userName)
+        result.setdefault("manager_user_password", userPassword)
+        self.finish(result)
         
         
         
@@ -91,10 +89,10 @@ class DBOnMCluster(APIHandler):
                                 log_message= "when remove the db, no have database name",\
                                 response =  "please provide database name you want to removed!")
         
-        self.zkOper = ZkOpers()
+        zkOper = ZkOpers()
         try:
-            clusterUUID = self.zkOper.getClusterUUID()
-            user_ipAddress_map = self.zkOper.retrieve_db_user_prop(clusterUUID, dbName)
+            clusterUUID = zkOper.getClusterUUID()
+            user_ipAddress_map = zkOper.retrieve_db_user_prop(clusterUUID, dbName)
         
             conn = self.dba_opers.get_mysql_connection()
         
@@ -113,14 +111,15 @@ class DBOnMCluster(APIHandler):
                     self.zkOper.remove_db_user(clusterUUID, dbName, user_name, ip_address)
                     user_name_list += user_name + ","
                 
-            self.zkOper.remove_db(clusterUUID, dbName)
+            zkOper.remove_db(clusterUUID, dbName)
         finally:
-            self.zkOper.close()
-        dict = {}
-        dict.setdefault("message", "database remove successful!")
-        dict.setdefault("removed_db_name", dbName)
-        dict.setdefault("removed_user_with_db_name", user_name_list)
-        self.finish(dict)
+            zkOper.close()
+            
+        result = {}
+        result.setdefault("message", "database remove successful!")
+        result.setdefault("removed_db_name", dbName)
+        result.setdefault("removed_user_with_db_name", user_name_list)
+        self.finish(result)
 
 # After mcluster shut down, manager want to recover the cluster, then need to retrieve the node's uuid and seqno. 
 # Though this api, user can get it.
@@ -130,8 +129,8 @@ class Inner_DB_Retrieve_Recover_UUID_Seqno(APIHandler):
     node_mysql_service_opers = Node_Mysql_Service_Opers()
     
     def get(self):
-        dict = self.node_mysql_service_opers.retrieve_recover_position()
-        self.finish(dict)
+        result = self.node_mysql_service_opers.retrieve_recover_position()
+        self.finish(result)
 
         
 # when mcluster db instance's current connections exceed to 70 percent of max connections,
@@ -215,35 +214,33 @@ class Inner_DB_Check_WR(APIHandler):
  
 #     
     def get(self):
-        zkoper_obj = ZkOpers()
-
-  
-        dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
-        data_node_ip = dataNodeProKeyValue['dataNodeIp']
-        self.logger.info('data_node_ip is :' + str(data_node_ip))
-        started_ip_list = zkoper_obj.retrieve_started_nodes()
-        self.logger.info('started_ip_list is: ' + str(started_ip_list))
-        identifier = socket.gethostname()
-        
-        '''
-        @todo: review the comment code for arbitrator way
-        '''
-#         ret_dict = self.confOpers.getValue(options.data_node_property, ['dataNodeName','dataNodeIp'])
-#         node_name = ret_dict['dataNodeName']
-#         obj = re.search("-n-2", node_name)
-#         if obj != None:
-#              self.finish("true") 
-#              return
-        
+        zkOper = ZkOpers()
         conn = self.dba_opers.get_mysql_connection()
-        try:       
+        try:
+            dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
+            data_node_ip = dataNodeProKeyValue['dataNodeIp']
+            self.logger.info('data_node_ip is :' + str(data_node_ip))
+            started_ip_list = zkOper.retrieve_started_nodes()
+            self.logger.info('started_ip_list is: ' + str(started_ip_list))
+            identifier = socket.gethostname()
+        
+            '''
+            @todo: review the comment code for arbitrator way
+            '''
+#           ret_dict = self.confOpers.getValue(options.data_node_property, ['dataNodeName','dataNodeIp'])
+#           node_name = ret_dict['dataNodeName']
+#           obj = re.search("-n-2", node_name)
+#           if obj != None:
+#               self.finish("true") 
+#               return
+
             if conn is None:
                 if data_node_ip in started_ip_list:
-                    zkoper_obj.remove_started_node(data_node_ip)
+                    zkOper.remove_started_node(data_node_ip)
                     self.invokeCommand.run_check_shell(options.kill_innotop)
                 self.finish("false")
                 return
-            zkoper_obj.write_started_node(data_node_ip)
+            zkOper.write_started_node(data_node_ip)
 
             if not is_monitoring(get_localhost_ip()):
                 self.finish("true")
@@ -283,24 +280,7 @@ class Inner_DB_Check_WR(APIHandler):
             self.logger.info("time is :" + str_time)
             self.dba_opers.insert_record_time(conn, str_time , identifier ,tbName , dbName)
             self.logger.info('Insert time %s into table %s ' % (str_time, tbName))
-          
-
-        except Exception,e:
-            self.logger.error(e)
-            self.finish("false")
-            return
-        finally:
-            conn.close()
-               
-        return_flag = "true"
-        try: 
-            conn = self.dba_opers.get_mysql_connection()
-        except Exception, e:
-            return_flag = 'false'
-            self.logger.error(e)
-            self.finish(return_flag)
-            return
-        try: 
+            
             record_time = self.dba_opers.query_record_time(conn ,identifier ,tbName , dbName)
             record_stamp_time = time.mktime(time.strptime(record_time, TIME_FORMAT))
             n_stamp_time = time.time()
@@ -314,15 +294,17 @@ class Inner_DB_Check_WR(APIHandler):
                 raise HTTPAPIError(status_code=500, error_detail= error_message,\
                             notification = "direct", \
                             log_message= error_message,\
-                            response = error_message)             
-
-        except Exception, e:
+                            response = error_message)
+        except Exception,e:
+            return_flag = 'false'
             self.logger.error(e)
-            return_flag = "false"
-        finally: 
+            self.finish(return_flag)
+            return
+        finally:
             conn.close()
-            zkoper_obj.close()
-        self.finish(return_flag) 
+            zkOper.close()
+               
+        self.finish(return_flag)
         
 
 # retrieve the database stat with innotop

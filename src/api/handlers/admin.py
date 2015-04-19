@@ -21,62 +21,49 @@ class AdminConf(APIHandler):
     def post(self):
         requestParam = {}
         args = self.request.arguments
-        logging.info("args:" + str(args))
-        try:
-            for key in args:
-                requestParam.setdefault(key,args[key][0])
+        
+        for key in args:
+            requestParam.setdefault(key,args[key][0])
+        
+        if requestParam != {}:
+            self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
             
-            if requestParam != {}:
-                self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
-        except Exception,e:
-            logging.error(e)
-            error_message="server error in cluster conf"
-            raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                                    notification = "direct", \
-                                    log_message= error_message,\
-                                    response =  error_message)
-        dict = {}
+        result = {}
 #        dict.setdefault("code", '000000')
-        dict.setdefault("message", "admin conf successful!")
-        self.finish(dict)
+        result.setdefault("message", "admin conf successful!")
+        self.finish(result)
+        
+        
         
 # admin reset
 # eg. curl --user root:root "http://localhost:8888/admin/reset"
 class AdminReset(APIHandler):
     
     def get(self):
-        try:
-            template_path=os.path.join(options.base_dir, "templates")
-            config_path = os.path.join(options.base_dir, "config")
+        template_path=os.path.join(options.base_dir, "templates")
+        config_path = os.path.join(options.base_dir, "config")
+    
+        clusterPropTemFileName = os.path.join(template_path,"cluster.property.template")
+        dataNodePropTemFileName = os.path.join(template_path,"dataNode.property.template")
+        mclusterManagerCnfTemFileName = os.path.join(template_path,"mclusterManager.cnf.template")
+    
+        clusterPropFileName = os.path.join(config_path,"cluster.property")
+        dataNodePropFileName = os.path.join(config_path,"dataNode.property")
+        mclusterManagerCnfFileName = os.path.join(config_path,"mclusterManager.cnf")
+        fileNameList = [clusterPropFileName,dataNodePropFileName,mclusterManagerCnfFileName]
+    
+        for fileName in fileNameList:
+            if os.path.exists(fileName):
+                os.chmod(fileName, stat.S_IWRITE)
+                os.remove(fileName)
         
-            clusterPropTemFileName = os.path.join(template_path,"cluster.property.template")
-            dataNodePropTemFileName = os.path.join(template_path,"dataNode.property.template")
-            mclusterManagerCnfTemFileName = os.path.join(template_path,"mclusterManager.cnf.template")
-        
-            clusterPropFileName = os.path.join(config_path,"cluster.property")
-            dataNodePropFileName = os.path.join(config_path,"dataNode.property")
-            mclusterManagerCnfFileName = os.path.join(config_path,"mclusterManager.cnf")
-            fileNameList = [clusterPropFileName,dataNodePropFileName,mclusterManagerCnfFileName]
-        
-            for fileName in fileNameList:
-                if os.path.exists(fileName):
-                    os.chmod(fileName, stat.S_IWRITE)
-                    os.remove(fileName)
-            
-            shutil.copyfile(clusterPropTemFileName, clusterPropFileName)
-            shutil.copyfile(dataNodePropTemFileName, dataNodePropFileName)
-            shutil.copyfile(mclusterManagerCnfTemFileName, mclusterManagerCnfFileName)
+        shutil.copyfile(clusterPropTemFileName, clusterPropFileName)
+        shutil.copyfile(dataNodePropTemFileName, dataNodePropFileName)
+        shutil.copyfile(mclusterManagerCnfTemFileName, mclusterManagerCnfFileName)
    
-        except Exception,e:
-            logging.error(e)
-            error_message="server error in cluster reset"
-            raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                                    notification = "direct", \
-                                    log_message= error_message,\
-                                    response =  error_message)
-        dict = {}
-        dict.setdefault("message", "admin reset successful!")
-        self.finish(dict)
+        result = {}
+        result.setdefault("message", "admin reset successful!")
+        self.finish(result)
         
         
         

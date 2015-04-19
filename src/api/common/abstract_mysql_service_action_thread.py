@@ -8,9 +8,8 @@ from common.utils.mail import send_email
 from common.configFileOpers import ConfigFileOpers
 from common.invokeCommand import InvokeCommand
 from tornado.options import options
+
 class Abstract_Mysql_Service_Action_Thread(threading.Thread):
-    
-#    zkOper = ZkOpers('127.0.0.1',2181)
     
     threading_exception_queue = Threading_Exception_Queue()
     
@@ -20,24 +19,26 @@ class Abstract_Mysql_Service_Action_Thread(threading.Thread):
     
     def __init__(self):
         threading.Thread.__init__(self)
-        self.zkOper = ZkOpers()
+        
     #duplicate Cluster_stop_action._check_stop_status
     def _check_stop_status(self, data_node_ip):
+        zkOper = ZkOpers()
         while True:
             isLock = False
             try:
-                isLock,lock = self.zkOper.lock_node_start_stop_action()
+                isLock,lock = zkOper.lock_node_start_stop_action()
                 break
             except:
                 continue
             finally:
                 if isLock:
-                    self.zkOper.unLock_node_start_stop_action(lock)
-                    self.zkOper.close()
+                    zkOper.unLock_node_start_stop_action(lock)
+                    zkOper.close()
+                    
         stop_finished = False
         while not stop_finished:
             
-            started_nodes = self.zkOper.retrieve_started_nodes()
+            started_nodes = zkOper.retrieve_started_nodes()
             
             stop_finished = True
             for i in range(len(started_nodes)):

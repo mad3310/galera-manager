@@ -6,6 +6,7 @@ Created on 2013-7-21
 @author: asus
 '''
 import logging
+
 from base import APIHandler
 from common.tornado_basic_auth import require_basic_auth
 from tornado.options import options
@@ -13,6 +14,8 @@ from common.dba_opers import DBAOpers
 from common.configFileOpers import ConfigFileOpers
 from common.utils import get_random_password
 from common.utils.exceptions import HTTPAPIError
+from common.zkOpers import ZkOpers
+
 # create manager user in mcluster
 # eg. curl --user root:root -d "role=manager&dbName=managerTest&userName=zbz" "http://localhost:8888/dbUser"
 
@@ -49,8 +52,6 @@ class DBUser(APIHandler):
         max_updates_per_hour = self.get_argument("max_updates_per_hour", 0)
         max_connections_per_hour = self.get_argument("max_connections_per_hour", 0)
         max_user_connections = self.get_argument("max_user_connections", 200)
-        dict = {}
-        dict = self.request.arguments
         if dict.has_key("user_password"):
             del dict["user_password"]
         logging.info(str(dict))
@@ -85,69 +86,70 @@ class DBUser(APIHandler):
         existed_flag =  "true"
         
         conn = self.dba_opers.get_mysql_connection()
-        existed_flag = self.dba_opers.check_if_existed_database(conn, dbName)
-        if existed_flag == "false": 
-            raise HTTPAPIError(status_code = 417, error_detail = dbName + \
-                             " database doesn't exist", notification = "direct", \
-                             log_message = "database " + dbName + " doesn't exist", \
-                             response = "Please create database " + dbName + " first")
-
-        self.dba_opers.create_user(conn, userName, user_password, ip_address)
-        
-        if 'manager' ==  role:
-            self.dba_opers.grant_manager_privileges(conn, userName, user_password, dbName, ip_address, 
-                                               max_queries_per_hour, 
-                                               max_updates_per_hour, 
-                                               max_connections_per_hour, 
-                                               max_user_connections)
-        elif 'wr' == role:
-            self.dba_opers.grant_wr_privileges(conn, userName, user_password, dbName, ip_address, 
-                                               max_queries_per_hour, 
-                                               max_updates_per_hour, 
-                                               max_connections_per_hour, 
-                                               max_user_connections)
-            
-        elif 'ro' == role:
-            max_updates_per_hour = 1
-            self.dba_opers.grant_readonly_privileges(conn, userName, user_password, dbName, ip_address, 
-                                               max_queries_per_hour, 
-                                               max_connections_per_hour, 
-                                               max_user_connections)
-            
-        else:
-            #use try catch to close the conn
-            conn.close()
-            
-            raise HTTPAPIError(status_code=417, error_detail="when create db's user, the role type is un-valid, the error type is " + role,\
-                                notification = "direct", \
-                                log_message= "when create db's user, the role type is un-valid, the error type is " + role,\
-                                response =  "please valid the specified role, the type is [manager,ro,wr]")
-        
-        self.dba_opers.flush_privileges(conn)
-        
-        #use try catch to close the conn
-        conn.close()
-
-        self.zkOper = ZkOpers()
         try:
-        #check if exist cluster
-            clusterUUID = self.zkOper.getClusterUUID()
+            existed_flag = self.dba_opers.check_if_existed_database(conn, dbName)
+            if existed_flag == "false": 
+                raise HTTPAPIError(status_code = 417, error_detail = dbName + \
+                                 " database doesn't exist", notification = "direct", \
+                                 log_message = "database " + dbName + " doesn't exist", \
+                                 response = "Please create database " + dbName + " first")
+    
+            self.dba_opers.create_user(conn, userName, user_password, ip_address)
+            
+            if 'manager' ==  role:
+                self.dba_opers.grant_manager_privileges(conn, userName, user_password, dbName, ip_address, 
+                                                   max_queries_per_hour, 
+                                                   max_updates_per_hour, 
+                                                   max_connections_per_hour, 
+                                                   max_user_connections)
+            elif 'wr' == role:
+                self.dba_opers.grant_wr_privileges(conn, userName, user_password, dbName, ip_address, 
+                                                   max_queries_per_hour, 
+                                                   max_updates_per_hour, 
+                                                   max_connections_per_hour, 
+                                                   max_user_connections)
+                
+            elif 'ro' == role:
+                max_updates_per_hour = 1
+                self.dba_opers.grant_readonly_privileges(conn, userName, user_password, dbName, ip_address, 
+                                                   max_queries_per_hour, 
+                                                   max_connections_per_hour, 
+                                                   max_user_connections)
+                
+            else:
+                #use try catch to close the conn
+                conn.close()
+                
+                raise HTTPAPIError(status_code=417, error_detail="when create db's user, the role type is un-valid, the error type is " + role,\
+                                    notification = "direct", \
+                                    log_message= "when create db's user, the role type is un-valid, the error type is " + role,\
+                                    response =  "please valid the specified role, the type is [manager,ro,wr]")
+            
+            self.dba_opers.flush_privileges(conn)
+        finally:
+            conn.close()
+
+        zkOper = ZkOpers()
+        try:
+            #check if exist cluster
+            clusterUUID = zkOper.getClusterUUID()
         
             userProps = {'role':role,
                          'max_queries_per_hour':max_queries_per_hour,
                          'max_updates_per_hour':max_updates_per_hour,
                          'max_connections_per_hour':max_connections_per_hour,
                          'max_user_connections':max_user_connections}
-            self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
+            zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
         finally:
-            self.zkOper.close()
-        dict = {}
+            zkOper.close()
+            
+        result = {}
 #        dict.setdefault("code", '000000')
-        dict.setdefault("message", "user has been created successful!")
-        dict.setdefault("user_role", role)
-        dict.setdefault("user_name", userName)
-        dict.setdefault("user_password", user_password)
-        self.finish(dict)
+        result.setdefault("message", "user has been created successful!")
+        result.setdefault("user_role", role)
+        result.setdefault("user_name", userName)
+        result.setdefault("user_password", user_password)
+        self.finish(result)
     
     
     def put(self):
@@ -182,61 +184,61 @@ class DBUser(APIHandler):
                                 notification = "direct", \
                                 log_message= "when modify db's user, no specify any modified parameter",\
                                 response =  "please specify any one or all of following parameter:[max_queries_per_hour,max_updates_per_hour,max_connections_per_hour,max_user_connections]")
-        self.zkOper = ZkOpers()
-        clusterUUID = self.zkOper.getClusterUUID()
+        zkOper = ZkOpers()
+        conn = self.dba_opers.get_mysql_connection()
+        try:
+            clusterUUID = zkOper.getClusterUUID()
         
-        user_limit_map = self.zkOper.retrieve_user_limit_props(clusterUUID, dbName, userName, ip_address)
-        
-        if user_limit_map == {}:
-            raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no found specified user!",\
+            user_limit_map = zkOper.retrieve_user_limit_props(clusterUUID, dbName, userName, ip_address)
+            
+            if user_limit_map == {}:
+                raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no found specified user!",\
                                 notification = "direct", \
                                 log_message = "when modify db's user, no found specified user!",\
                                 response =  "please check the valid of the specified user, because the system no found the user!")
             
-        if max_queries_per_hour is None:
-            max_queries_per_hour = user_limit_map.get('max_queries_per_hour')
+            if max_queries_per_hour is None:
+                max_queries_per_hour = user_limit_map.get('max_queries_per_hour')
+                
+            if max_updates_per_hour is None:
+                max_updates_per_hour = user_limit_map.get('max_updates_per_hour')
+                
+            if max_connections_per_hour is None:
+                max_connections_per_hour = user_limit_map.get('max_connections_per_hour')
+                
+            if max_user_connections is None:
+                max_user_connections = user_limit_map.get('max_user_connections')
             
-        if max_updates_per_hour is None:
-            max_updates_per_hour = user_limit_map.get('max_updates_per_hour')
+            self.dba_opers.grant_resource_limit(conn, userName, dbName, ip_address, 
+                                               max_queries_per_hour, 
+                                               max_updates_per_hour, 
+                                               max_connections_per_hour, 
+                                               max_user_connections)
             
-        if max_connections_per_hour is None:
-            max_connections_per_hour = user_limit_map.get('max_connections_per_hour')
+            self.dba_opers.flush_privileges(conn)
             
-        if max_user_connections is None:
-            max_user_connections = user_limit_map.get('max_user_connections')
+            userProps = {'role':user_limit_map.get('role'),
+                         'max_queries_per_hour':max_queries_per_hour,
+                         'max_updates_per_hour':max_updates_per_hour,
+                         'max_connections_per_hour':max_connections_per_hour,
+                         'max_user_connections':max_user_connections}
+            zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
+            
+        finally:
+            conn.close()
+            self.zkOper.close()
         
-        conn = self.dba_opers.get_mysql_connection()
         
-        self.dba_opers.grant_resource_limit(conn, userName, dbName, ip_address, 
-                                           max_queries_per_hour, 
-                                           max_updates_per_hour, 
-                                           max_connections_per_hour, 
-                                           max_user_connections)
+        result = {}
+        result.setdefault("message", "modify the user's resource limit successfully!")
+        result.setdefault("db_name", dbName)
+        result.setdefault("user_name", userName)
+        self.finish(result)
         
-        self.dba_opers.flush_privileges(conn)
-        
-        #use try catch to close the conn
-        conn.close()
-        
-        userProps = {'role':user_limit_map.get('role'),
-                     'max_queries_per_hour':max_queries_per_hour,
-                     'max_updates_per_hour':max_updates_per_hour,
-                     'max_connections_per_hour':max_connections_per_hour,
-                     'max_user_connections':max_user_connections}
-        self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
-        
-        dict = {}
-        dict.setdefault("message", "modify the user's resource limit successfully!")
-        dict.setdefault("db_name", dbName)
-        dict.setdefault("user_name", userName)
-        self.finish(dict)
-        self.zkOper.close()
         
         
         
     def delete(self, dbName, userName, ipAddress):
-        self.zkOper = ZkOpers()
-
         if not dbName:
             raise HTTPAPIError(status_code=417, error_detail="when remove db's user, no specify the database name",\
                                 notification = "direct", \
@@ -256,17 +258,24 @@ class DBUser(APIHandler):
                                 response =  "please specify the ip address.")
         
         conn = self.dba_opers.get_mysql_connection()
-        self.dba_opers.delete_user(conn, userName, ipAddress)
-        #use try catch to close the conn
-        conn.close()
         
-        #check if exist cluster
-        clusterUUID = self.zkOper.getClusterUUID()
-        self.zkOper.remove_db_user(clusterUUID, dbName, userName, ipAddress)
+        try:
+            self.dba_opers.delete_user(conn, userName, ipAddress)
+        finally:
+            conn.close()
         
-        dict = {}
-        dict.setdefault("message", "removed user successfully!")
-        dict.setdefault("user_name", userName)
-        dict.setdefault("ip_address", ipAddress)
-        self.finish(dict)
-        self.zkOper.close()
+        zkOper = ZkOpers()
+        try:
+            #check if exist cluster
+            clusterUUID = zkOper.getClusterUUID()
+            zkOper.remove_db_user(clusterUUID, dbName, userName, ipAddress)
+        finally:
+            zkOper.close()
+        
+        
+        result = {}
+        result.setdefault("message", "removed user successfully!")
+        result.setdefault("user_name", userName)
+        result.setdefault("ip_address", ipAddress)
+        self.finish(result)
+        

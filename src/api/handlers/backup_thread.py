@@ -3,7 +3,6 @@
 import threading
 import logging
 import datetime
-from datetime import date
 
 from tornado.options import options
 from common.invokeCommand import InvokeCommand

@@ -9,6 +9,7 @@ from tornado.httpclient import HTTPError
 from common.invokeCommand import InvokeCommand
 
 from common.configFileOpers import ConfigFileOpers
+
 confOpers = ConfigFileOpers()
 
 def issue_mycnf_changed(self):
@@ -17,8 +18,12 @@ def issue_mycnf_changed(self):
     
     zkOper = ZkOpers()
     
-    clusterUUID = zkOper.getClusterUUID()
-    sourceText,stat = zkOper.retrieveMysqlProp(clusterUUID, issue_mycnf_changed)
+    try:
+        clusterUUID = zkOper.getClusterUUID()
+        sourceText,_ = zkOper.retrieveMysqlProp(clusterUUID, issue_mycnf_changed)
+    finally:
+        zkOper.close()
+    
     keyValueDict = getDictFromText(sourceText, keyList)
     confOpers.setValue(options.mysql_cnf_file_name, keyValueDict)
     
@@ -98,7 +103,7 @@ def check_leader():
     invokeCommand = InvokeCommand()
     zk_address, zk_port = get_zk_address()
     cmd = "echo stat |nc %s %s| grep Mode" %(zk_address, zk_port)
-    ret_str, ret_val = invokeCommand._runSysCmd(cmd)
+    ret_str, _ = invokeCommand._runSysCmd(cmd)
     invokeCommand = None
     if ret_str.find('leader') == -1:
         return False
@@ -107,7 +112,6 @@ def check_leader():
 def is_monitoring(host_ip=None):
     zkOper = ZkOpers()
     try:
-  
         stat = zkOper.retrieveClusterStatus()
         logging.info("is_monitoring: stat: %s, host_ip: %s" % (str(stat), str(host_ip)))
         if not stat or '_status' not in stat:
@@ -124,12 +128,12 @@ def is_monitoring(host_ip=None):
 def get_localhost_ip():
     cmd="""ifconfig $(route -n|grep '^0.0.0.0'|awk '{print $NF}')|awk '/inet addr/,gsub("addr:",""){print $2}'"""
     invokeCommand = InvokeCommand()
-    ret_str, ret_val = invokeCommand._runSysCmd(cmd)
+    ret_str, _ = invokeCommand._runSysCmd(cmd)
     invokeCommand = None
     return ret_str
 
 def get_zk_address():
-     ret_dict = confOpers.getValue(options.zk_address, ['zkAddress','zkPort'])
-     zk_address = ret_dict['zkAddress']
-     zk_port = ret_dict['zkPort']
-     return zk_address ,zk_port
+    ret_dict = confOpers.getValue(options.zk_address, ['zkAddress','zkPort'])
+    zk_address = ret_dict['zkAddress']
+    zk_port = ret_dict['zkPort']
+    return zk_address ,zk_port

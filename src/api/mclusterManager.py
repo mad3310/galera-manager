@@ -5,13 +5,11 @@ import logging
 import json
 import os.path
 import routes
-import socket
 
 import tornado.httpserver
 import tornado.ioloop
 import tornado.options
 import tornado.web
-from common.helper import get_localhost_ip
 from tornado.options import options
 from common.appdefine import mclusterManagerDefine
 from common.helper import get_localhost_ip
@@ -50,25 +48,29 @@ def main():
 #         pass 
     tornado.options.parse_command_line()
     
-    zk_client = ZkOpers()
+    zkOper = ZkOpers()
     
-    cluster_existed = zk_client.existCluster()
-    if cluster_existed:
-        clusterUUID = zk_client.getClusterUUID() 
-        data = zk_client.retrieveClusterProp(clusterUUID) 
-        
-        node_ip_addr = get_localhost_ip()
-        return_result = zk_client.retrieve_data_node_info(node_ip_addr)
-        
-        json_str_data = data.replace("'", "\"")
-        dict_data = json.loads(json_str_data)
-        if type(return_result) is dict and type(dict_data) is dict:
-            config_file_obj = ConfigFileOpers()
-            config_file_obj.setValue(options.data_node_property, return_result)
-            config_file_obj.setValue(options.cluster_property, dict_data)
-            logging.debug("program has re-written zk data into configuration file")
-        else:
-            logging.info("write data into configuration failed")
+    try:
+        cluster_existed = zkOper.existCluster()
+        if cluster_existed:
+            clusterUUID = zkOper.getClusterUUID() 
+            data = zkOper.retrieveClusterProp(clusterUUID) 
+            
+            node_ip_addr = get_localhost_ip()
+            return_result = zkOper.retrieve_data_node_info(node_ip_addr)
+            
+            json_str_data = data.replace("'", "\"")
+            dict_data = json.loads(json_str_data)
+            if type(return_result) is dict and type(dict_data) is dict:
+                config_file_obj = ConfigFileOpers()
+                config_file_obj.setValue(options.data_node_property, return_result)
+                config_file_obj.setValue(options.cluster_property, dict_data)
+                logging.debug("program has re-written zk data into configuration file")
+            else:
+                logging.info("write data into configuration failed")
+    finally:
+        zkOper.close()
+    
         
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(options.port)
