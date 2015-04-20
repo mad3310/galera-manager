@@ -15,19 +15,22 @@ from common.utils.exceptions import HTTPAPIError
 from common.db_stat_opers import DBStatOpers
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
-from common.helper import check_leader, is_monitoring, get_localhost_ip
+from common.helper import is_monitoring, get_localhost_ip
 from common.my_logging import debug_log
 from common.zkOpers import ZkOpers
 import socket
 import datetime
 import time
 import logging
-TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+
 # create database in mcluster
 # eg. curl --user root:root -d "dbName=managerTest&userName=zbz" "http://localhost:8888/db"
 
 # delete database in mcluster
 # eg. curl --user root:root -X DELETE "http://localhost:8888/db/{dbName}"
+
+TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 @require_basic_auth
 class DBOnMCluster(APIHandler):

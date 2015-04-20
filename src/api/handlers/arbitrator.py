@@ -1,20 +1,23 @@
 #-*- coding: utf-8 -*-
+import re
+import tornado
 
-from comnon.invokeCommand import InvokeCommand
+from common.invokeCommand import InvokeCommand
 from base import APIHandler
 from tornado.options import options
-
 from common.utils.exceptions import HTTPAPIError
-import socket
-import logging
-import kazoo
+from common.helper import  get_localhost_ip
+from tornado.web import asynchronous
+from common.configFileOpers import ConfigFileOpers
 
-from common.helper import  get_localhost_ip 
+
 # check whether the name of this node is end the -n-2.
 #eg curl "http://localhost:8888/inner/arbitrator/ip"
 
 class ArbitratorIP(APIHandler):
+    
     confOpers = ConfigFileOpers()
+    
     @tornado.gen.engine
     @asynchronous
     def get(self):
@@ -27,8 +30,10 @@ class ArbitratorIP(APIHandler):
             self.finish("false")
 
 
-class ArbitratorStart(APIHander):
+class ArbitratorStart(APIHandler):
+    
     confOpers = ConfigFileOpers()
+    
     @tornado.gen.engine
     @asynchronous
     def get(self):
@@ -56,6 +61,7 @@ class ArbitratorStart(APIHander):
         self.finish('true')
 
 class ArbitratorStatusCheck(APIHandler):
+    
     @tornado.gen.engine
     @asynchronous
     def get(self):
@@ -68,7 +74,7 @@ class ArbitratorStatusCheck(APIHandler):
             count = invokeCommand._runSysCmd(cmd) 
             if count == 1:
                 self.finish("true")
-		    else
+            else:
                 self.finish("false")
         else:
             self.finish("false")

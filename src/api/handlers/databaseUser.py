@@ -9,7 +9,6 @@ import logging
 
 from base import APIHandler
 from common.tornado_basic_auth import require_basic_auth
-from tornado.options import options
 from common.dba_opers import DBAOpers
 from common.configFileOpers import ConfigFileOpers
 from common.utils import get_random_password
@@ -223,7 +222,6 @@ class DBUser(APIHandler):
                          'max_connections_per_hour':max_connections_per_hour,
                          'max_user_connections':max_user_connections}
             zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
-            
         finally:
             conn.close()
             self.zkOper.close()

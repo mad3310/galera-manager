@@ -91,10 +91,10 @@ class AdminUser(APIHandler):
         if requestParam != {}:
             self.confOpers.setValue(options.cluster_property, requestParam)
         
-        dict = {}
+        result = {}
         #dict.setdefault("code", '000000')
-        dict.setdefault("message", "creating admin user successful!")
-        self.finish(dict)
+        result.setdefault("message", "creating admin user successful!")
+        self.finish(result)
 #         
 # no used        
 # download cnf and property file, this is inner-API
@@ -122,7 +122,7 @@ class GenerateConfigFileHandler(APIHandler):
         
         del configFileContentText # remove the configFileContentText
         
-        dict = {}
-        dict.setdefault("message", "finished")
+        result = {}
+        result.setdefault("message", "finished")
         
-        self.finish(dict)
+        self.finish(result)

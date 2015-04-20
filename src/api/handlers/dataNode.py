@@ -202,10 +202,10 @@ class DataNodeStart(APIHandler):
                                     notification = "direct", \
                                     log_message= error_message,\
                                     response =  error_message)
-        dict = {}
-        dict.setdefault("message", "due to start data node need a large of times, please wait to finished and email to you, when data node has started!")
+        result = {}
+        result.setdefault("message", "due to start data node need a large of times, please wait to finished and email to you, when data node has started!")
 #        dict.setdefault("code", "000000")
-        self.finish(dict)
+        self.finish(result)
 
 # stop mysqld service on data node
 # eg. curl --user root:root "http://localhost:8888/node/stop"
@@ -225,11 +225,11 @@ class DataNodeStop(APIHandler):
                                     notification = "direct", \
                                     log_message= error_message,\
                                     response =  error_message)
-        dict = {}
+        result = {}
 #        dict.setdefault("code", "000000")
-        dict.setdefault("message", "due to stop data node need a large of times, please wait to finished and email to you, when data node has stoped!")
+        result.setdefault("message", "due to stop data node need a large of times, please wait to finished and email to you, when data node has stoped!")
         
-        self.finish(dict)
+        self.finish(result)
         
 # retrieve node stat 
 # eg. curl "http://localhost:8888/node/stat"       
@@ -238,8 +238,8 @@ class DataNodeStat(APIHandler):
     stat_opers = NodeStatOpers()
     
     def get(self):
-        return_dict = self.stat_opers.stat()
-        self.finish(return_dict)
+        result = self.stat_opers.stat()
+        self.finish(result)
         
         
 # retrieve the node stat for data dir size
@@ -248,8 +248,8 @@ class StatDataDirSize(APIHandler):
     stat_opers = NodeStatOpers()
     
     def get(self):
-        return_dict = self.stat_opers.stat_data_dir_size()
-        self.finish(return_dict)
+        result = self.stat_opers.stat_data_dir_size()
+        self.finish(result)
         
 # retrieve the node stat for mysql cpu partion
 # eg. curl "http://localhost:8888/node/stat/mysqlcpu/partion"        
@@ -257,8 +257,8 @@ class StatMysqlCpuPartion(APIHandler):
     stat_opers = NodeStatOpers()
     
     def get(self):
-        return_dict = self.stat_opers.stat_mysql_cpu()
-        self.finish(return_dict)
+        result = self.stat_opers.stat_mysql_cpu()
+        self.finish(result)
         
         
 # retrieve the node stat for mysql memory partion
@@ -267,8 +267,8 @@ class StatMysqlMemoryPartion(APIHandler):
     stat_opers = NodeStatOpers()
     
     def get(self):
-        return_dict = self.stat_opers.stat_mysql_memory()
-        self.finish(return_dict)
+        result = self.stat_opers.stat_mysql_memory()
+        self.finish(result)
         
         
 # retrieve the node stat for memory size
@@ -277,8 +277,8 @@ class StatNodeMemorySize(APIHandler):
     stat_opers = NodeStatOpers()
     
     def get(self):
-        return_dict = self.stat_opers.stat_node_memory()
-        self.finish(return_dict)
+        result = self.stat_opers.stat_node_memory()
+        self.finish(result)
         
 
 # no used
@@ -297,9 +297,9 @@ class CopyConfigFileInfoHandler(APIHandler):
             
         http_client.close()
         
-        dict = {}
-        dict.setdefault("message", "change config file info is ok!")
-        self.finish(dict)
+        result = {}
+        result.setdefault("message", "change config file info is ok!")
+        self.finish(result)
             
         
     def handleResponse(self,response):
