@@ -105,8 +105,8 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
             finished_flag = self.dba_opers.retrieve_wsrep_status()
             
             if not finished_flag:
-                result = self.invokeCommand.remove_mysql_socket()
-                result = self.invokeCommand.mysql_service_start(isNewCluster)
+                self.invokeCommand.remove_mysql_socket()
+                self.invokeCommand.mysql_service_start(isNewCluster)
             
                 finished_flag = self._check_start_status(data_node_ip)
         finally:
@@ -167,7 +167,7 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
         
         zkoper = ZkOpers()
         try:
-            result = self.invokeCommand.mysql_service_stop()
+            self.invokeCommand.mysql_service_stop()
             finished_flag = self._check_stop_status(data_node_ip)
         finally:
             zkoper.unLock_node_start_stop_action(lock)

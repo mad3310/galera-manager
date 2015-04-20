@@ -118,11 +118,12 @@ class Check_Status_Base(object):
 
 
     def write_status(self, total_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key):
-        result_dict = {}
         format_str = "total=%s, success count=%s, failed count=%s"
         format_values = (total_count, success_count, failed_count)
         message = format_str % format_values
         dt = datetime.datetime.now()
+        
+        result_dict = {}
         result_dict.setdefault("message", message)
         result_dict.setdefault("alarm", alarm_level)
         result_dict.setdefault("error_record", error_record_dict)
@@ -155,6 +156,7 @@ class Check_Cluster_Available(Check_Status_Base):
             failed_count = 3
         else:
             message = "ok"
+            
         alarm_result = self.retrieve_alarm_level(0,0,failed_count)
             
         cluster_available_dict = {}
@@ -205,7 +207,6 @@ class Check_Node_Size(Check_Status_Base):
         
         lost_ip_list = [] 
         wsrep_incoming_addresses_value = key_value.get('wsrep_incoming_addresses')
-        wsrep_cluster_size = key_value.get('wsrep_cluster_size')
         logging.info("[compare Mcluster the count of data node] incoming address(show status):" + 
                      wsrep_incoming_addresses_value)
         wsrep_incoming_addresses_list = wsrep_incoming_addresses_value.split(',')
@@ -359,6 +360,7 @@ class Check_DB_Wsrep_Status(Check_Status_Base):
         monitor_type = "db"
         monitor_key = "wsrep_status"
         super(Check_DB_Wsrep_Status, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
+        
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
 #         message = "processing method: Check_DB_Wsrep_Status,the total count:%s,the succes count:%s,the failed count:%s"
 #         logging.info(message%(total_count, success_count, failed_count))
@@ -482,6 +484,7 @@ class Check_Backup_Status(Check_Status_Base):
     
     def __init__(self):
         super(Check_Backup_Status, self).__init__()
+        
     @tornado.gen.engine  
     def check(self, data_node_info_list):
         url_post = "/backup/inner/check"
@@ -508,6 +511,7 @@ class Check_Database_User(Check_Status_Base):
         #url_post = "/dbuser/inner/check"
         if not is_monitoring(get_localhost_ip()):
             return
+        
         monitor_type = "db"
         monitor_key = "dbuser"
         

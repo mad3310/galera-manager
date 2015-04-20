@@ -5,7 +5,6 @@ Created on 2013-7-21
 '''
 import logging
 from tornado.options import options
-from common.invokeCommand import InvokeCommand
 from common.abstract_stat_service import Abstract_Stat_Service
 from common.helper import is_monitoring, get_localhost_ip
 
@@ -23,15 +22,15 @@ class NodeStatOpers(Abstract_Stat_Service):
         mysql_top_partion = self._stat_mysql_top()
         node_mem_size = self.stat_node_memory()
         
-        dict = {}
-        dict.setdefault("dir_size_partion", mysql_dir_size_partion)
-        dict.setdefault('mysql_top_partion', mysql_top_partion)
-        dict.setdefault('node_mem_size', node_mem_size)
+        result = {}
+        result.setdefault("dir_size_partion", mysql_dir_size_partion)
+        result.setdefault('mysql_top_partion', mysql_top_partion)
+        result.setdefault('node_mem_size', node_mem_size)
         
-        return dict
+        return result
         
     def stat_data_dir_size(self):
-        dict = {}
+        result = {}
         
         return_result = self.invokeCommand.run_check_shell(options.stat_dir_size)
         df_output_lines = [s.split() for s in return_result.splitlines()]
@@ -41,16 +40,16 @@ class NodeStatOpers(Abstract_Stat_Service):
             mounted_on = df_output_line[5]
             used = used.replace('%','')
             if mounted_on == '/var' or mounted_on == '/srv/mcluster' or mounted_on == '/':
-                dict.setdefault(mounted_on,used)
+                result.setdefault(mounted_on,used)
         
-        return dict
+        return result
     
     def _stat_mysql_top(self):
-        dict = {}
+        result = {}
         if not is_monitoring(get_localhost_ip()):
-            dict.setdefault('mysql_cpu_partion', 0.0)
-            dict.setdefault('mysql_mem_partion', 0.0)
-            return dict
+            result.setdefault('mysql_cpu_partion', 0.0)
+            result.setdefault('mysql_mem_partion', 0.0)
+            return result
         
         return_result = self.invokeCommand.run_check_shell(options.stat_top_command)
         logging.info("return_result :" + str(return_result))
@@ -67,23 +66,23 @@ class NodeStatOpers(Abstract_Stat_Service):
             mysql_cpu = mysql_info_list[8]
             mysql_mem = mysql_info_list[9]
         
-        dict.setdefault('mysql_cpu_partion', mysql_cpu)
-        dict.setdefault('mysql_mem_partion', mysql_mem)
+        result.setdefault('mysql_cpu_partion', mysql_cpu)
+        result.setdefault('mysql_mem_partion', mysql_mem)
         
-        return dict
+        return result
     
     def stat_mysql_cpu(self):
-        dict = self._stat_mysql_top()
-        value = dict.get('mysql_cpu_partion')
+        top_dict = self._stat_mysql_top()
+        value = top_dict.get('mysql_cpu_partion')
         return {'mysql_cpu_partion': value}
     
     def stat_mysql_memory(self):
-        dict = self._stat_mysql_top()
-        value = dict.get('mysql_mem_partion')
+        _top_dict = self._stat_mysql_top()
+        value = _top_dict.get('mysql_mem_partion')
         return {'mysql_mem_partion': value}
     
     def stat_node_memory(self):
-        dict = {}
+        
         
         return_result = self.invokeCommand.run_check_shell(options.stat_mem_command)
         mysql_mem_list = return_result.split('\n\n\n')[0].split('\n')[2].split()
@@ -94,8 +93,9 @@ class NodeStatOpers(Abstract_Stat_Service):
         else:
             node_mem_used_size = mysql_mem_list[2]
             node_mem_free_size = mysql_mem_list[3]
-            
-        dict.setdefault('node_mem_used_size', node_mem_used_size)
-        dict.setdefault('node_mem_free_size', node_mem_free_size)
         
-        return dict
+        result = {}    
+        result.setdefault('node_mem_used_size', node_mem_used_size)
+        result.setdefault('node_mem_free_size', node_mem_free_size)
+        
+        return result

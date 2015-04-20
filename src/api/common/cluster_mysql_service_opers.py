@@ -98,6 +98,7 @@ class WsrepStatus():
         return wsrep_status_ok_count
 
 class StopIssue(object):
+    
     def __init__(self):
         """
         constructor
@@ -322,6 +323,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 for (node_ip, value) in uuid_seqno_dict.items():
                     if not value:
                         err_node.join(node_ip)
+                        
                 if err_node != "":
                     error_message = "data node(%s) error, please check the status and start it by human." % (node_ip)
                     status_dict['_status'] = 'failed'
@@ -523,6 +525,28 @@ class Cluster_stop_action(Abstract_Mysql_Service_Action_Thread):
                 data_node_stop_finished_count += 1
         
         return data_node_stop_finished_count
-           
-       
+    
+    
+    #duplicate Cluster_stop_action._check_stop_status
+    def _check_stop_status(self, data_node_ip):
         
+        '''
+        @todo: need to lock this process?
+        '''
+        zkOper = ZkOpers()            
+        stop_finished = False
+        try:
+            while not stop_finished:
+                started_nodes = zkOper.retrieve_started_nodes()
+                
+                stop_finished = True
+                for i in range(len(started_nodes)):
+                    started_node = started_nodes[i]
+                    if started_node == data_node_ip:
+                        stop_finished = False
+                        
+                time.sleep(1)
+        finally:
+            zkOper.close()
+        
+        return stop_finished

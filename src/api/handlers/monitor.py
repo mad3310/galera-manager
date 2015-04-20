@@ -14,7 +14,7 @@ Check_DB_Wsrep_Status, Check_DB_Cur_Conns, Check_DB_Anti_Item, Check_Backup_Stat
 
 from common.zkOpers import ZkOpers
 
-class Cluster_Info_Sync_Handler:
+class Cluster_Info_Sync_Handler(object):
     
     check_cluster_available = Check_Cluster_Available()
             
@@ -30,7 +30,7 @@ class Cluster_Info_Sync_Handler:
         
         return cluster_status_dict
     
-class Cluster_Info_Async_Handler:
+class Cluster_Info_Async_Handler(object):
     
     def retrieve_info(self, data_node_info_list):
         self._action()
@@ -39,7 +39,7 @@ class Cluster_Info_Async_Handler:
         logging.info("_retrieve_cluster_info_async:do nothing!")
         
         
-class Node_Info_Sync_Handler:
+class Node_Info_Sync_Handler(object):
     
     check_node_size = Check_Node_Size()
     
@@ -55,7 +55,7 @@ class Node_Info_Sync_Handler:
         return node_status_dict
         
         
-class Node_Info_Async_Handler:
+class Node_Info_Async_Handler(object):
     
     check_node_log_health = Check_Node_Log_Health()
     
@@ -75,7 +75,7 @@ class Node_Info_Async_Handler:
         self.check_node_active.check(data_node_info_list)
     
         
-class DB_Info_Sync_Handler:    
+class DB_Info_Sync_Handler(object):    
     
     def retrieve_info(self, data_node_info_list):
         return self._action(data_node_info_list)
@@ -84,7 +84,7 @@ class DB_Info_Sync_Handler:
         logging.info("_retrieve_db_info_sync:do nothing!")
     
         
-class DB_Info_Async_Handler:    
+class DB_Info_Async_Handler(object):    
     
     check_db_wr_available = Check_DB_WR_Avalialbe()
     
@@ -119,6 +119,7 @@ class Mcluster_Monitor_Sync(APIHandler):
     node_handler = Node_Info_Sync_Handler()
     
     db_handler = DB_Info_Sync_Handler()
+    
     def get(self):
         zkOper = ZkOpers()
         try:
