@@ -16,7 +16,6 @@ from common.db_stat_opers import DBStatOpers
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
 from common.helper import is_monitoring, get_localhost_ip
-from common.my_logging import debug_log
 from common.zkOpers import ZkOpers
 import socket
 import datetime
@@ -66,7 +65,7 @@ class DBOnMCluster(APIHandler):
         zkOper = ZkOpers()
         try: 
             clusterUUID = zkOper.getClusterUUID()
-            self.zkOper.write_db_info(clusterUUID, dbName, dbProps)
+            zkOper.write_db_info(clusterUUID, dbName, dbProps)
         
             userProps = {'role':'manager',
                          'max_queries_per_hour':max_queries_per_hour,
@@ -111,7 +110,7 @@ class DBOnMCluster(APIHandler):
             user_name_list = ''
             if user_ipAddress_map is not None:
                 for (user_name,ip_address) in user_ipAddress_map.items():
-                    self.zkOper.remove_db_user(clusterUUID, dbName, user_name, ip_address)
+                    zkOper.remove_db_user(clusterUUID, dbName, user_name, ip_address)
                     user_name_list += user_name + ","
                 
             zkOper.remove_db(clusterUUID, dbName)
@@ -140,9 +139,6 @@ class Inner_DB_Retrieve_Recover_UUID_Seqno(APIHandler):
 # we need to know this issue and notification.
 # eg. curl "http://localhost:8888/inner/db/check/cur_conns" 
 class Inner_DB_Check_CurConns(APIHandler):
-    log_obj = debug_log('root')
-    logger = log_obj.get_logger_object()
-    
     dba_opers = DBAOpers()
     
     def get(self):
@@ -169,8 +165,6 @@ class Inner_DB_Check_CurConns(APIHandler):
             self.finish("true")
             return
         
-        self.logger.debug("[DBMonitorForMaxConns] the count of current connections: " + str(current_connections_count) + 
-                     " the count of db instance's variables (max_connections):" + max_connections)
         self.finish("false")
         
         
@@ -210,8 +204,6 @@ class Inner_DB_Check_WR(APIHandler):
     dba_opers = DBAOpers()
     
     confOpers = ConfigFileOpers()
-    log_obj = debug_log('root')
-    logger = log_obj.get_logger_object()
     
     invokeCommand = InvokeCommand()
  
@@ -222,9 +214,7 @@ class Inner_DB_Check_WR(APIHandler):
         try:
             dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
             data_node_ip = dataNodeProKeyValue['dataNodeIp']
-            self.logger.info('data_node_ip is :' + str(data_node_ip))
             started_ip_list = zkOper.retrieve_started_nodes()
-            self.logger.info('started_ip_list is: ' + str(started_ip_list))
             identifier = socket.gethostname()
         
             '''
@@ -274,15 +264,15 @@ class Inner_DB_Check_WR(APIHandler):
                 int_tbName = (offset + 2 ) % 4
                 del_tbName = "%s_%s" %(pre_tbname,int_tbName)
                 self.dba_opers.delete_tb_contents(conn, del_tbName, dbName)
-                self.logger.info('delete the contents in database (%s) before 12 hours success!' % (del_tbName))
+                logging.info('delete the contents in database (%s) before 12 hours success!' % (del_tbName))
                 str_time = n_time.strftime(TIME_FORMAT)
-                self.logger.info("delete contents time is %s:" % (str_time))
+                logging.info("delete contents time is %s:" % (str_time))
 
             
             str_time = n_time.strftime(TIME_FORMAT)
-            self.logger.info("time is :" + str_time)
+            logging.info("time is :" + str_time)
             self.dba_opers.insert_record_time(conn, str_time , identifier ,tbName , dbName)
-            self.logger.info('Insert time %s into table %s ' % (str_time, tbName))
+            logging.info('Insert time %s into table %s ' % (str_time, tbName))
             
             record_time = self.dba_opers.query_record_time(conn ,identifier ,tbName , dbName)
             record_stamp_time = time.mktime(time.strptime(record_time, TIME_FORMAT))
@@ -293,14 +283,14 @@ class Inner_DB_Check_WR(APIHandler):
             
             if delta_time > t_threshold:
                 error_message = 'delta_time bewteen read and write is too long -- delta_time is %s' % (delta_time)
-                self.logger.error(error_message)
+                logging.error(error_message)
                 raise HTTPAPIError(status_code=500, error_detail= error_message,\
                             notification = "direct", \
                             log_message= error_message,\
                             response = error_message)
         except Exception,e:
             return_flag = 'false'
-            self.logger.error(e)
+            logging.error(e)
             self.finish(return_flag)
             return
         finally:

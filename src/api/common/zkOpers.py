@@ -10,22 +10,17 @@ import json
 
 from tornado.options import options
 from common.configFileOpers import ConfigFileOpers
-from kazoo.client import KazooClient
+from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import SessionExpiredError
 from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
 import logging
 import threading
-from common.my_logging import debug_log
 from common.utils.exceptions import CommonException
 
 class ZkOpers(object):
     
-    zk = None
-    
     rootPath = "/letv/mysql/mcluster"
-    log_obj = debug_log('root')
-    logger = log_obj.get_logger_object()
     
     confOpers = ConfigFileOpers()
     '''
@@ -35,49 +30,36 @@ class ZkOpers(object):
         '''
         Constructor
         '''
-#         self.log_obj = debug_log('root')
-#         self.logger = self.log_obj.get_logger_object()
         self.zkaddress, self.zkport = self.local_get_zk_address()
-        self.retry = KazooRetry(max_tries=3, delay=0.5)
-        self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
+        
+        self.zk = KazooClient(
+            hosts=self.zkaddress+':'+str(self.zkport),
+            connection_retry = KazooRetry(delay=1, max_tries=5, max_delay=30)
+        )
         self.zk.start()
-        #self.zk = self.ensureinstance()
-        logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
+        self.zk.add_listener(self.listener)
+        
+    def listener(self, state):
+        if state == KazooState.LOST:
+            self.zk.start()
+        elif state == KazooState.SUSPENDED:
+            print "*******listener saw KazooState.LOST"
+        else:
+            print "*******listener saw KazooState.CONNECT"
 
     def local_get_zk_address(self):
         ret_dict = self.confOpers.getValue(options.zk_address, ['zkAddress','zkPort'])
-        logging.info("local get ret_dict "+ str(ret_dict))
         zk_address = ret_dict['zkAddress']
-        zk_port = ret_dict['zkPort'] 
+        zk_port = ret_dict['zkPort']
         return zk_address, zk_port
 
     def close(self):
         try:
             self.zk.stop()
             self.zk.close()
-            logging.info("stop the zk client successfully")
         except Exception, e:
             logging.error(e)
 
-    def ensureinstance(self, count=0, zk=None):
-        while count < 5:
-            try:
-                if not zk:
-                    zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
-                    zk.start()
-                    print ("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
-                clusters = zk.get_children(self.rootPath)
-                if len(clusters) != 0:
-                    return zk
-            except SessionExpiredError, e:
-                zk.stop()
-                print ("zk client retry time: %s" % (count))
-                return self.ensureinstance(count + 1)
-            except TimeoutError, e:
-                zk.stop()
-                print ("zk client retry time: %s" % (count))
-                return self.ensureinstance(count + 1)
-        raise TimeoutError, "zookeeper connection timeout"
         
     def existCluster(self):
         self.zk.ensure_path(self.rootPath)
@@ -256,13 +238,11 @@ class ZkOpers(object):
     def write_started_node(self, data_node_ip):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/node/started/" + data_node_ip
-        self.logger.debug("the started data node:" + data_node_ip)
         self.zk.ensure_path(path)
         
     def remove_started_node(self, data_node_ip):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/node/started/" + data_node_ip
-        self.logger.debug("the removed data node:" + data_node_ip)
         if self.zk.exists(path):
             self.zk.delete(path)
             
@@ -276,7 +256,6 @@ class ZkOpers(object):
     def write_monitor_status(self, monitor_type, monitor_key, monitor_value):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/" + monitor_type +"/"+ monitor_key
-        self.logger.debug("monitor status:" + path)
         self.zk.ensure_path(path)
         self.zk.set(path, str(monitor_value))#version need to write
         
@@ -346,7 +325,6 @@ class ZkOpers(object):
     
     
     def _return_children_to_list(self, path):
-        self.logger.debug("check children:" + path)
         self.zk.ensure_path(path)
         children = self.zk.get_children(path)
         
@@ -357,15 +335,10 @@ class ZkOpers(object):
         return children_to_list
     
     def _retrieveSpecialPathProp(self,path):
-        self.logger.debug(path)
-        
         data = None
         
         if self.zk.exists(path):
-            self.logger.debug(path+" existed")
             data,stat = self.zk.get(path)
-            
-        self.logger.debug(data)
         
         resultValue = {}
         if data != None and data != '':

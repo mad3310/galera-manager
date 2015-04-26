@@ -224,7 +224,7 @@ class DBUser(APIHandler):
             zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
         finally:
             conn.close()
-            self.zkOper.close()
+            zkOper.close()
         
         
         result = {}

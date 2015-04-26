@@ -33,8 +33,6 @@ class CreateMCluster(APIHandler):
         zkOper = ZkOpers()
         try:
             existCluster = zkOper.existCluster()
-            requestParam = {}
-            args = self.request.arguments
             if existCluster:
                 raise HTTPAPIError(status_code=417, error_detail="server has belong to a cluster,should be not create new cluster!",\
                                     notification = "direct", \
@@ -47,12 +45,14 @@ class CreateMCluster(APIHandler):
             for key in args:
                 value = args[key][0]
                 requestParam.setdefault(key,value)
+                
             cluster_name = requestParam['clusterName']
             if len(cluster_name) >= 33:
-                raise HTTPAPIError(status_code=403, error_detail="Cluster name is too long, please use name whoes length is less than 33 characters",\
+                raise HTTPAPIError(status_code=417, error_detail="Cluster name is too long, please use name whoes length is less than 33 characters",\
                                     notification = "direct", \
                                     log_message= "Cluster name is too long, please use name whoes length is less than 33 characters",\
                                     response =  "Cluster name is too long, please use name whoes length is less than 33 characters!")
+                
             clusterUUID = str(uuid.uuid1())
             requestParam.setdefault("clusterUUID",clusterUUID)
             
@@ -111,26 +111,27 @@ class InitMCluster(APIHandler):
                                     response =  "the number should be not odd number,please add 1 or 3 data node into cluster!")
             
             clusterName = clusterProKeyValue['clusterName']
-            clusterAddress = 'gcomm://' + data_node_ip
+            clusterAddress = 'gcomm://%s' % (data_node_ip)
             
             requestParam = {'wsrep_cluster_name':clusterName, 'wsrep_node_address':data_node_ip, 'wsrep_cluster_address':clusterAddress, 'wsrep_node_name':data_node_name}
             self.confOpers.setValue(options.mysql_cnf_file_name, requestParam)
             
             sst_user_password = self.invokeCommand.runBootstrapScript()
-            zkOper.write_started_node(data_node_ip)
-            
-#            mysql_cnf_text_test = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
             
             mysql_cnf_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
             zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_text, issue_mycnf_changed)
+            zkOper.write_started_node(data_node_ip)
         except kazoo.exceptions.LockTimeout:
             raise HTTPAPIError(status_code=578, error_detail="a server is initing, need to wait for the completion of init oper.",\
                                 notification = "direct", \
                                 log_message= "a server is initing, need to wait for the completion of init oper.",\
                                 response =  "the mysql cluster is initing,please wait for the completion of other machine join this cluster.")
         finally:
-            zkOper.unLock_init_node_action(lock)
-            zkOper.close()
+            if isLock:
+                zkOper.unLock_init_node_action(lock)
+                
+            if zkOper:
+                zkOper.close()
         
         result = {}
 #        dict.setdefault("code", '000000')
@@ -173,24 +174,28 @@ class ClusterStart(APIHandler):
     @asynchronous
     def post(self):
         args = self.request.arguments
-        logging.info("args :" + str(args))
+        
+        requestParam = {}
         for key in args:
-            value = args[key][0]
-        if value != 'new' and value != 'old':
-            raise HTTPAPIError(status_code=-1, error_detail="arguments are wrong",
+            requestParam.setdefault(key,args[key][0])
+            
+        cluster_flag = requestParam.get('cluster_flag')
+            
+        if cluster_flag != 'new' and cluster_flag != 'old':
+            raise HTTPAPIError(status_code=417, error_detail="arguments are wrong",
                                notification = "direct",
                                log_message= "arguments are wrong",
                                response =  "arguments are wrong, retry again.")
-        logging.info("Arguments in Http requests is " + value)
+        
         try:
-            self.mysql_service_opers.start(value)
+            self.mysql_service_opers.start(cluster_flag)
         except kazoo.exceptions.LockTimeout:
             raise HTTPAPIError(status_code=578, error_detail="lock by other thread",
                                notification = "direct",
                                log_message= "lock by other thread",
                                response =  "current operation is using by other people, please wait a moment to try again!")
         result = {}
- #       dict.setdefault("code", '000000')
+#       dict.setdefault("code", '000000')
         result.setdefault("message", "due to start cluster need a large of times, please wait to finished and email to you, when cluster have started!")
         self.finish(result)
                 

@@ -6,7 +6,6 @@ from tornado.options import options
 
 from common.utils.exceptions import HTTPAPIError
 from common.utils.mail import send_email
-from common.my_logging import debug_log
 
 from common.invokeCommand import InvokeCommand
 from common.helper import get_localhost_ip
@@ -15,9 +14,6 @@ import traceback
 
 
 class BaseHandler(RequestHandler):
-    
-    log_obj = debug_log('root')
-    logger = log_obj.get_logger_object()
     
     @property
     def db(self):
@@ -74,7 +70,7 @@ class APIHandler(BaseHandler):
             exception = "".join([ln for ln in traceback.format_exception(*exc_info)])
 
             if status_code == 500 and not debug:
-                self.logger.error(e)
+                logging.error(e)
                 self._send_error_email(exception)
 
             if debug:
@@ -85,7 +81,7 @@ class APIHandler(BaseHandler):
             self.set_header("Content-Type", "application/json; charset=UTF-8")
             self.finish(str(e))
         except Exception:
-            self.logger.error(traceback.format_exc())
+            logging.error(traceback.format_exc())
             return super(APIHandler, self).write_error(status_code, **kwargs)
 
     def _send_error_email(self, exception):
@@ -106,7 +102,7 @@ class APIHandler(BaseHandler):
             if options.send_email_switch:
                 send_email(options.admins, subject, body)
         except Exception:
-            self.logger.error(traceback.format_exc())
+            logging.error(traceback.format_exc())
 
 
 class ErrorHandler(RequestHandler):

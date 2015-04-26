@@ -18,6 +18,7 @@ from common.utils.exceptions import HTTPAPIError
 from common.backup_thread import backup_thread
 from common.helper import _retrieve_userName_passwd, is_monitoring, get_localhost_ip 
 from common.tornado_basic_auth import require_basic_auth
+from common.zkOpers import ZkOpers
 
 # Start backing up database data.
 #eq curl --user root:root "http://localhost:8888/backup" backup data by full dose.
@@ -72,7 +73,14 @@ class BackUp(APIHandler):
     @asynchronous
     def get(self):
         url_post = "/inner/backup"
-        online_node_list = self.zkOper.retrieve_started_nodes()
+        
+        zkOper = ZkOpers()
+        
+        try:
+            online_node_list = zkOper.retrieve_started_nodes()
+        finally:
+            zkOper.close()
+        
         hostname = socket.gethostname()
         local_ip = get_localhost_ip()
         adminUser, adminPasswd = _retrieve_userName_passwd()
@@ -80,21 +88,26 @@ class BackUp(APIHandler):
         http_client = tornado.httpclient.AsyncHTTPClient()
         
         result = {}
-        if obj == None:
-            logging.info("local ip :" + str(local_ip))
-            online_node_list.remove(local_ip)
-            for node_ip in online_node_list:
-                requesturi = "http://"+ node_ip +":"+str(options.port)+ url_post
+        
+        try:
+            if obj == None:
+                logging.info("local ip :" + str(local_ip))
+                online_node_list.remove(local_ip)
+                for node_ip in online_node_list:
+                    requesturi = "http://"+ node_ip +":"+str(options.port)+ url_post
+                    request = HTTPRequest(url=requesturi, method='GET', auth_username=adminUser, auth_password = adminPasswd)
+                    logging.info("url is " + requesturi)
+                    http_client.fetch(request, callback=None)
+                result.setdefault("message", "Process is running ,wait")
+            else:
+                requesturi = "http://"+ local_ip +":"+str(options.port)+ url_post
                 request = HTTPRequest(url=requesturi, method='GET', auth_username=adminUser, auth_password = adminPasswd)
                 logging.info("url is " + requesturi)
                 http_client.fetch(request, callback=None)
-            result.setdefault("message", "Process is running ,wait")
-        else:
-            requesturi = "http://"+ local_ip +":"+str(options.port)+ url_post
-            request = HTTPRequest(url=requesturi, method='GET', auth_username=adminUser, auth_password = adminPasswd)
-            logging.info("url is " + requesturi)
-            http_client.fetch(request, callback=None)
-            result.setdefault("message", "Process is running ,wait")
+                result.setdefault("message", "Process is running ,wait")
+        finally:
+            http_client.close()
+        
             
         self.finish(result)
  
@@ -184,29 +197,41 @@ class BackUpCheck(APIHandler):
     @asynchronous
     def get(self):
         url_post = "/backup/checker"
-        online_node_list = self.zkOper.retrieve_started_nodes()
+        
+        zkOper = ZkOpers()
+        try:
+            online_node_list = zkOper.retrieve_started_nodes()
+        finally:
+            zkOper.close()
+        
         local_ip = get_localhost_ip()
         logging.info("local ip :" + str(local_ip))
+        
+        
         http_client = tornado.httpclient.AsyncHTTPClient()
         key_sets = set()
-        for node_ip in online_node_list:
-            requesturi = "http://"+ node_ip +":"+str(options.port)+ url_post
-            callback_key = str(node_ip)
-            key_sets.add(callback_key)
-            request = HTTPRequest(url=requesturi, method='GET' )
-            logging.info("url is " + requesturi)
-            http_client.fetch(request, callback=(yield Callback(callback_key)))
         
-        response_message = []
-        for i in range(len(online_node_list)):
-            callback_key = key_sets.pop()
-            response = yield Wait(callback_key)
-            if response.error:
-                continue
-            else:
-                logging.info("response: %s" % str(response.body.strip()))
-                response_message.append(json.loads(response.body.strip()))
-                
+        try:
+            for node_ip in online_node_list:
+                requesturi = "http://"+ node_ip +":"+str(options.port)+ url_post
+                callback_key = str(node_ip)
+                key_sets.add(callback_key)
+                request = HTTPRequest(url=requesturi, method='GET' )
+                logging.info("url is " + requesturi)
+                http_client.fetch(request, callback=(yield Callback(callback_key)))
+            
+            response_message = []
+            for i in range(len(online_node_list)):
+                callback_key = key_sets.pop()
+                response = yield Wait(callback_key)
+                if response.error:
+                    continue
+                else:
+                    logging.info("response: %s" % str(response.body.strip()))
+                    response_message.append(json.loads(response.body.strip()))
+        finally:
+            http_client.close()
+            
         last_message = ""
         for message in response_message:
             logging.info("response: %s" % str(response))

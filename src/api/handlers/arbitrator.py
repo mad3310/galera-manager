@@ -9,6 +9,7 @@ from common.utils.exceptions import HTTPAPIError
 from common.helper import  get_localhost_ip
 from tornado.web import asynchronous
 from common.configFileOpers import ConfigFileOpers
+from common.zkOpers import ZkOpers
 
 
 # check whether the name of this node is end the -n-2.
@@ -37,7 +38,13 @@ class ArbitratorStart(APIHandler):
     @tornado.gen.engine
     @asynchronous
     def get(self):
-        data_node_list = self.zkOper.retrieve_data_node_list()
+        
+        zkOper = ZkOpers()
+        try:
+            data_node_list = zkOper.retrieve_data_node_list()
+        finally:
+            zkOper.close()
+        
         local_ip = get_localhost_ip()
         
         data_node_list.remove(local_ip)

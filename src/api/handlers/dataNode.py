@@ -33,16 +33,16 @@ class AddDataNodeToMCluster(APIHandler):
             self.confOpers.setValue(options.data_node_property, requestParam)
             
             
-        self.zkOper = ZkOpers()
+        zkOper = ZkOpers()
         try:
             dataNodeProprs = self.confOpers.getValue(options.data_node_property)
-            clusterUUID = self.zkOper.getClusterUUID()
-            self.zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
+            clusterUUID = zkOper.getClusterUUID()
+            zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
         
-            data,_ = self.zkOper.retrieveClusterProp(clusterUUID)
+            data,_ = zkOper.retrieveClusterProp(clusterUUID)
             self.confOpers.setValue(options.cluster_property, eval(data))
         
-            fullText,_ = self.zkOper.retrieveMysqlProp(clusterUUID)
+            fullText,_ = zkOper.retrieveMysqlProp(clusterUUID)
             self.confOpers.writeFullText(options.mysql_cnf_file_name, fullText)
         
             data_node_ip = requestParam.get('dataNodeIp')
@@ -75,9 +75,9 @@ class AddDataNodeToMCluster(APIHandler):
             self.confOpers.setValue(options.mysql_cnf_file_name, keyValueMap)
     
             mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-            self.zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_full_text, issue_mycnf_changed)
+            zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_full_text, issue_mycnf_changed)
         finally:
-            self.zkOper.close()
+            zkOper.close()
             
         result = {}
 #        dict.setdefault("code", "000000")
@@ -186,22 +186,15 @@ class DataNodeStart(APIHandler):
     
     @tornado.web.asynchronous
     def post(self):
-        try:
-            isNewCluster = False
+        isNewCluster = False
+    
+        args = self.request.arguments
+        logging.info("args :" + str(args))
+        if args != {}:
+            isNewCluster = args['isNewCluster'][0]
+    
+        self.mysql_service_opers.start(isNewCluster)
         
-            args = self.request.arguments
-            logging.info("args :" + str(args))
-            if args != {}:
-                isNewCluster = args['isNewCluster'][0]
-        
-            self.mysql_service_opers.start(isNewCluster)
-        except Exception,e:
-            logging.error(e)
-            error_message="server error in cluster_node start"
-            raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                                    notification = "direct", \
-                                    log_message= error_message,\
-                                    response =  error_message)
         result = {}
         result.setdefault("message", "due to start data node need a large of times, please wait to finished and email to you, when data node has started!")
 #        dict.setdefault("code", "000000")
@@ -216,15 +209,8 @@ class DataNodeStop(APIHandler):
     
     @tornado.web.asynchronous
     def get(self):
-        try:
-            self.mysql_service_opers.stop()
-        except Exception,e:
-            logging.error(e)
-            error_message="server error in cluster_node stop"
-            raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                                    notification = "direct", \
-                                    log_message= error_message,\
-                                    response =  error_message)
+        self.mysql_service_opers.stop()
+        
         result = {}
 #        dict.setdefault("code", "000000")
         result.setdefault("message", "due to stop data node need a large of times, please wait to finished and email to you, when data node has stoped!")

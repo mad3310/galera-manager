@@ -9,14 +9,16 @@ from common.configFileOpers import ConfigFileOpers
 from base import BaseHandler, APIHandler
 from tornado.options import options
 from common.utils.exceptions import HTTPAPIError
-
+from configuration.adminOpers import AdminOpers
 
 
 # admin conf
-# eg. curl -d "zkAddress=10.204.8.211" "http://localhost:8888/admin/conf"
+# eg. curl -d "zkAddress=10.204.8.211&zkPort=2181" "http://localhost:8888/admin/conf"
 class AdminConf(APIHandler):
     
     confOpers = ConfigFileOpers()
+    
+    adminOpers = AdminOpers()
     
     def post(self):
         requestParam = {}
@@ -27,6 +29,8 @@ class AdminConf(APIHandler):
         
         if requestParam != {}:
             self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
+            
+        self.adminOpers.sync_info_from_zk()
             
         result = {}
 #        dict.setdefault("code", '000000')

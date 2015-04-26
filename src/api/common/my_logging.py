@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 #-*- coding: utf-8 -*-
 import os.path
-import logging
 import logging.config
 from tornado.options import options
 

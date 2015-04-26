@@ -533,7 +533,7 @@ class Cluster_stop_action(Abstract_Mysql_Service_Action_Thread):
         '''
         @todo: need to lock this process?
         '''
-        zkOper = ZkOpers()            
+        zkOper = ZkOpers()
         stop_finished = False
         try:
             while not stop_finished:

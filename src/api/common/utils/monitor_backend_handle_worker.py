@@ -6,7 +6,7 @@ from common.configFileOpers import ConfigFileOpers
 from handlers.monitor import Cluster_Info_Async_Handler, Node_Info_Async_Handler, DB_Info_Async_Handler
 from common.zkOpers import ZkOpers
 from common.utils.exceptions import CommonException
-from common.helper import get_zk_address, check_leader
+from common.helper import get_zk_address
 from common.invokeCommand import InvokeCommand
 
 class Monitor_Backend_Handle_Worker(threading.Thread):
@@ -29,16 +29,9 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
         @todo: need to check the zk lead method, when use outside zk cluster
         '''
         zk_address = get_zk_address()
-        logging.info("zk address " + str(zk_address))
-        if zk_address == "": 
-            logging.info("zk address is none") 
-            return
-        else:
-            leader_flag = check_leader()
-            if leader_flag == False:
-                raise CommonException('This node is not leader of zookeeper!')
-            
-        logging.info("This node is leader of zookeeper.")
+        if "" == zk_address: 
+            raise CommonException('zk address is none!')
+        
         isLock = False
         lock = None
 
@@ -49,14 +42,13 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
             if not isLock:
                 raise CommonException('This node is not leader of zookeeper!')
             
-            data_node_info_list = self.zkOper.retrieve_data_node_list()
+            data_node_info_list = zkOper.retrieve_data_node_list()
             self.__action_monitor_async(data_node_info_list)
         except kazoo.exceptions.LockTimeout:
             logging.info("a thread is running the monitor async, give up this oper on this machine!")
         finally:
             zkOper.unLock_aysnc_monitor_action(lock)
             zkOper.close()
-            logging.info("close zk client connection successfully")
         
                 
     def __action_monitor_async(self, data_node_info_list):
