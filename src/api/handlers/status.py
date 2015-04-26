@@ -17,19 +17,18 @@ class MclusterStatusDetail(APIHandler):
         if monitor_type == None:
             raise "monitor type should be not null!"
         
+        result = {}
+        
         zkOper = ZkOpers()
         try:
             monitor_status_list = zkOper.retrieve_monitor_status_list(monitor_type)
+        
+            for monitor_status_key in monitor_status_list:
+                monitor_status_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
+                result.setdefault(monitor_status_key, monitor_status_value)
+            
         finally:
-            zkOper.close()    
-        
-        monitor_status_list_count = len(monitor_status_list)
-        
-        result = {}
-        for i in range(monitor_status_list_count):
-            monitor_status_key = monitor_status_list[i]
-            monitor_status_value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
-            result.setdefault(monitor_status_key, monitor_status_value)
+            zkOper.close()
             
         self.finish(result)
             
@@ -40,18 +39,16 @@ class MclusterStatusDetail(APIHandler):
 class MclusterStatus(APIHandler):
  
     def get(self):
+        result = {}
         zkOper = ZkOpers()
         try: 
             monitor_types = zkOper.retrieve_monitor_type()
-            result = {}
-            for i in range(len(monitor_types)):
-                monitor_type = monitor_types[i]
+            
+            for monitor_type in monitor_types:
                 monitor_status_list = zkOper.retrieve_monitor_status_list(monitor_type)
-                monitor_status_list_count = len(monitor_status_list)
             
                 monitor_type_sub_dict = {}
-                for i in range(monitor_status_list_count):
-                    monitor_status_key = monitor_status_list[i]
+                for monitor_status_key in monitor_status_list:
                     monitor_status_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
                     monitor_type_sub_dict.setdefault(monitor_status_key, monitor_status_value)
                 
