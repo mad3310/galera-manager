@@ -7,7 +7,6 @@ Created on 2013-7-21
 '''
 
 import urllib2
-import logging
 import json
 import datetime
 import time
