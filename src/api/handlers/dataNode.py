@@ -115,17 +115,17 @@ class SyncDataNode(APIHandler):
 # eg. curl "http://localhost:8888/inner/node/check/log/error"
 class DataNodeMonitorLogError(APIHandler):
     
-    invokeCommand = InvokeCommand()
+    node_mysql_service_oper = Node_Mysql_Service_Opers()
     
     def get(self):
-        result = self.invokeCommand.run_check_shell(options.check_datanode_error)
+        result = self.node_mysql_service_oper.retrieve_log_for_error()
         self.finish(result)
         
 # check data node if there are some warnings in log
 # eg. curl "http://localhost:8888/inner/node/check/log/warning"
 class DataNodeMonitorLogWarning(APIHandler):
     
-    invokeCommand = InvokeCommand()
+    node_mysql_service_oper = Node_Mysql_Service_Opers()
     
     def get(self):
         '''
@@ -146,7 +146,7 @@ class DataNodeMonitorLogWarning(APIHandler):
 #         reuslt = self.invokeCommand.run_chek_shell(options.check_arbitrator_warning)
 #            self.finish(result)
         
-        result = self.invokeCommand.run_check_shell(options.check_datanode_warning)
+        result = self.node_mysql_service_oper.retrieve_log_for_warning()
         self.finish(result)
         
         

@@ -9,6 +9,9 @@ from common.zkOpers import ZkOpers
 from common.abstract_mysql_service_opers import Abstract_Mysql_Service_Opers
 from common.abstract_mysql_service_action_thread import Abstract_Mysql_Service_Action_Thread
 from common.utils.exceptions import CommonException
+from common.configFileOpers import ConfigFileOpers
+from common.utils.mail import send_email
+from common.helper import get_localhost_ip
 
 '''
 Created on 2013-7-21
@@ -19,6 +22,8 @@ Created on 2013-7-21
 class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
     
     invokeCommand = InvokeCommand()
+    
+    confFileOper = ConfigFileOpers()
     
     def __init__(self):
         '''
@@ -75,6 +80,39 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
             node_stop_action.start()
         finally:
             zkOper.close()
+            
+    def retrieve_log_for_error(self):
+        result = self.invokeCommand.run_check_shell(options.check_datanode_error)
+        
+        if cmp('false',result) == 0:
+            _tmp_error_log_file_path = '%s/shell/tmp_check_datanode_error' % (options.base_dir)
+            _mysql_error_log_message = self.confFileOper.retrieveFullText(_tmp_error_log_file_path)
+            _email_subject = "[%s] MySQL log error message" % options.sitename
+            self._send_log_info_email(_email_subject, _mysql_error_log_message)
+            
+        return result
+    
+    def retrieve_log_for_warning(self):
+        result = self.invokeCommand.run_check_shell(options.check_datanode_warning)
+        
+        if cmp('false',result) == 0:
+            _tmp_warning_log_file_path = '%s/shell/tmp_check_datanode_warning' % (options.base_dir)
+            _mysql_error_log_message = self.confFileOper.retrieveFullText(_tmp_warning_log_file_path)
+            _email_subject = "[%s] MySQL log warning message" % options.sitename
+            self._send_log_info_email(_email_subject, _mysql_error_log_message)
+            
+        return result
+    
+    def _send_log_info_email(self, subject, content):
+        local_ip = get_localhost_ip()
+        # send email
+        body = self.render_string("errors/500_email.html",
+                                  exception=content)
+        
+        body += "\nip:" + local_ip
+        
+        if options.send_email_switch:
+            send_email(options.admins, subject, body)
         
         
 class Node_start_action(Abstract_Mysql_Service_Action_Thread):
@@ -200,4 +238,7 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
             
             
         return finished_flag
+    
+
+
             

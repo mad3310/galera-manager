@@ -6,12 +6,13 @@ from tornado.gen import Callback, Wait
 from tornado.options import options
 from abc import abstractmethod
 from common.helper import check_leader, is_monitoring, get_localhost_ip
+from common.utils.mail import send_email
 
 import logging
 import tornado.httpclient
 import datetime
 import re
-import json
+
 
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
@@ -38,13 +39,13 @@ class Check_Status_Base(object):
             return
         
         zkOper = ZkOpers()
+        zk_data_node_count = len(data_node_info_list)
         try:
             pre_stat = zkOper.retrieveClusterStatus()
             ''' The following logic expression means 
                 1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.
                 2. else the pre_stat is not {}, then it must have value in pre_stat dictionary and judge whether it is right or not.
             '''
-            zk_data_node_count = len(data_node_info_list)
             if pre_stat.has_key('_status') and pre_stat['_status'] != 'initializing' or pre_stat == {}:
                 online_node_list = zkOper.retrieve_started_nodes()
                 result = {}
@@ -77,7 +78,7 @@ class Check_Status_Base(object):
                 
             error_record_dict = {}
             error_record_msg = ''
-            error_record_ip_list = [] 
+            error_record_ip_list = []
             for i in range(len(key_sets)):
                 callback_key = key_sets.pop()
                 response = yield Wait(callback_key)
@@ -299,19 +300,23 @@ class Check_DB_Anti_Item(Check_Status_Base):
                 anti_item_trigger_count = self.dba_opers.check_triggers(conn)
                 anti_item_nopk_count = self.dba_opers.check_existed_nopk(conn)
                 anti_item_fulltext_and_spatial_count = self.dba_opers.check_existed_fulltext_and_spatial(conn)
+                
                 if anti_item_myisam_count :
                     anti_item_count += anti_item_myisam_count
                     msg += " Myisam,"
-                if anti_item_procedure_count :
-#                     anti_item_count += anti_item_procedure_count
-#                     msg += " Procedure,"
-                    logging.warn("[status_opers] check db status, existed stored procedure. Item's count:%s"%(str(anti_item_procedure_count)))
+                    
+                if anti_item_procedure_count:
+                    anti_item_message = "check db status, existed stored procedure. Item's count:%s"%(str(anti_item_procedure_count))
+                    self._send_monitor_email(anti_item_message)
+                    
                 if anti_item_trigger_count :
                     anti_item_count += anti_item_trigger_count
                     msg += " Trigger,"
+                    
                 if anti_item_nopk_count :
                     anti_item_count += anti_item_nopk_count
                     msg += " NOPK,"
+                    
                 if anti_item_fulltext_and_spatial_count:
                     anti_item_count += anti_item_fulltext_and_spatial_count
                     msg += " FullText, SPATIAL,"
@@ -336,6 +341,18 @@ class Check_DB_Anti_Item(Check_Status_Base):
             return options.alarm_nothing
         
         return options.alarm_serious
+    
+    def _send_monitor_email(self, anti_item_content):
+        local_ip = get_localhost_ip()
+        # send email
+        subject = "[%s] Auti-Item existed in MySQL according to Galera way" % options.sitename
+        body = self.render_string("errors/500_email.html",
+                                  exception=anti_item_content)
+        
+        body += "\nip:" + local_ip
+        
+        if options.send_email_switch:
+            send_email(options.admins, subject, body)
         
     
 class Check_DB_WR_Avalialbe(Check_Status_Base):
@@ -484,14 +501,7 @@ class Check_Node_Log_Error(Check_Status_Base):
         super(Check_Node_Log_Error, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
 
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
-#         message = "processing method: Check_Node_Log_Error,the total count:%s,the succes count:%s,the failed count:%s"
-#         logging.info(message%(total_count, success_count, failed_count))
-        if failed_count == 0:
-            return options.alarm_nothing
-        elif failed_count == 1:
-            return options.alarm_general
-        else:
-            return options.alarm_serious
+        return options.alarm_nothing
         
 #eq curl  "http://localhost:8888/backup/inner/check" backup data by full dose.
 class Check_Backup_Status(Check_Status_Base):
@@ -662,12 +672,5 @@ class Check_Node_Log_Warning(Check_Status_Base):
         super(Check_Node_Log_Warning, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
         
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
-#         message = "processing method: Check_Node_Log_Warning,the total count:%s,the succes count:%s,the failed count:%s"
-#         logging.info(message%(total_count, success_count, failed_count))
-        if failed_count == 0:
-            return options.alarm_nothing
-        elif failed_count == 1:
-            return options.alarm_general
-        else:
-            return options.alarm_serious
+        return options.alarm_nothing
 

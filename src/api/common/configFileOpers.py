@@ -2,8 +2,10 @@
 #-*- coding: utf-8 -*-
 
 import os
+from common.utils.exceptions import CommonException
 
-class ConfigFileOpers():
+class ConfigFileOpers(object):
+    
     def getValue(self,fileName,keyList=None):
         resultValue = {}
         f = file(fileName, 'r')
@@ -58,8 +60,11 @@ class ConfigFileOpers():
         
     def retrieveFullText(self, fileName):
         inputstream = open(fileName)
-        lines = inputstream.readlines()
-        inputstream.close()
+        
+        try:
+            lines = inputstream.readlines()
+        finally:
+            inputstream.close()
         
         resultValue = ''
         for line in lines:
@@ -69,11 +74,11 @@ class ConfigFileOpers():
     
     
     def writeFullText(self, fileName,fullText):
-        if os.path.exists(fileName):
-            outputstream = open(fileName,'w')
-            outputstream.write('')
-            outputstream.close()
+        if not os.path.exists(fileName):
+            raise CommonException("%s file not existed!" % (fileName))
+        
         outputstream = open(fileName,'w')
+        outputstream.write('')
         outputstream.write(fullText)
         outputstream.close()
                     
