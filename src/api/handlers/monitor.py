@@ -125,7 +125,7 @@ class Mcluster_Monitor_Sync(APIHandler):
         try:
             data_node_info_list = zkOper.retrieve_data_node_list()
         finally:
-            zkOper.close()
+            zkOper.stop()
             
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)
@@ -151,7 +151,7 @@ class Mcluster_Monitor_Async(APIHandler):
         try:
             data_node_info_list = zkOper.retrieve_data_node_list()
         finally:
-            zkOper.close()
+            zkOper.stop()
             
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)

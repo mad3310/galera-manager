@@ -64,7 +64,7 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
             node_start_action = Node_start_action(isNewCluster, lock)
             node_start_action.start()
         finally:
-            zkOper.close()
+            zkOper.stop()
          
     def stop(self):
         zkOper = ZkOpers()
@@ -79,7 +79,7 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
             node_stop_action = Node_stop_action(lock)
             node_stop_action.start()
         finally:
-            zkOper.close()
+            zkOper.stop()
             
     def retrieve_log_for_error(self):
         result = self.invokeCommand.run_check_shell(options.check_datanode_error)
@@ -147,7 +147,7 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
                 finished_flag = self._check_start_status(data_node_ip)
         finally:
             zkOper.unLock_node_start_stop_action(lock)
-            zkOper.close()
+            zkOper.stop()
         
         if finished_flag:    
             self._send_email(data_node_ip, " mysql service start operation finished")
@@ -234,7 +234,7 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
             try:
                 zkOper.remove_started_node(data_node_ip)
             finally:
-                zkOper.close()
+                zkOper.stop()
             
             
         return finished_flag

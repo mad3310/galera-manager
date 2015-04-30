@@ -43,7 +43,7 @@ class ArbitratorStart(APIHandler):
         try:
             data_node_list = zkOper.retrieve_data_node_list()
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         local_ip = get_localhost_ip()
         

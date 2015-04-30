@@ -59,6 +59,13 @@ class ZkOpers(object):
             self.zk.close()
         except Exception, e:
             logging.error(e)
+            
+    def stop(self):
+        try:
+            self.zk.stop()
+        except Exception, e:
+            logging.error(e)
+            raise
 
         
     def existCluster(self):

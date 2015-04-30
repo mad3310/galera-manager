@@ -77,7 +77,7 @@ class AddDataNodeToMCluster(APIHandler):
             mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
             zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_full_text, issue_mycnf_changed)
         finally:
-            zkOper.close()
+            zkOper.stop()
             
         result = {}
 #        dict.setdefault("code", "000000")
@@ -103,7 +103,7 @@ class SyncDataNode(APIHandler):
             return_result = zkOper.retrieve_data_node_info(ip_address)
             self.confOpers.setValue(options.data_node_property, return_result)
         finally:
-            zkOper.close()
+            zkOper.stop()
             
         result = {}
 #        dict.setdefault("code", "000000")

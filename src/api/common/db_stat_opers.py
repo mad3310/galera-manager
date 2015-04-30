@@ -68,7 +68,7 @@ class DBStatOpers(Abstract_Stat_Service):
         try:
             cluster_started_nodes = zkOper.retrieve_started_nodes()
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         confDict = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         local_ip = confDict['dataNodeIp']

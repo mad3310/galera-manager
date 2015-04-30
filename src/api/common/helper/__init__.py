@@ -22,7 +22,7 @@ def issue_mycnf_changed(self):
         clusterUUID = zkOper.getClusterUUID()
         sourceText,_ = zkOper.retrieveMysqlProp(clusterUUID, issue_mycnf_changed)
     finally:
-        zkOper.close()
+        zkOper.stop()
     
     keyValueDict = getDictFromText(sourceText, keyList)
     confOpers.setValue(options.mysql_cnf_file_name, keyValueDict)
@@ -123,7 +123,7 @@ def is_monitoring(host_ip=None):
         logging.info("is_monitoring: except False")
         return False
     finally:
-        zkOper.close()
+        zkOper.stop()
 
 def get_localhost_ip():
     cmd="""ifconfig $(route -n|grep '^0.0.0.0'|awk '{print $NF}')|awk '/inet addr/,gsub("addr:",""){print $2}'"""

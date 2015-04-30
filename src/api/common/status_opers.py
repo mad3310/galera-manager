@@ -60,7 +60,7 @@ class Check_Status_Base(object):
                 logging.info(str(pre_stat) + " change to " + dict['_status'])
                 zkOper.writeClusterStatus(result)
         finally:
-            zkOper.close()
+            zkOper.stop()
             
             
         success_count = 0
@@ -151,7 +151,7 @@ class Check_Status_Base(object):
             
             zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
         finally:
-            zkOper.close()
+            zkOper.stop()
 
 class Check_Cluster_Available(Check_Status_Base):
     
@@ -280,7 +280,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
         try:
             _path_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         if _path_value != {}:
             failed_count = int(re.findall(r'failed count=(\d)', _path_value['message'])[0])
@@ -435,7 +435,7 @@ class Check_Node_Active(Check_Status_Base):
         try:
             started_nodes_list = zkOper.retrieve_started_nodes()
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         
         logging.info("check_node_active started_nodes_list %s" %(started_nodes_list))
@@ -578,7 +578,7 @@ class Check_Database_User(Check_Status_Base):
                     logging.info("result" + str(inner_list))
             #logging.info("user_zk_src_list :" + str(user_zk_src_list))
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         differ_dict_set = {}
         count_dict_set = {}

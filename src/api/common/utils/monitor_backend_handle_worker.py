@@ -48,7 +48,7 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
             logging.info("a thread is running the monitor async, give up this oper on this machine!")
         finally:
             zkOper.unLock_aysnc_monitor_action(lock)
-            zkOper.close()
+            zkOper.stop()
         
                 
     def __action_monitor_async(self, data_node_info_list):

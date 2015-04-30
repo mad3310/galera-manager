@@ -28,7 +28,7 @@ class MclusterStatusDetail(APIHandler):
                 result.setdefault(monitor_status_key, monitor_status_value)
             
         finally:
-            zkOper.close()
+            zkOper.stop()
             
         self.finish(result)
             
@@ -54,6 +54,6 @@ class MclusterStatus(APIHandler):
                 
                 result.setdefault(monitor_type,monitor_type_sub_dict)
         finally:
-            zkOper.close()
+            zkOper.stop()
             
         self.finish(result)

@@ -35,4 +35,4 @@ class AdminOpers(object):
                 else:
                     logging.info("write data into configuration failed")
         finally:
-            zkOper.close()
+            zkOper.stop()

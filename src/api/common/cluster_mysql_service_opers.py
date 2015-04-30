@@ -136,7 +136,7 @@ class StopIssue(object):
                         
                 time.sleep(1)
         finally:
-            zkOper.close()
+            zkOper.stop()
             
         return stop_finished
     
@@ -410,7 +410,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
             raise e
         finally:
             zkOper.unLock_cluster_start_stop_action(lock)
-            zkOper.close()
+            zkOper.stop()
             logging.info("Unlock cluster_start_stop_action done!")
             logging.info(str(data_node_started_flag_dict))
         
@@ -472,7 +472,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                     
                 time.sleep(sleep_t)
         finally:
-            zkOper.close()
+            zkOper.stop()
             
         return start_finished
     
@@ -517,7 +517,7 @@ class Cluster_stop_action(Abstract_Mysql_Service_Action_Thread):
             
         finally:
             zkOper.unLock_cluster_start_stop_action(lock)
-            zkOper.close()
+            zkOper.stop()
         
         data_node_stop_finished_count = 0
         for data_node_ip, stop_finished in data_node_stop_finished_flag_dict.iteritems():
@@ -547,6 +547,6 @@ class Cluster_stop_action(Abstract_Mysql_Service_Action_Thread):
                         
                 time.sleep(1)
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         return stop_finished

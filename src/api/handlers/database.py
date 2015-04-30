@@ -74,7 +74,7 @@ class DBOnMCluster(APIHandler):
                          'max_user_connections':max_user_connections}
             zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
         finally:
-            zkOper.close()
+            zkOper.stop()
             
         result = {}
         result.setdefault("message", "database create successful")
@@ -115,7 +115,7 @@ class DBOnMCluster(APIHandler):
                 
             zkOper.remove_db(clusterUUID, dbName)
         finally:
-            zkOper.close()
+            zkOper.stop()
             
         result = {}
         result.setdefault("message", "database remove successful!")
@@ -295,7 +295,7 @@ class Inner_DB_Check_WR(APIHandler):
             return
         finally:
             conn.close()
-            zkOper.close()
+            zkOper.stop()
                
         self.finish(return_flag)
         

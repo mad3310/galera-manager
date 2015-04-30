@@ -79,7 +79,7 @@ class BackUp(APIHandler):
         try:
             online_node_list = zkOper.retrieve_started_nodes()
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         hostname = socket.gethostname()
         local_ip = get_localhost_ip()
@@ -202,7 +202,7 @@ class BackUpCheck(APIHandler):
         try:
             online_node_list = zkOper.retrieve_started_nodes()
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         local_ip = get_localhost_ip()
         logging.info("local ip :" + str(local_ip))

@@ -140,7 +140,7 @@ class DBUser(APIHandler):
                          'max_user_connections':max_user_connections}
             zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
         finally:
-            zkOper.close()
+            zkOper.stop()
             
         result = {}
 #        dict.setdefault("code", '000000')
@@ -224,7 +224,7 @@ class DBUser(APIHandler):
             zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
         finally:
             conn.close()
-            zkOper.close()
+            zkOper.stop()
         
         
         result = {}
@@ -268,7 +268,7 @@ class DBUser(APIHandler):
             clusterUUID = zkOper.getClusterUUID()
             zkOper.remove_db_user(clusterUUID, dbName, userName, ipAddress)
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         
         result = {}

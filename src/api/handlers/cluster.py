@@ -65,7 +65,7 @@ class CreateMCluster(APIHandler):
             zkOper.writeClusterInfo(clusterUUID, clusterProps)
             zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         result = {}
 #        dict.setdefault("code", '000000')
@@ -131,7 +131,7 @@ class InitMCluster(APIHandler):
                 zkOper.unLock_init_node_action(lock)
                 
             if zkOper:
-                zkOper.close()
+                zkOper.stop()
         
         result = {}
 #        dict.setdefault("code", '000000')
@@ -155,7 +155,7 @@ class SyncMCluster(APIHandler):
             data, _ = zkOper.retrieveClusterProp(clusterUUID)
             self.confOpers.setValue(options.cluster_property, eval(data))
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         result = {}
 #       dict.setdefault("code", '000000')
@@ -206,19 +206,19 @@ class ClusterStatus(APIHandler):
     
     @asynchronous
     def get(self):
-        zkoper_obj = ZkOpers()
+        zkOper = ZkOpers()
         try:
-            existCluster = zkoper_obj.existCluster()
+            existCluster = zkOper.existCluster()
 
-            cluster_status = zkoper_obj.retrieveClusterStatus()
-            cluster_started_nodes = zkoper_obj.retrieve_started_nodes()
+            cluster_status = zkOper.retrieveClusterStatus()
+            cluster_started_nodes = zkOper.retrieve_started_nodes()
         except kazoo.exceptions.LockTimeout:
             raise HTTPAPIError(status_code=578, error_detail="lock by other thread",\
                                 notification = "direct", \
                                 log_message= "lock by other thread",\
                                 response =  "current operation is using by other people, please wait a moment to try again!")
         finally:
-            zkoper_obj.close()
+            zkOper.stop()
             
         result = {}
 #       dict.setdefault("code", '000000')
@@ -255,7 +255,7 @@ class ClusterStop(APIHandler):
 
             zkOper.writeClusterStatus(status_dict)
         finally:
-            zkOper.close()
+            zkOper.stop()
         
         result = {}
         #dict.setdefault("code", '000000')
