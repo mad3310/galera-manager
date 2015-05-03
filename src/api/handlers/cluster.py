@@ -188,7 +188,7 @@ class ClusterStart(APIHandler):
                                response =  "arguments are wrong, retry again.")
         
         try:
-            self.mysql_service_opers.start(cluster_flag)
+            self.mysql_service_opers.start(cluster_flag, None)
         except kazoo.exceptions.LockTimeout:
             raise HTTPAPIError(status_code=578, error_detail="lock by other thread",
                                notification = "direct",

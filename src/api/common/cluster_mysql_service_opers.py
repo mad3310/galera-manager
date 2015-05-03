@@ -16,6 +16,7 @@ from common.utils.exceptions import HTTPAPIError
 from common.helper import _retrieve_userName_passwd
 from common.helper import _request_fetch
 from common.abstract_mysql_service_action_thread import Abstract_Mysql_Service_Action_Thread
+from common.utils.exceptions import CommonException
 
 '''
 Created on 2013-7-21
@@ -34,7 +35,7 @@ class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
     '''
     @todo: arbitrator need to add one cluster_mode param?
     '''
-    def start(self, cluster_flag, cluster_mode):
+    def start(self, cluster_flag, cluster_mode=None):
         zkOper = ZkOpers()
         isLock,lock = zkOper.lock_cluster_start_stop_action()
         
@@ -149,7 +150,6 @@ class GaleraStatus():
         
     def check_status(self,  c_data_node_stop_finished_flag_dict):
         self.c_uuid_seqno_dict = {}
-        logging.info('/inner/db/recover/uuid_seqno start')
         url_post = "/inner/db/recover/uuid_seqno"
         for (data_node_ip, stop_finished) in c_data_node_stop_finished_flag_dict.iteritems():
             if not stop_finished:
@@ -234,13 +234,16 @@ class Arbitrator(object):
             
 class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
     
-    lock = None
-    
     def __init__(self, lock , cluster_flag, cluster_mode):
         super(Cluster_start_action, self).__init__()
         self.lock = lock
         self.cluster_flag = cluster_flag
         self.cluster_mode = cluster_mode
+        
+        self.zkOper = ZkOpers()
+        
+    def __del__(self):
+        del self.zkOper
         
     def run(self):
         try:
@@ -254,20 +257,21 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
         need_start_node_ip_list = []
         arbitrator_node_ip = []
         status_dict = {}
-        mode_dict = {}
-        
-        zkOper = ZkOpers()
         
         try:
-            data_node_info_list = zkOper.retrieve_data_node_list()
+            data_node_info_list = self.zkOper.retrieve_data_node_list()
             node_num = len(data_node_info_list)
             adminUser, adminPasswd = _retrieve_userName_passwd()
-            mode_dict.setdefault("cluster_mode", cluster_mode)
-            zkOper.writeClusterMode(mode_dict)
+            
+            if None != cluster_mode:
+                mode_dict = {
+                    "cluster_mode" : cluster_mode
+                }
+                self.zkOper.writeClusterMode(mode_dict)
             
             if cluster_flag == 'new':
                 status_dict.setdefault("_status", "initializing")
-                zkOper.writeClusterStatus(status_dict)
+                self.zkOper.writeClusterStatus(status_dict)
                 portstatus_obj = PortStatus()
                 need_start_node_ip_list = portstatus_obj.check_port(data_node_info_list)
                 logging.info("need_start_node_ip_list:" + str(need_start_node_ip_list))
@@ -275,15 +279,10 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 if node_num - len(need_start_node_ip_list) != 1:
                     error_message = "data nodes's status is abnormal."
                     status_dict['_status'] = 'failed'
-                    zkOper.writeClusterStatus(status_dict)
+                    self.zkOper.writeClusterStatus(status_dict)
                     #logging.error("Some nodes's status are abnormal")  
-                    raise HTTPAPIError(status_code=417, error_detail = error_message,
-                                       notification = "direct",
-                                       log_message = error_message,
-                                       response = error_message)
+                    raise CommonException(error_message)
                     
-                logging.info('check_port done!')     
-                
                 '''
                 @todo: for arbitrator mode? need this code?
                 '''
@@ -298,10 +297,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 w_num = wsrepstatus_obj.check_wsrep(data_node_info_list, node_wsrep_status_dict, node_num)
                 if w_num == node_num:
                     error_message = "all data node's status is ok. No need to start them."
-                    raise HTTPAPIError(status_code=500, error_detail = error_message,
-                                       notification = "direct",
-                                       log_message = error_message,
-                                       response = error_message)
+                    raise CommonException(error_message)
                 
                 logging.info("Check the data node wsrep status for start cluster, the wsrep status value is %s" % str(node_wsrep_status_dict))              
                
@@ -311,14 +307,14 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 stop_finished_count = stop_issue_obj.issue_stop(node_wsrep_status_dict, data_node_stop_finished_flag_dict, adminUser, adminPasswd)
                 if stop_finished_count == len(data_node_stop_finished_flag_dict):
                     status_dict['_status'] = 'stopped'
-                    zkOper.writeClusterStatus(status_dict)
+                    self.zkOper.writeClusterStatus(status_dict)
                     self._send_email("mcluster", " mysql service have been stopped in the cluster")
                 
                 logging.info('nodes stopping finished!')
                 
-                galerastatus_obj = GaleraStatus()
+                _galerastatus_obj = GaleraStatus()
                 
-                uuid_seqno_dict = galerastatus_obj.check_status(data_node_stop_finished_flag_dict)
+                uuid_seqno_dict = _galerastatus_obj.check_status(data_node_stop_finished_flag_dict)
                 err_node = ""
                 for (node_ip, value) in uuid_seqno_dict.items():
                     if not value:
@@ -327,11 +323,8 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 if err_node != "":
                     error_message = "data node(%s) error, please check the status and start it by human." % (node_ip)
                     status_dict['_status'] = 'failed'
-                    zkOper.writeClusterStatus(status_dict)
-                    raise HTTPAPIError(status_code=500, error_detail= error_message,
-                                       notification = "direct",
-                                       log_message= error_message,
-                                       response =  error_message)
+                    self.zkOper.writeClusterStatus(status_dict)
+                    raise CommonException(error_message)
                 
                 need_start_node_ip_list = self._sort_seqno(uuid_seqno_dict)
                 logging.info("After sort, the uuid_seqno_dict value is %s" % str(need_start_node_ip_list))
@@ -341,7 +334,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
             logging.info("need_start_node_ip_list:" + str(need_start_node_ip_list))
             
             for data_node_ip in need_start_node_ip_list:
-                started_nodes = zkOper.retrieve_started_nodes()
+                started_nodes = self.zkOper.retrieve_started_nodes()
 #                started_nodes_count = len(started_nodes)
             
                 isNewCluster = False
@@ -354,21 +347,16 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 requesturi = "http://%s:%s%s" % (data_node_ip, options.port, url_post)
                 request = HTTPRequest(url=requesturi, method='POST', body=urllib.urlencode(args_dict),
                                       auth_username = adminUser, auth_password = adminPasswd)
-                logging.info("issue " + requesturi)
                 _request_fetch(request)
                 
                 start_finished = self._check_start_status(data_node_ip, cluster_flag)
                 logging.info('request from node/start is ' + str(start_finished))
                 if start_finished == False:
                     status_dict['_status'] = 'failed'
-                    zkOper.writeClusterStatus(status_dict)
-
+                    self.zkOper.writeClusterStatus(status_dict)
                     error_message = "%s'database status is failed!" % (data_node_ip)
-                    #logging.error(error_message)
-                    raise HTTPAPIError(status_code=500, error_detail= error_message,
-                                       notification = "direct",
-                                       log_message= error_message,
-                                       response =  error_message)
+                    raise CommonException(error_message)
+                
                 logging.info("check started nodes ok!")        
                 data_node_started_flag_dict.setdefault(data_node_ip, start_finished)
 
@@ -389,9 +377,9 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                         log_message="garbd arbitrator start failed",
                         response = "garbd arbitrator start failed")
                     else:
-                        zkOper.write_started_node(arbitrator_ip)
+                        self.zkOper.write_started_node(arbitrator_ip)
                 
-            cluster_started_nodes_list = zkOper.retrieve_started_nodes()
+            cluster_started_nodes_list = self.zkOper.retrieve_started_nodes()
             nodes_online = len(cluster_started_nodes_list)
 
             logging.info("starts nodes" + str(nodes_online))
@@ -402,17 +390,21 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 status_dict['_status'] = 'failed'
                 self._send_email("mcluster", " mysql services have benn started error")
                 
-            zkOper.writeClusterStatus(status_dict)
+            self.zkOper.writeClusterStatus(status_dict)
         except Exception, e:
             logging.error(e)
             status_dict['_status'] = 'failed'
-            zkOper.writeClusterStatus(status_dict)
+            self.zkOper.writeClusterStatus(status_dict)
             raise e
         finally:
-            zkOper.unLock_cluster_start_stop_action(lock)
-            zkOper.stop()
-            logging.info("Unlock cluster_start_stop_action done!")
-            logging.info(str(data_node_started_flag_dict))
+            if self.lock:
+                self.zkOper.unLock_cluster_start_stop_action(self.lock)
+            
+            if self.zkOper:
+                self.zkOper.stop()
+            
+                logging.info("Unlock cluster_start_stop_action done!")
+            
         
     def _sort_seqno(self, param):
         uuid_unique_list = []
@@ -432,10 +424,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
         uuid_unique_set = set(uuid_unique_list)
         if len(uuid_unique_set) != 1:
             error_message = "node's uuid_seqno api no return unique uuid!"
-            raise HTTPAPIError(status_code=500, error_detail= error_message,
-                               notification = "direct",
-                               log_message= error_message,
-                               response =  error_message)
+            raise CommonException(error_message)
         
         seqno_list.sort()
         
@@ -461,18 +450,14 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
         else:
             count = options.old_count_times
             
-        zkOper = ZkOpers()
-        try:
-            while not start_finished and count >= 0:
-                started_nodes = zkOper.retrieve_started_nodes()
-                count -= 1
-                logging.info(str(data_node_ip) + "count down" + str(count))
-                if data_node_ip in started_nodes:
-                    start_finished = True
-                    
-                time.sleep(sleep_t)
-        finally:
-            zkOper.stop()
+        while not start_finished and count >= 0:
+            started_nodes = self.zkOper.retrieve_started_nodes()
+            count -= 1
+            logging.info(str(data_node_ip) + "count down" + str(count))
+            if data_node_ip in started_nodes:
+                start_finished = True
+                
+            time.sleep(sleep_t)
             
         return start_finished
     
