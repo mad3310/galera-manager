@@ -131,7 +131,12 @@ class BackUpChecker(APIHandler):
 
     @asynchronous
     def get(self):
-        if not is_monitoring():
+        
+        zkOper = self.retrieve_zkOper()
+        '''
+        @todo: is_monitoring no have host_ip?
+        '''
+        if not is_monitoring(zkOper=zkOper):
             self.finish("true")
             return
         

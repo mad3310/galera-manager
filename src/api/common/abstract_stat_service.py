@@ -13,10 +13,18 @@ class Abstract_Stat_Service(object):
     
     confOpers = ConfigFileOpers()
     
+    zkOper = None
+    
     def __init__(self):
         '''
         Constructor
         '''
+        
+    def retrieve_zkOper(self):
+        if None == self.zkOper:
+            self.zkOper = ZkOpers()
+            
+        return self.zkOper
         
     @abstractmethod
     def stat(self):

@@ -64,11 +64,7 @@ class DBStatOpers(Abstract_Stat_Service):
     def get_peer_wsrep_status(self):
         logging.info("can not connect to local database site")
         
-        zkOper = ZkOpers()
-        try:
-            cluster_started_nodes = zkOper.retrieve_started_nodes()
-        finally:
-            zkOper.stop()
+        cluster_started_nodes = self.zkOper.retrieve_started_nodes()
         
         confDict = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         local_ip = confDict['dataNodeIp']

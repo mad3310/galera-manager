@@ -18,10 +18,18 @@ TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class Check_Status_Base(object):
     
+    zkOper = None
+    
     def __init__(self):
         if self.__class__ == Check_Status_Base:
             raise NotImplementedError, \
             "Cannot create object of class Check_Status_Base"
+            
+    def retrieve_zkOper(self):
+        if None == self.zkOper:
+            self.zkOper = ZkOpers()
+            
+        return self.zkOper
     
     @abstractmethod
     def check(self, data_node_info_list):
@@ -33,28 +41,25 @@ class Check_Status_Base(object):
     
     @tornado.gen.engine
     def check_status(self, data_node_info_list, url_post, monitor_type, monitor_key):
-        zkOper = ZkOpers()
         zk_data_node_count = len(data_node_info_list)
-        try:
-            pre_stat = zkOper.retrieveClusterStatus()
-            ''' The following logic expression means 
-                1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.
-                2. else the pre_stat is not {}, then it must have value in pre_stat dictionary and judge whether it is right or not.
-            '''
-            if pre_stat.has_key('_status') and pre_stat['_status'] != 'initializing' or pre_stat == {}:
-                online_node_list = zkOper.retrieve_started_nodes()
-                result = {}
-            
-                online_num = len(online_node_list)
-                if zk_data_node_count == online_num:
-                    result['_status'] = 'running'   
-                elif zk_data_node_count / 2 + 1 <= online_num < zk_data_node_count:
-                    result['_status'] = 'sub-health'
-                else :
-                    result['_status'] = 'failed' 
-                zkOper.writeClusterStatus(result)
-        finally:
-            zkOper.stop()
+        self.retrieve_zkOper()
+        pre_stat = self.zkOper.retrieveClusterStatus()
+        ''' The following logic expression means 
+            1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.
+            2. else the pre_stat is not {}, then it must have value in pre_stat dictionary and judge whether it is right or not.
+        '''
+        if pre_stat.has_key('_status') and pre_stat['_status'] != 'initializing' or pre_stat == {}:
+            online_node_list = self.zkOper.retrieve_started_nodes()
+            result = {}
+        
+            online_num = len(online_node_list)
+            if zk_data_node_count == online_num:
+                result['_status'] = 'running'   
+            elif zk_data_node_count / 2 + 1 <= online_num < zk_data_node_count:
+                result['_status'] = 'sub-health'
+            else :
+                result['_status'] = 'failed' 
+            self.zkOper.writeClusterStatus(result)
             
             
         success_count = 0
@@ -111,41 +116,37 @@ class Check_Status_Base(object):
 
     def write_status(self, total_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key):
         dt = datetime.datetime.now()
+        self.retrieve_zkOper()
+        _include_timeout_num_from_response = 0
+        if {} != error_record_dict:
+            _error_record_message = error_record_dict.get('msg')
+            _include_timeout_list = re.findall(r'HTTP 599: Timeout', str(_error_record_message))
+            _include_timeout_num_from_response = len(_include_timeout_list)
         
-        zkOper = ZkOpers()
-        try: 
-            _include_timeout_num_from_response = 0
-            if {} != error_record_dict:
-                _error_record_message = error_record_dict.get('msg')
-                _include_timeout_list = re.findall(r'HTTP 599: Timeout', str(_error_record_message))
-                _include_timeout_num_from_response = len(_include_timeout_list)
-            
-            _timeout_num_from_zk = 0    
-            if _include_timeout_num_from_response > 0:
-                _monitor_value_dict = zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
-                _timeout_num = _monitor_value_dict.get("timeout_num")
-                if _timeout_num is not None:
-                    _timeout_num_from_zk = _timeout_num
-                    
-                _timeout_num_from_zk += 1
-                    
-            if _timeout_num_from_zk < 2 and _include_timeout_num_from_response > 0:
-                success_count = total_count
-                failed_count = 0
-                alarm_level = "nothing"
-                error_record_dict = {}
+        _timeout_num_from_zk = 0    
+        if _include_timeout_num_from_response > 0:
+            _monitor_value_dict = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
+            _timeout_num = _monitor_value_dict.get("timeout_num")
+            if _timeout_num is not None:
+                _timeout_num_from_zk = _timeout_num
+                
+            _timeout_num_from_zk += 1
+                
+        if _timeout_num_from_zk < 2 and _include_timeout_num_from_response > 0:
+            success_count = total_count
+            failed_count = 0
+            alarm_level = "nothing"
+            error_record_dict = {}
+    
+        result_dict = {
+            "message": "total=%s, success count=%s, failed count=%s" % (total_count, success_count, failed_count),
+            "alarm": alarm_level,
+            "error_record": error_record_dict,
+            "ctime": dt.strftime(TIME_FORMAT),
+            "timeout_num": _timeout_num_from_zk
+        }
         
-            result_dict = {
-                "message": "total=%s, success count=%s, failed count=%s" % (total_count, success_count, failed_count),
-                "alarm": alarm_level,
-                "error_record": error_record_dict,
-                "ctime": dt.strftime(TIME_FORMAT),
-                "timeout_num": _timeout_num_from_zk
-            }
-            
-            zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
-        finally:
-            zkOper.stop()
+        self.zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
 
 class Check_Cluster_Available(Check_Status_Base):
     
@@ -253,7 +254,10 @@ class Check_DB_Anti_Item(Check_Status_Base):
     dba_opers = DBAOpers()
     
     def check(self, data_node_info_list):
-        if not is_monitoring(get_localhost_ip()):
+        
+        zkOper = self.retrieve_zkOper()
+        
+        if not is_monitoring(get_localhost_ip(), zkOper):
             return
         
         conn = self.dba_opers.get_mysql_connection()
@@ -266,11 +270,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
         failed_count = 0
         _path_value = {}
         
-        zkOper = ZkOpers()
-        try:
-            _path_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
-        finally:
-            zkOper.stop()
+        _path_value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
         
         if _path_value != {}:
             failed_count = int(re.findall(r'failed count=(\d)', _path_value['message'])[0])
@@ -421,14 +421,9 @@ class Check_Node_Active(Check_Status_Base):
     
     @tornado.gen.engine
     def check(self, data_node_info_list):
-        zkOper = ZkOpers()
-        try:
-            started_nodes_list = zkOper.retrieve_started_nodes()
-        finally:
-            zkOper.stop()
+        self.retrieve_zkOper()
+        started_nodes_list = self.zkOper.retrieve_started_nodes()
         
-        
-        logging.info("check_node_active started_nodes_list %s" %(started_nodes_list))
         error_record = {}
         ip = []
         for data_node_ip in started_nodes_list:
@@ -523,7 +518,9 @@ class Check_Database_User(Check_Status_Base):
     @tornado.gen.engine
     def check(self, data_node_info_list):
         #url_post = "/dbuser/inner/check"
-        if not is_monitoring(get_localhost_ip()):
+        zkOper = self.retrieve_zkOper()
+        
+        if not is_monitoring(get_localhost_ip(), zkOper):
             return
         
         monitor_type = "db"
@@ -550,25 +547,20 @@ class Check_Database_User(Check_Status_Base):
             user_mysql_src_dict.setdefault(dict_key_str, inner_value_list)
 
           
-        zkOper = ZkOpers()
-
-        try:
-            db_list = zkOper.retrieve_db_list()
-        
-            user_zk_src_list = []
-            for db_name in db_list:
-                db_user_list = zkOper.retrieve_db_user_list(db_name)
-                logging.info("dbName: " + db_name + " db_user_list : " + str(db_user_list))
-                for db_user in db_user_list:
-                    inner_list = []
-                    inner_list.append(db_user)
-                    prop = zkOper.get_db_user_prop(db_name, db_user)
-                    inner_list.append(prop)
-                    user_zk_src_list.append(inner_list)
-                    logging.info("result" + str(inner_list))
+        db_list = self.zkOper.retrieve_db_list()
+    
+        user_zk_src_list = []
+        for db_name in db_list:
+            db_user_list = self.zkOper.retrieve_db_user_list(db_name)
+            logging.info("dbName: " + db_name + " db_user_list : " + str(db_user_list))
+            for db_user in db_user_list:
+                inner_list = []
+                inner_list.append(db_user)
+                prop = self.zkOper.get_db_user_prop(db_name, db_user)
+                inner_list.append(prop)
+                user_zk_src_list.append(inner_list)
+                logging.info("result" + str(inner_list))
             #logging.info("user_zk_src_list :" + str(user_zk_src_list))
-        finally:
-            zkOper.stop()
         
         differ_dict_set = {}
         count_dict_set = {}

@@ -1,13 +1,11 @@
 #-*- coding: utf-8 -*-
 import time
 import sys
-import logging
 import kazoo
 
 from common.invokeCommand import InvokeCommand
 from tornado.options import options
 from common.dba_opers import DBAOpers
-from common.zkOpers import ZkOpers
 from common.abstract_mysql_service_opers import Abstract_Mysql_Service_Opers
 from common.abstract_mysql_service_action_thread import Abstract_Mysql_Service_Action_Thread
 from common.utils.exceptions import CommonException
@@ -52,7 +50,6 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         
         
     def start(self, isNewCluster):
-        
         '''
         @todo: check only pass lock to below action and close the zkOper object, real action if can release the lock
         '''
@@ -60,25 +57,15 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         node_start_action.start()
          
     def stop(self):
-        zkOper = ZkOpers()
-        
-        try:
-            isLock,lock = zkOper.lock_node_start_stop_action()
-            
-            if not isLock:
-                raise CommonException("When stop node, can't retrieve the stop action lock!")
-            
-            # Start a thread to run the events
-            node_stop_action = Node_stop_action(lock)
-            node_stop_action.start()
-        finally:
-            zkOper.stop()
+        # Stop a thread to run the events
+        node_stop_action = Node_stop_action()
+        node_stop_action.start()
             
     def retrieve_log_for_error(self):
         result = self.invokeCommand.run_check_shell(options.check_datanode_error)
         
         if cmp('false',result) == 0:
-            _tmp_error_log_file_path = '%s/shell/tmp_check_datanode_error' % (options.base_dir)
+            _tmp_error_log_file_path = '%s/tmp_check_datanode_error' % (options.base_dir)
             _mysql_error_log_message = self.confFileOper.retrieveFullText(_tmp_error_log_file_path)
             _email_subject = "[%s] MySQL log error message" % options.sitename
             self._send_log_info_email(_email_subject, _mysql_error_log_message)
@@ -89,7 +76,7 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         result = self.invokeCommand.run_check_shell(options.check_datanode_warning)
         
         if cmp('false',result) == 0:
-            _tmp_warning_log_file_path = '%s/shell/tmp_check_datanode_warning' % (options.base_dir)
+            _tmp_warning_log_file_path = '%s/tmp_check_datanode_warning' % (options.base_dir)
             _mysql_error_log_message = self.confFileOper.retrieveFullText(_tmp_warning_log_file_path)
             _email_subject = "[%s] MySQL log warning message" % options.sitename
             self._send_log_info_email(_email_subject, _mysql_error_log_message)
@@ -118,18 +105,14 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
         
         self.isNewCluster = isNewCluster
         
-        self.zkOper = ZkOpers()
-        
+        zkOper = self.retrieve_zkOper()
         try:
-            self.isLock, self.lock = self.zkOper.lock_node_start_stop_action()
+            self.isLock, self.lock = zkOper.lock_node_start_stop_action()
         except kazoo.exceptions.LockTimeout:
             raise CommonException("When start node, can't retrieve the start atcion lock!")
             
         if not self.isLock:
             raise CommonException("When start node, can't retrieve the start atcion lock!")
-        
-    def __del__(self):
-        del self.zkOper
         
     def run(self):
         try:
@@ -137,11 +120,8 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
         except:
             self.threading_exception_queue.put(sys.exc_info())
         finally:
-            if self.isLock:
+            if self.isLock is not None:
                 self.zkOper.unLock_node_start_stop_action(self.lock)
-        
-            if None != self.zkOper:
-                self.zkOper.stop()
         
     def _issue_start_action(self, isNewCluster):
         dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
@@ -185,31 +165,37 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
             
         
 class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
-    lock = None
     
-    def __init__(self, lock):
-        super(Node_stop_action, self).__init__()
-        self.lock = lock
+    def __init__(self):
         
+        super(Node_stop_action, self).__init__()
+        
+        zkOper = self.retrieve_zkOper()
+        try:
+            self.isLock, self.lock = zkOper.lock_node_start_stop_action()
+        except kazoo.exceptions.LockTimeout:
+            raise CommonException("When stop node, can't retrieve the stop atcion lock!")
+        
+        if not self.isLock:
+            raise CommonException("When stop node, can't retrieve the stop action lock!")
+            
     def run(self):
         try:
-            self._issue_stop_action(self.lock)
+            self._issue_stop_action()
         except:
             self.threading_exception_queue.put(sys.exc_info())
         
-    def _issue_stop_action(self, lock):
+    def _issue_stop_action(self):
         finished_flag = False
         
         dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = dataNodeProKeyValue['dataNodeIp']
         
-        zkoper = ZkOpers()
         try:
             self.invokeCommand.mysql_service_stop()
             finished_flag = self._check_stop_status(data_node_ip)
         finally:
-            zkoper.unLock_node_start_stop_action(lock)
-            zkoper.close()
+            self.zkoper.unLock_node_start_stop_action(self.lock)
             
         if finished_flag:    
             self._send_email(data_node_ip, " mysql service stop operation finished")
@@ -232,12 +218,7 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
             time.sleep(2)
         
         if finished_flag:
-            zkOper = ZkOpers()
-            try:
-                zkOper.remove_started_node(data_node_ip)
-            finally:
-                zkOper.stop()
-            
+            self.zkOper.remove_started_node(data_node_ip)
             
         return finished_flag
     

@@ -136,7 +136,8 @@ class Inner_DB_Check_CurConns(APIHandler):
     dba_opers = DBAOpers()
     
     def get(self):
-        if not is_monitoring(get_localhost_ip()):
+        zkOper = self.retrieve_zkOper()
+        if not is_monitoring(get_localhost_ip(), zkOper):
             self.finish("true")
             return
         conn = self.dba_opers.get_mysql_connection()
@@ -171,7 +172,9 @@ class Inner_DB_Check_WsrepStatus(APIHandler):
     dba_opers = DBAOpers()
     
     def get(self):
-        if not is_monitoring(get_localhost_ip()):
+        zkOper = self.retrieve_zkOper()
+        
+        if not is_monitoring(get_localhost_ip(), zkOper):
             self.finish("true")
             return
         try:
@@ -231,7 +234,7 @@ class Inner_DB_Check_WR(APIHandler):
             
             zkOper.write_started_node(data_node_ip)
 
-            if not is_monitoring(get_localhost_ip()):
+            if not is_monitoring(get_localhost_ip(), zkOper):
                 self.finish("true")
                 return
             

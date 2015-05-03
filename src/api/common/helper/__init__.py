@@ -109,8 +109,7 @@ def check_leader():
         return False
     return True
 
-def is_monitoring(host_ip=None):
-    zkOper = ZkOpers()
+def is_monitoring(host_ip=None, zkOper=None):
     try:
         stat = zkOper.retrieveClusterStatus()
         logging.info("is_monitoring: stat: %s, host_ip: %s" % (str(stat), str(host_ip)))
@@ -122,8 +121,6 @@ def is_monitoring(host_ip=None):
     except:
         logging.info("is_monitoring: except False")
         return False
-    finally:
-        zkOper.stop()
 
 def get_localhost_ip():
     cmd="""ifconfig $(route -n|grep '^0.0.0.0'|awk '{print $NF}')|awk '/inet addr/,gsub("addr:",""){print $2}'"""

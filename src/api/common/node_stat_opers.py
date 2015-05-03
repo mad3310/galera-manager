@@ -46,7 +46,10 @@ class NodeStatOpers(Abstract_Stat_Service):
     
     def _stat_mysql_top(self):
         result = {}
-        if not is_monitoring(get_localhost_ip()):
+        
+        zkOper = self.retrieve_zkOper()
+        
+        if not is_monitoring(get_localhost_ip(), zkOper):
             result.setdefault('mysql_cpu_partion', 0.0)
             result.setdefault('mysql_mem_partion', 0.0)
             return result
