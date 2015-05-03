@@ -6,6 +6,7 @@ import tornado
 import json
 import sys
 import re
+import kazoo
 
 from tornado.options import options
 from tornado.httpclient import HTTPRequest
@@ -25,8 +26,6 @@ Created on 2013-7-21
 '''
 class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
     
-    zkOper = None
-    
     def __init__(self):
         '''
         Constructor
@@ -36,24 +35,18 @@ class Cluster_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
     @todo: arbitrator need to add one cluster_mode param?
     '''
     def start(self, cluster_flag, cluster_mode=None):
-        zkOper = ZkOpers()
-        isLock,lock = zkOper.lock_cluster_start_stop_action()
-        
         # Start a thread to run the events
-        cluster_start_action = Cluster_start_action(lock, cluster_flag, cluster_mode)
+        cluster_start_action = Cluster_start_action(cluster_flag, cluster_mode)
         cluster_start_action.start()
         
     def stop(self):
-        zkOper = ZkOpers()
-        isLock,lock = zkOper.lock_cluster_start_stop_action()
-        
-        # Start a thread to run the events
-        cluster_stop_action = Cluster_stop_action(lock)
+        # Stop a thread to run the events
+        cluster_stop_action = Cluster_stop_action()
         cluster_stop_action.start()
 
 
 
-class PortStatus():
+class PortStatus(object):
     def __init__(self):
         """
         constructor
@@ -74,7 +67,7 @@ class PortStatus():
         return self.c_start_node_ip_list
                   
 
-class WsrepStatus():
+class WsrepStatus(object):
     def __init__(self):
         """
         constructor
@@ -142,7 +135,7 @@ class StopIssue(object):
         return stop_finished
     
 
-class GaleraStatus():
+class GaleraStatus(object):
     def __init__(self):
         """
         constructor
@@ -234,24 +227,31 @@ class Arbitrator(object):
             
 class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
     
-    def __init__(self, lock , cluster_flag, cluster_mode):
+    def __init__(self, cluster_flag, cluster_mode):
         super(Cluster_start_action, self).__init__()
-        self.lock = lock
         self.cluster_flag = cluster_flag
         self.cluster_mode = cluster_mode
         
-        self.zkOper = ZkOpers()
+        zkOper = self.retrieve_zkOper()
+        try:
+            self.isLock, lock = zkOper.lock_cluster_start_stop_action()
+        except kazoo.exceptions.LockTimeout:
+            logging.info("a thread is starting this cluster, give up this operation!")
+            return
         
-    def __del__(self):
-        del self.zkOper
+        if not self.isLock:
+            raise CommonException('a thread is starting this cluster, give up this operation!')
+        
+        self.lock = lock
+        
         
     def run(self):
         try:
-            self._issue_start_action(self.lock, self.cluster_flag, self.cluster_mode)
+            self._issue_start_action(self.cluster_flag, self.cluster_mode)
         except:
             self.threading_exception_queue.put(sys.exc_info())
             
-    def _issue_start_action(self, lock, cluster_flag, cluster_mode):
+    def _issue_start_action(self, cluster_flag, cluster_mode):
         node_wsrep_status_dict = {}
         data_node_started_flag_dict = {}
         need_start_node_ip_list = []
@@ -400,10 +400,7 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
             if self.lock:
                 self.zkOper.unLock_cluster_start_stop_action(self.lock)
             
-            if self.zkOper:
-                self.zkOper.stop()
-            
-                logging.info("Unlock cluster_start_stop_action done!")
+            logging.info("Unlock cluster_start_stop_action done!")
             
         
     def _sort_seqno(self, param):
@@ -465,24 +462,32 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
         
 class Cluster_stop_action(Abstract_Mysql_Service_Action_Thread): 
     
-    lock = None
-    
-    def __init__(self, lock):
+    def __init__(self):
         super(Cluster_stop_action, self).__init__()
+        
+        zkOper = self.retrieve_zkOper()
+        try:
+            self.isLock, lock = zkOper.lock_cluster_start_stop_action()
+        except kazoo.exceptions.LockTimeout:
+            logging.info("a thread is stopping this cluster, give up this operation!")
+            return
+        
+        if not self.isLock:
+            raise CommonException('a thread is stopping this cluster, give up this operation!')
+        
         self.lock = lock
         
     def run(self):
         try:
-            self._issue_stop_action(self.lock)            
+            self._issue_stop_action()            
         except:
             self.threading_exception_queue.put(sys.exc_info())
                 
     def _issue_stop_action(self, lock):
         data_node_stop_finished_flag_dict = {}
         
-        zkOper = ZkOpers()
         try:
-            data_node_info_list = zkOper.retrieve_data_node_list()
+            data_node_info_list = self.zkOper.retrieve_data_node_list()
             
             url_post = "/node/stop"
             
@@ -501,8 +506,8 @@ class Cluster_stop_action(Abstract_Mysql_Service_Action_Thread):
                 data_node_stop_finished_flag_dict.setdefault(data_node_ip, stop_finished)
             
         finally:
-            zkOper.unLock_cluster_start_stop_action(lock)
-            zkOper.stop()
+            if self.lock is not None:
+                self.zkOper.unLock_cluster_start_stop_action(self.lock)
         
         data_node_stop_finished_count = 0
         for data_node_ip, stop_finished in data_node_stop_finished_flag_dict.iteritems():
@@ -518,20 +523,16 @@ class Cluster_stop_action(Abstract_Mysql_Service_Action_Thread):
         '''
         @todo: need to lock this process?
         '''
-        zkOper = ZkOpers()
         stop_finished = False
-        try:
-            while not stop_finished:
-                started_nodes = zkOper.retrieve_started_nodes()
-                
-                stop_finished = True
-                for i in range(len(started_nodes)):
-                    started_node = started_nodes[i]
-                    if started_node == data_node_ip:
-                        stop_finished = False
-                        
-                time.sleep(1)
-        finally:
-            zkOper.stop()
+        while not stop_finished:
+            started_nodes = self.zkOper.retrieve_started_nodes()
+            
+            stop_finished = True
+            for i in range(len(started_nodes)):
+                started_node = started_nodes[i]
+                if started_node == data_node_ip:
+                    stop_finished = False
+                    
+            time.sleep(1)
         
         return stop_finished

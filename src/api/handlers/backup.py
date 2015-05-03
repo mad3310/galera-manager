@@ -18,7 +18,6 @@ from common.utils.exceptions import HTTPAPIError
 from common.backup_thread import backup_thread
 from common.helper import _retrieve_userName_passwd, is_monitoring, get_localhost_ip 
 from common.tornado_basic_auth import require_basic_auth
-from common.zkOpers import ZkOpers
 
 # Start backing up database data.
 #eq curl --user root:root "http://localhost:8888/backup" backup data by full dose.
@@ -74,7 +73,8 @@ class BackUp(APIHandler):
     def get(self):
         url_post = "/inner/backup"
         
-        online_node_list = self.zkOper.retrieve_started_nodes()
+        zkOper = self.retrieve_zkOper()
+        online_node_list = zkOper.retrieve_started_nodes()
         
         hostname = socket.gethostname()
         local_ip = get_localhost_ip()
@@ -193,7 +193,8 @@ class BackUpCheck(APIHandler):
     def get(self):
         url_post = "/backup/checker"
         
-        online_node_list = self.zkOper.retrieve_started_nodes()
+        zkOper = self.retrieve_zkOper()
+        online_node_list = zkOper.retrieve_started_nodes()
         
         local_ip = get_localhost_ip()
         logging.info("local ip :" + str(local_ip))
@@ -207,7 +208,7 @@ class BackUpCheck(APIHandler):
                 requesturi = "http://"+ node_ip +":"+str(options.port)+ url_post
                 callback_key = str(node_ip)
                 key_sets.add(callback_key)
-                request = HTTPRequest(url=requesturi, method='GET' )
+                request = HTTPRequest(url=requesturi, method='GET')
                 logging.info("url is " + requesturi)
                 http_client.fetch(request, callback=(yield Callback(callback_key)))
             

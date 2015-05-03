@@ -20,7 +20,7 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
         self.zkOper = ZkOpers()
         
         try:
-            self.isLock, lock = self.zkOper.lock_async_monitor_action()
+            self.isLock, self.lock = self.zkOper.lock_async_monitor_action()
         except kazoo.exceptions.LockTimeout:
             logging.info("a thread is running the monitor async, give up this oper on this machine!")
             return
@@ -28,16 +28,15 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
         if not self.isLock:
             raise CommonException('a thread is running the monitor async, give up this oper on this machine!')
         
-        self.lock = lock
-        
     def run(self):
         try:
             data_node_info_list = self.zkOper.retrieve_data_node_list()
             self.__action_monitor_async(data_node_info_list)
         finally:
-            if self.lock:
+            if self.lock is not None:
                 self.zkOper.unLock_aysnc_monitor_action(self.lock)
-            if self.zkOper:
+                
+            if self.zkOper is not None:
                 self.zkOper.stop()
         
                 

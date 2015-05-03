@@ -6,7 +6,6 @@ Created on 2013-7-21
 @author: asus
 '''
 from base import APIHandler
-from common.zkOpers import ZkOpers
 
 # retrieve the status value of special monitor type, the monitor type include cluster,node,db.
 # In different monitor type, there are many of monitor points. 
@@ -19,10 +18,11 @@ class MclusterStatusDetail(APIHandler):
         
         result = {}
         
-        monitor_status_list = self.zkOper.retrieve_monitor_status_list(monitor_type)
+        zkOper = self.retrieve_zkOper()
+        monitor_status_list = zkOper.retrieve_monitor_status_list(monitor_type)
     
         for monitor_status_key in monitor_status_list:
-            monitor_status_value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
+            monitor_status_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
             result.setdefault(monitor_status_key, monitor_status_value)
             
         self.finish(result)
@@ -35,14 +35,16 @@ class MclusterStatus(APIHandler):
  
     def get(self):
         result = {}
-        monitor_types = self.zkOper.retrieve_monitor_type()
+        
+        zkOper = self.retrieve_zkOper()
+        monitor_types = zkOper.retrieve_monitor_type()
         
         for monitor_type in monitor_types:
-            monitor_status_list = self.zkOper.retrieve_monitor_status_list(monitor_type)
+            monitor_status_list = zkOper.retrieve_monitor_status_list(monitor_type)
         
             monitor_type_sub_dict = {}
             for monitor_status_key in monitor_status_list:
-                monitor_status_value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
+                monitor_status_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
                 monitor_type_sub_dict.setdefault(monitor_status_key, monitor_status_value)
             
             result.setdefault(monitor_type,monitor_type_sub_dict)

@@ -6,6 +6,7 @@ from common.utils.mail import send_email
 from common.configFileOpers import ConfigFileOpers
 from common.invokeCommand import InvokeCommand
 from tornado.options import options
+from common.zkOpers import ZkOpers
 
 class Abstract_Mysql_Service_Action_Thread(threading.Thread):
     
@@ -15,8 +16,16 @@ class Abstract_Mysql_Service_Action_Thread(threading.Thread):
     
     invokeCommand = InvokeCommand()
     
+    zkOper = None
+    
     def __init__(self):
         threading.Thread.__init__(self)
+        
+    def retrieve_zkOper(self):
+        if None == self.zkOper:
+            self.zkOper = ZkOpers()
+            
+        return self.zkOper
         
     def _send_email(self, data_node_ip, text):
         try:

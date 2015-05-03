@@ -37,7 +37,8 @@ class ArbitratorStart(APIHandler):
     @asynchronous
     def get(self):
         
-        data_node_list = self.zkOper.retrieve_data_node_list()
+        zkOper = self.retrieve_zkOper()
+        data_node_list = zkOper.retrieve_data_node_list()
         
         local_ip = get_localhost_ip()
         

@@ -12,8 +12,6 @@ from base import APIHandler
 from common.status_opers import Check_Cluster_Available, Check_Node_Size, Check_Node_Log_Health, Check_Node_Log_Error, Check_Node_Log_Warning, Check_Node_Active, Check_DB_WR_Avalialbe,\
 Check_DB_Wsrep_Status, Check_DB_Cur_Conns, Check_DB_Anti_Item, Check_Backup_Status, Check_Database_User
 
-from common.zkOpers import ZkOpers
-
 class Cluster_Info_Sync_Handler(object):
     
     check_cluster_available = Check_Cluster_Available()
@@ -121,7 +119,8 @@ class Mcluster_Monitor_Sync(APIHandler):
     db_handler = DB_Info_Sync_Handler()
     
     def get(self):
-        data_node_info_list = self.zkOper.retrieve_data_node_list()
+        zkOper = self.retrieve_zkOper()
+        data_node_info_list = zkOper.retrieve_data_node_list()
             
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)
@@ -143,7 +142,8 @@ class Mcluster_Monitor_Async(APIHandler):
 
     @tornado.web.asynchronous
     def get(self):
-        data_node_info_list = self.zkOper.retrieve_data_node_list()
+        zkOper = self.retrieve_zkOper()
+        data_node_info_list = zkOper.retrieve_data_node_list()
             
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)

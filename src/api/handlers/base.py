@@ -29,7 +29,13 @@ class BaseHandler(RequestHandler):
     
 class APIHandler(BaseHandler):
     
-    zkOper = ZkOpers()
+    zkOper = None
+    
+    def retrieve_zkOper(self):
+        if None == self.zkOper:
+            self.zkOper = ZkOpers()
+            
+        return self.zkOper
     
     def finish(self, chunk=None, notification=None):
         if chunk is None:

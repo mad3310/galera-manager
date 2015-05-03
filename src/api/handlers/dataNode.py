@@ -12,7 +12,6 @@ from common.helper import issue_mycnf_changed
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.utils.exceptions import HTTPAPIError
 from common.node_stat_opers import NodeStatOpers
-from common.zkOpers import ZkOpers
 
 # add data node into mcluster
 # eg. curl --user root:root -d "dataNodeIp=192.168.0.20&dataNodeName=letv_mcluster_test_1_node_2" "http://localhost:8888/cluster/node"
@@ -34,13 +33,15 @@ class AddDataNodeToMCluster(APIHandler):
             
             
         dataNodeProprs = self.confOpers.getValue(options.data_node_property)
-        clusterUUID = self.zkOper.getClusterUUID()
-        self.zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
+        
+        zkOper = self.retrieve_zkOper()
+        clusterUUID = zkOper.getClusterUUID()
+        zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
     
-        data,_ = self.zkOper.retrieveClusterProp(clusterUUID)
+        data,_ = zkOper.retrieveClusterProp(clusterUUID)
         self.confOpers.setValue(options.cluster_property, eval(data))
     
-        fullText,_ = self.zkOper.retrieveMysqlProp(clusterUUID)
+        fullText,_ = zkOper.retrieveMysqlProp(clusterUUID)
         self.confOpers.writeFullText(options.mysql_cnf_file_name, fullText)
     
         data_node_ip = requestParam.get('dataNodeIp')
@@ -73,7 +74,7 @@ class AddDataNodeToMCluster(APIHandler):
         self.confOpers.setValue(options.mysql_cnf_file_name, keyValueMap)
 
         mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-        self.zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_full_text, issue_mycnf_changed)
+        zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_full_text, issue_mycnf_changed)
             
         result = {}
 #        dict.setdefault("code", "000000")
@@ -94,8 +95,9 @@ class SyncDataNode(APIHandler):
                                     notification = "direct", \
                                     log_message= error_message,\
                                     response =  error_message)
-                
-        return_result = self.zkOper.retrieve_data_node_info(ip_address)
+        
+        zkOper = self.retrieve_zkOper()        
+        return_result = zkOper.retrieve_data_node_info(ip_address)
         self.confOpers.setValue(options.data_node_property, return_result)
             
         result = {}
