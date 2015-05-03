@@ -280,14 +280,6 @@ class Inner_DB_Check_WR(APIHandler):
             
             t_threshold = options.delta_time
             delta_time = n_stamp_time - record_stamp_time
-            
-            if delta_time > t_threshold:
-                error_message = 'delta_time bewteen read and write is too long -- delta_time is %s' % (delta_time)
-                logging.error(error_message)
-                raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                            notification = "direct", \
-                            log_message= error_message,\
-                            response = error_message)
         except Exception,e:
             return_flag = 'false'
             logging.error(e)
@@ -296,7 +288,15 @@ class Inner_DB_Check_WR(APIHandler):
         finally:
             conn.close()
             zkOper.stop()
-               
+            
+        if delta_time > t_threshold:
+            error_message = 'delta_time bewteen read and write is too long -- delta_time is %s' % (delta_time)
+            raise HTTPAPIError(status_code=500, error_detail= error_message,\
+                        notification = "direct", \
+                        log_message= error_message,\
+                        response = error_message)
+        
+        return_flag = 'true'       
         self.finish(return_flag)
         
 

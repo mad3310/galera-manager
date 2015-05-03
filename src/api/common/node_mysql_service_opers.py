@@ -1,6 +1,8 @@
 #-*- coding: utf-8 -*-
 import time
 import sys
+import logging
+import kazoo
 
 from common.invokeCommand import InvokeCommand
 from tornado.options import options
@@ -50,21 +52,12 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         
         
     def start(self, isNewCluster):
-        zkOper = ZkOpers()
         
         '''
         @todo: check only pass lock to below action and close the zkOper object, real action if can release the lock
         '''
-        try:
-            isLock,lock = zkOper.lock_node_start_stop_action()
-            
-            if not isLock:
-                raise CommonException("When start node, can't retrieve the start atcion lock!")
-                
-            node_start_action = Node_start_action(isNewCluster, lock)
-            node_start_action.start()
-        finally:
-            zkOper.stop()
+        node_start_action = Node_start_action(isNewCluster)
+        node_start_action.start()
          
     def stop(self):
         zkOper = ZkOpers()
@@ -116,44 +109,57 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         
         
 class Node_start_action(Abstract_Mysql_Service_Action_Thread):
-    lock = None
     isNewCluster = False
     
     dba_opers = DBAOpers()
     
-    def __init__(self, isNewCluster, lock):
+    def __init__(self, isNewCluster):
         super(Node_start_action, self).__init__()
-        self.lock = lock
+        
         self.isNewCluster = isNewCluster
+        
+        self.zkOper = ZkOpers()
+        
+        try:
+            self.isLock, self.lock = self.zkOper.lock_node_start_stop_action()
+        except kazoo.exceptions.LockTimeout:
+            raise CommonException("When start node, can't retrieve the start atcion lock!")
+            
+        if not self.isLock:
+            raise CommonException("When start node, can't retrieve the start atcion lock!")
+        
+    def __del__(self):
+        del self.zkOper
         
     def run(self):
         try:
-            self._issue_start_action(self.isNewCluster, self.lock)
+            self._issue_start_action(self.isNewCluster)
         except:
             self.threading_exception_queue.put(sys.exc_info())
+        finally:
+            if self.isLock:
+                self.zkOper.unLock_node_start_stop_action(self.lock)
         
-    def _issue_start_action(self, isNewCluster, lock):
+            if None != self.zkOper:
+                self.zkOper.stop()
+        
+    def _issue_start_action(self, isNewCluster):
         dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = dataNodeProKeyValue['dataNodeIp']
         
-        zkOper = ZkOpers()
-        try:
-            finished_flag = self.dba_opers.retrieve_wsrep_status()
-            
-            if not finished_flag:
-                self.invokeCommand.remove_mysql_socket()
-                self.invokeCommand.mysql_service_start(isNewCluster)
-            
-                finished_flag = self._check_start_status(data_node_ip)
-        finally:
-            zkOper.unLock_node_start_stop_action(lock)
-            zkOper.stop()
+        finished_flag = self.dba_opers.retrieve_wsrep_status()
+        
+        if not finished_flag:
+            self.invokeCommand.remove_mysql_socket()
+            self.invokeCommand.mysql_service_start(isNewCluster)
+        
+            finished_flag = self.__check_start_status(data_node_ip)
         
         if finished_flag:    
             self._send_email(data_node_ip, " mysql service start operation finished")
             
    
-    def _check_start_status(self, data_node_ip):
+    def __check_start_status(self, data_node_ip):
         finished_flag = False
         
         sh_name = "ps -ef | grep mysqld_safe | grep -iv grep | wc -l"
@@ -173,11 +179,7 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
 
         
         if finished_flag:
-            zkoper = ZkOpers()
-            try:
-                zkoper.write_started_node(data_node_ip)
-            finally:
-                zkoper.close()
+            self.zkOper.write_started_node(data_node_ip)
             
         return finished_flag
             

@@ -7,6 +7,7 @@ Created on 2013-7-11
 @author: asus
 '''
 import json
+import threading
 
 from tornado.options import options
 from common.configFileOpers import ConfigFileOpers
@@ -14,15 +15,17 @@ from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import SessionExpiredError
 from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
-import logging
-import threading
 from common.utils.exceptions import CommonException
+from common.my_logging import debug_log
+
+global zkaddress, zkport
 
 class ZkOpers(object):
     
     rootPath = "/letv/mysql/mcluster"
     
     confOpers = ConfigFileOpers()
+    
     '''
     classdocs
     '''
@@ -30,41 +33,47 @@ class ZkOpers(object):
         '''
         Constructor
         '''
-        self.zkaddress, self.zkport = self.local_get_zk_address()
+        log_obj = debug_log('zkOpers')
+        self.logger = log_obj.get_logger_object()
+    
+        if zkaddress is None or zkport is None:
+            zkaddress, zkport = self.local_get_zk_address()
         
         self.zk = KazooClient(
-            hosts=self.zkaddress+':'+str(self.zkport),
-            connection_retry = KazooRetry(delay=1, max_tries=5, max_delay=30)
+            hosts="%s:%s"%(zkaddress,str(zkport)),
+            connection_retry = KazooRetry(delay=1, max_tries=10, max_delay=30)
         )
-        self.zk.start()
+        
         self.zk.add_listener(self.listener)
+        self.zk.start()
+        
         
     def listener(self, state):
         if state == KazooState.LOST:
             self.zk.start()
         elif state == KazooState.SUSPENDED:
-            print "*******listener saw KazooState.LOST"
+            pass
         else:
-            print "*******listener saw KazooState.CONNECT"
-
+            pass
+        
     def local_get_zk_address(self):
         ret_dict = self.confOpers.getValue(options.zk_address, ['zkAddress','zkPort'])
-        zk_address = ret_dict['zkAddress']
-        zk_port = ret_dict['zkPort']
-        return zk_address, zk_port
+        zk_address_local = ret_dict['zkAddress']
+        zk_port_local = ret_dict['zkPort']
+        return zk_address_local, zk_port_local
 
     def close(self):
         try:
             self.zk.stop()
             self.zk.close()
         except Exception, e:
-            logging.error(e)
+            self.logger.error(e)
             
     def stop(self):
         try:
             self.zk.stop()
         except Exception, e:
-            logging.error(e)
+            self.logger.error(e)
             raise
 
         
@@ -141,7 +150,6 @@ class ZkOpers(object):
     
     def retrieve_db_list(self):
         clusterUUID = self.getClusterUUID()
-        logging.info("ClusterUUID:" + clusterUUID)
         path = self.rootPath + "/" + clusterUUID + "/db"
         db_list = self._return_children_to_list(path)
         return  db_list
@@ -323,7 +331,7 @@ class ZkOpers(object):
         clusterUUID = self.getClusterUUID()
         path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_name) 
         lock = self.zk.Lock(path, threading.current_thread())
-        isLock = lock.acquire(True,1)
+        isLock = lock.acquire()
         return (isLock,lock)
         
     def _unLock_base_action(self, lock):
@@ -345,7 +353,7 @@ class ZkOpers(object):
         data = None
         
         if self.zk.exists(path):
-            data,stat = self.zk.get(path)
+            data,_ = self.zk.get(path)
         
         resultValue = {}
         if data != None and data != '':
