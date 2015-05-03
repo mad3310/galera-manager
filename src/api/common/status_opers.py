@@ -33,11 +33,6 @@ class Check_Status_Base(object):
     
     @tornado.gen.engine
     def check_status(self, data_node_info_list, url_post, monitor_type, monitor_key):
-        
-        leader_flag = check_leader()
-        if leader_flag == False:
-            return
-        
         zkOper = ZkOpers()
         zk_data_node_count = len(data_node_info_list)
         try:
@@ -57,7 +52,6 @@ class Check_Status_Base(object):
                     result['_status'] = 'sub-health'
                 else :
                     result['_status'] = 'failed' 
-                logging.info(str(pre_stat) + " change to " + dict['_status'])
                 zkOper.writeClusterStatus(result)
         finally:
             zkOper.stop()
@@ -261,9 +255,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
     def check(self, data_node_info_list):
         if not is_monitoring(get_localhost_ip()):
             return
-        leader_flag = check_leader()
-        if leader_flag == False:
-            return
+        
         conn = self.dba_opers.get_mysql_connection()
        
         monitor_type = "db"
@@ -273,8 +265,6 @@ class Check_DB_Anti_Item(Check_Status_Base):
         anti_item_count = 0
         failed_count = 0
         _path_value = {}
-        logging.info("existed_db_anti_item  here")
-        
         
         zkOper = ZkOpers()
         try:
