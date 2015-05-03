@@ -11,19 +11,21 @@ class ConfigFileOpers(object):
         f = file(fileName, 'r')
         
         totalDict = {}
-        while True:
-            line = f.readline()
-            
-            if not line:
-                break
-            
-            pos1 = line.find('=')
-            key = line[:pos1]
-            value = line[pos1+1:len(line)].strip('\n')
-            totalDict.setdefault(key,value)
-            
-        f.close()
-            
+        
+        try:
+            while True:
+                line = f.readline()
+                
+                if not line:
+                    break
+                
+                pos1 = line.find('=')
+                key = line[:pos1]
+                value = line[pos1+1:len(line)].strip('\n')
+                totalDict.setdefault(key,value)
+        finally:
+            f.close()
+       
         if keyList == None:
             resultValue = totalDict
         else:
