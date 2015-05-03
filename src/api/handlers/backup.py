@@ -74,12 +74,7 @@ class BackUp(APIHandler):
     def get(self):
         url_post = "/inner/backup"
         
-        zkOper = ZkOpers()
-        
-        try:
-            online_node_list = zkOper.retrieve_started_nodes()
-        finally:
-            zkOper.stop()
+        online_node_list = self.zkOper.retrieve_started_nodes()
         
         hostname = socket.gethostname()
         local_ip = get_localhost_ip()
@@ -198,11 +193,7 @@ class BackUpCheck(APIHandler):
     def get(self):
         url_post = "/backup/checker"
         
-        zkOper = ZkOpers()
-        try:
-            online_node_list = zkOper.retrieve_started_nodes()
-        finally:
-            zkOper.stop()
+        online_node_list = self.zkOper.retrieve_started_nodes()
         
         local_ip = get_localhost_ip()
         logging.info("local ip :" + str(local_ip))

@@ -19,16 +19,11 @@ class MclusterStatusDetail(APIHandler):
         
         result = {}
         
-        zkOper = ZkOpers()
-        try:
-            monitor_status_list = zkOper.retrieve_monitor_status_list(monitor_type)
-        
-            for monitor_status_key in monitor_status_list:
-                monitor_status_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
-                result.setdefault(monitor_status_key, monitor_status_value)
-            
-        finally:
-            zkOper.stop()
+        monitor_status_list = self.zkOper.retrieve_monitor_status_list(monitor_type)
+    
+        for monitor_status_key in monitor_status_list:
+            monitor_status_value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
+            result.setdefault(monitor_status_key, monitor_status_value)
             
         self.finish(result)
             
@@ -40,20 +35,16 @@ class MclusterStatus(APIHandler):
  
     def get(self):
         result = {}
-        zkOper = ZkOpers()
-        try: 
-            monitor_types = zkOper.retrieve_monitor_type()
+        monitor_types = self.zkOper.retrieve_monitor_type()
+        
+        for monitor_type in monitor_types:
+            monitor_status_list = self.zkOper.retrieve_monitor_status_list(monitor_type)
+        
+            monitor_type_sub_dict = {}
+            for monitor_status_key in monitor_status_list:
+                monitor_status_value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
+                monitor_type_sub_dict.setdefault(monitor_status_key, monitor_status_value)
             
-            for monitor_type in monitor_types:
-                monitor_status_list = zkOper.retrieve_monitor_status_list(monitor_type)
-            
-                monitor_type_sub_dict = {}
-                for monitor_status_key in monitor_status_list:
-                    monitor_status_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
-                    monitor_type_sub_dict.setdefault(monitor_status_key, monitor_status_value)
-                
-                result.setdefault(monitor_type,monitor_type_sub_dict)
-        finally:
-            zkOper.stop()
+            result.setdefault(monitor_type,monitor_type_sub_dict)
             
         self.finish(result)

@@ -23,7 +23,7 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
             self.isLock, lock = self.zkOper.lock_async_monitor_action()
         except kazoo.exceptions.LockTimeout:
             logging.info("a thread is running the monitor async, give up this oper on this machine!")
-            raise
+            return
             
         if not self.isLock:
             raise CommonException('a thread is running the monitor async, give up this oper on this machine!')

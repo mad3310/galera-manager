@@ -18,8 +18,6 @@ from kazoo.retry import KazooRetry
 from common.utils.exceptions import CommonException
 from common.my_logging import debug_log
 
-global zkaddress, zkport
-
 class ZkOpers(object):
     
     rootPath = "/letv/mysql/mcluster"
@@ -38,13 +36,14 @@ class ZkOpers(object):
     
         zkaddress, zkport = self.local_get_zk_address()
         
-        self.zk = KazooClient(
-            hosts="%s:%s"%(zkaddress, zkport),
-            connection_retry = KazooRetry(delay=1, max_tries=10, max_delay=30)
-        )
-        
-        self.zk.add_listener(self.listener)
-        self.zk.start()
+        if "" != zkaddress and "" != zkport:
+            self.zk = KazooClient(
+                hosts="%s:%s"%(zkaddress, zkport),
+                connection_retry = KazooRetry(delay=1, max_tries=10, max_delay=30)
+            )
+            
+            self.zk.add_listener(self.listener)
+            self.zk.start()
         
         
     def listener(self, state):

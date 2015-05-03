@@ -128,19 +128,15 @@ class DBUser(APIHandler):
         finally:
             conn.close()
 
-        zkOper = ZkOpers()
-        try:
-            #check if exist cluster
-            clusterUUID = zkOper.getClusterUUID()
-        
-            userProps = {'role':role,
-                         'max_queries_per_hour':max_queries_per_hour,
-                         'max_updates_per_hour':max_updates_per_hour,
-                         'max_connections_per_hour':max_connections_per_hour,
-                         'max_user_connections':max_user_connections}
-            zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
-        finally:
-            zkOper.stop()
+        #check if exist cluster
+        clusterUUID = self.zkOper.getClusterUUID()
+    
+        userProps = {'role':role,
+                     'max_queries_per_hour':max_queries_per_hour,
+                     'max_updates_per_hour':max_updates_per_hour,
+                     'max_connections_per_hour':max_connections_per_hour,
+                     'max_user_connections':max_user_connections}
+        self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
             
         result = {}
 #        dict.setdefault("code", '000000')
@@ -183,12 +179,11 @@ class DBUser(APIHandler):
                                 notification = "direct", \
                                 log_message= "when modify db's user, no specify any modified parameter",\
                                 response =  "please specify any one or all of following parameter:[max_queries_per_hour,max_updates_per_hour,max_connections_per_hour,max_user_connections]")
-        zkOper = ZkOpers()
         conn = self.dba_opers.get_mysql_connection()
         try:
-            clusterUUID = zkOper.getClusterUUID()
+            clusterUUID = self.zkOper.getClusterUUID()
         
-            user_limit_map = zkOper.retrieve_user_limit_props(clusterUUID, dbName, userName, ip_address)
+            user_limit_map = self.zkOper.retrieve_user_limit_props(clusterUUID, dbName, userName, ip_address)
             
             if user_limit_map == {}:
                 raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no found specified user!",\
@@ -221,10 +216,9 @@ class DBUser(APIHandler):
                          'max_updates_per_hour':max_updates_per_hour,
                          'max_connections_per_hour':max_connections_per_hour,
                          'max_user_connections':max_user_connections}
-            zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
+            self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
         finally:
             conn.close()
-            zkOper.stop()
         
         
         result = {}
@@ -262,13 +256,9 @@ class DBUser(APIHandler):
         finally:
             conn.close()
         
-        zkOper = ZkOpers()
-        try:
-            #check if exist cluster
-            clusterUUID = zkOper.getClusterUUID()
-            zkOper.remove_db_user(clusterUUID, dbName, userName, ipAddress)
-        finally:
-            zkOper.stop()
+        #check if exist cluster
+        clusterUUID = self.zkOper.getClusterUUID()
+        self.zkOper.remove_db_user(clusterUUID, dbName, userName, ipAddress)
         
         
         result = {}

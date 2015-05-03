@@ -9,8 +9,6 @@ from common.utils.exceptions import HTTPAPIError
 from common.helper import  get_localhost_ip
 from tornado.web import asynchronous
 from common.configFileOpers import ConfigFileOpers
-from common.zkOpers import ZkOpers
-
 
 # check whether the name of this node is end the -n-2.
 #eg curl "http://localhost:8888/inner/arbitrator/ip"
@@ -39,11 +37,7 @@ class ArbitratorStart(APIHandler):
     @asynchronous
     def get(self):
         
-        zkOper = ZkOpers()
-        try:
-            data_node_list = zkOper.retrieve_data_node_list()
-        finally:
-            zkOper.stop()
+        data_node_list = self.zkOper.retrieve_data_node_list()
         
         local_ip = get_localhost_ip()
         

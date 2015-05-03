@@ -9,6 +9,7 @@ from common.utils.mail import send_email
 
 from common.invokeCommand import InvokeCommand
 from common.helper import get_localhost_ip
+from common.zkOpers import ZkOpers
 import logging
 import traceback
 
@@ -27,6 +28,9 @@ class BaseHandler(RequestHandler):
     
     
 class APIHandler(BaseHandler):
+    
+    zkOper = ZkOpers()
+    
     def finish(self, chunk=None, notification=None):
         if chunk is None:
             chunk = {}

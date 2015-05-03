@@ -121,11 +121,7 @@ class Mcluster_Monitor_Sync(APIHandler):
     db_handler = DB_Info_Sync_Handler()
     
     def get(self):
-        zkOper = ZkOpers()
-        try:
-            data_node_info_list = zkOper.retrieve_data_node_list()
-        finally:
-            zkOper.stop()
+        data_node_info_list = self.zkOper.retrieve_data_node_list()
             
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)
@@ -147,11 +143,7 @@ class Mcluster_Monitor_Async(APIHandler):
 
     @tornado.web.asynchronous
     def get(self):
-        zkOper = ZkOpers()
-        try:
-            data_node_info_list = zkOper.retrieve_data_node_list()
-        finally:
-            zkOper.stop()
+        data_node_info_list = self.zkOper.retrieve_data_node_list()
             
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)

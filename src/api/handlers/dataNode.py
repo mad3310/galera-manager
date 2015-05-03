@@ -33,51 +33,47 @@ class AddDataNodeToMCluster(APIHandler):
             self.confOpers.setValue(options.data_node_property, requestParam)
             
             
-        zkOper = ZkOpers()
-        try:
-            dataNodeProprs = self.confOpers.getValue(options.data_node_property)
-            clusterUUID = zkOper.getClusterUUID()
-            zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
-        
-            data,_ = zkOper.retrieveClusterProp(clusterUUID)
-            self.confOpers.setValue(options.cluster_property, eval(data))
-        
-            fullText,_ = zkOper.retrieveMysqlProp(clusterUUID)
-            self.confOpers.writeFullText(options.mysql_cnf_file_name, fullText)
-        
-            data_node_ip = requestParam.get('dataNodeIp')
-            mycnfParam = self.confOpers.getValue(options.mysql_cnf_file_name)
-            orginal_cluster_address = mycnfParam['wsrep_cluster_address']
-            
-            index = orginal_cluster_address.find("//")
-            
-            ip_str = orginal_cluster_address[index + 2 :]
-            ip_lists = ip_str.rstrip().split(",")
-            
-            if data_node_ip in ip_lists:
-                error_message = "this node have add to cluster, no need to add it!"
-                raise HTTPAPIError(status_code=417, error_detail= error_message,\
-                                    notification = "direct", \
-                                    log_message= error_message,\
-                                    response =  error_message)
-                  
-            new_cluster_address = orginal_cluster_address + "," + str(data_node_ip)
-            
-            data_node_name = requestParam.get('dataNodeName')
+        dataNodeProprs = self.confOpers.getValue(options.data_node_property)
+        clusterUUID = self.zkOper.getClusterUUID()
+        self.zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
     
-            mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-            #self.confOpers.writeFullText(options.mysql_cnf_file_name, mysql_cnf_full_text)
+        data,_ = self.zkOper.retrieveClusterProp(clusterUUID)
+        self.confOpers.setValue(options.cluster_property, eval(data))
     
-            keyValueMap = {}
-            keyValueMap.setdefault('wsrep_cluster_address',new_cluster_address)
-            keyValueMap.setdefault('wsrep_node_name', str(data_node_name))
-            keyValueMap.setdefault('wsrep_node_address' ,str(data_node_ip))
-            self.confOpers.setValue(options.mysql_cnf_file_name, keyValueMap)
+        fullText,_ = self.zkOper.retrieveMysqlProp(clusterUUID)
+        self.confOpers.writeFullText(options.mysql_cnf_file_name, fullText)
     
-            mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-            zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_full_text, issue_mycnf_changed)
-        finally:
-            zkOper.stop()
+        data_node_ip = requestParam.get('dataNodeIp')
+        mycnfParam = self.confOpers.getValue(options.mysql_cnf_file_name)
+        orginal_cluster_address = mycnfParam['wsrep_cluster_address']
+        
+        index = orginal_cluster_address.find("//")
+        
+        ip_str = orginal_cluster_address[index + 2 :]
+        ip_lists = ip_str.rstrip().split(",")
+        
+        if data_node_ip in ip_lists:
+            error_message = "this node have add to cluster, no need to add it!"
+            raise HTTPAPIError(status_code=417, error_detail= error_message,\
+                                notification = "direct", \
+                                log_message= error_message,\
+                                response =  error_message)
+              
+        new_cluster_address = orginal_cluster_address + "," + str(data_node_ip)
+        
+        data_node_name = requestParam.get('dataNodeName')
+
+        mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
+        #self.confOpers.writeFullText(options.mysql_cnf_file_name, mysql_cnf_full_text)
+
+        keyValueMap = {}
+        keyValueMap.setdefault('wsrep_cluster_address',new_cluster_address)
+        keyValueMap.setdefault('wsrep_node_name', str(data_node_name))
+        keyValueMap.setdefault('wsrep_node_address' ,str(data_node_ip))
+        self.confOpers.setValue(options.mysql_cnf_file_name, keyValueMap)
+
+        mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
+        self.zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_full_text, issue_mycnf_changed)
             
         result = {}
 #        dict.setdefault("code", "000000")
@@ -98,12 +94,9 @@ class SyncDataNode(APIHandler):
                                     notification = "direct", \
                                     log_message= error_message,\
                                     response =  error_message)
-        zkOper = ZkOpers()
-        try:
-            return_result = zkOper.retrieve_data_node_info(ip_address)
-            self.confOpers.setValue(options.data_node_property, return_result)
-        finally:
-            zkOper.stop()
+                
+        return_result = self.zkOper.retrieve_data_node_info(ip_address)
+        self.confOpers.setValue(options.data_node_property, return_result)
             
         result = {}
 #        dict.setdefault("code", "000000")

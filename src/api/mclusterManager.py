@@ -2,8 +2,6 @@
 #-*- coding: utf-8 -*-
 
 import os.path
-import routes
-
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
@@ -11,6 +9,8 @@ import tornado.web
 from tornado.options import options
 from common.appdefine import mclusterManagerDefine
 from common.scheduler_opers import Scheduler_Opers
+
+import routes
 
 class Application(tornado.web.Application):
     def __init__(self):

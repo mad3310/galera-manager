@@ -16,7 +16,6 @@ from common.db_stat_opers import DBStatOpers
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
 from common.helper import is_monitoring, get_localhost_ip
-from common.zkOpers import ZkOpers
 import socket
 import datetime
 import time
@@ -62,19 +61,15 @@ class DBOnMCluster(APIHandler):
         
         #check if exist cluster
         dbProps = {'db_name':dbName}
-        zkOper = ZkOpers()
-        try: 
-            clusterUUID = zkOper.getClusterUUID()
-            zkOper.write_db_info(clusterUUID, dbName, dbProps)
-        
-            userProps = {'role':'manager',
-                         'max_queries_per_hour':max_queries_per_hour,
-                         'max_updates_per_hour':max_updates_per_hour,
-                         'max_connections_per_hour':max_connections_per_hour,
-                         'max_user_connections':max_user_connections}
-            zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
-        finally:
-            zkOper.stop()
+        clusterUUID = self.zkOper.getClusterUUID()
+        self.zkOper.write_db_info(clusterUUID, dbName, dbProps)
+    
+        userProps = {'role':'manager',
+                     'max_queries_per_hour':max_queries_per_hour,
+                     'max_updates_per_hour':max_updates_per_hour,
+                     'max_connections_per_hour':max_connections_per_hour,
+                     'max_user_connections':max_user_connections}
+        self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
             
         result = {}
         result.setdefault("message", "database create successful")
@@ -91,31 +86,27 @@ class DBOnMCluster(APIHandler):
                                 log_message= "when remove the db, no have database name",\
                                 response =  "please provide database name you want to removed!")
         
-        zkOper = ZkOpers()
+        clusterUUID = self.zkOper.getClusterUUID()
+        user_ipAddress_map = self.zkOper.retrieve_db_user_prop(clusterUUID, dbName)
+    
+        conn = self.dba_opers.get_mysql_connection()
+    
         try:
-            clusterUUID = zkOper.getClusterUUID()
-            user_ipAddress_map = zkOper.retrieve_db_user_prop(clusterUUID, dbName)
-        
-            conn = self.dba_opers.get_mysql_connection()
-        
-            try:
-                if user_ipAddress_map is not None:
-                    for (user_name,ip_address) in user_ipAddress_map.items():
-                        self.dba_opers.delete_user(conn, user_name, ip_address)
-        
-                    self.dba_opers.drop_database(conn, dbName)
-            finally:
-                conn.close()
-        
-            user_name_list = ''
             if user_ipAddress_map is not None:
                 for (user_name,ip_address) in user_ipAddress_map.items():
-                    zkOper.remove_db_user(clusterUUID, dbName, user_name, ip_address)
-                    user_name_list += user_name + ","
-                
-            zkOper.remove_db(clusterUUID, dbName)
+                    self.dba_opers.delete_user(conn, user_name, ip_address)
+    
+                self.dba_opers.drop_database(conn, dbName)
         finally:
-            zkOper.stop()
+            conn.close()
+    
+        user_name_list = ''
+        if user_ipAddress_map is not None:
+            for (user_name,ip_address) in user_ipAddress_map.items():
+                self.zkOper.remove_db_user(clusterUUID, dbName, user_name, ip_address)
+                user_name_list += user_name + ","
+            
+        self.zkOper.remove_db(clusterUUID, dbName)
             
         result = {}
         result.setdefault("message", "database remove successful!")
@@ -209,12 +200,11 @@ class Inner_DB_Check_WR(APIHandler):
  
 #     
     def get(self):
-        zkOper = ZkOpers()
         conn = self.dba_opers.get_mysql_connection()
         try:
             dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
             data_node_ip = dataNodeProKeyValue['dataNodeIp']
-            started_ip_list = zkOper.retrieve_started_nodes()
+            started_ip_list = self.zkOper.retrieve_started_nodes()
             identifier = socket.gethostname()
         
             '''
@@ -229,11 +219,11 @@ class Inner_DB_Check_WR(APIHandler):
 
             if conn is None:
                 if data_node_ip in started_ip_list:
-                    zkOper.remove_started_node(data_node_ip)
+                    self.zkOper.remove_started_node(data_node_ip)
                     self.invokeCommand.run_check_shell(options.kill_innotop)
                 self.finish("false")
                 return
-            zkOper.write_started_node(data_node_ip)
+            self.zkOper.write_started_node(data_node_ip)
 
             if not is_monitoring(get_localhost_ip()):
                 self.finish("true")
@@ -287,7 +277,6 @@ class Inner_DB_Check_WR(APIHandler):
             return
         finally:
             conn.close()
-            zkOper.stop()
             
         if delta_time > t_threshold:
             error_message = 'delta_time bewteen read and write is too long -- delta_time is %s' % (delta_time)
