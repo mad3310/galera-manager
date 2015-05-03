@@ -36,11 +36,10 @@ class ZkOpers(object):
         log_obj = debug_log('zkOpers')
         self.logger = log_obj.get_logger_object()
     
-        if zkaddress is None or zkport is None:
-            zkaddress, zkport = self.local_get_zk_address()
+        zkaddress, zkport = self.local_get_zk_address()
         
         self.zk = KazooClient(
-            hosts="%s:%s"%(zkaddress,str(zkport)),
+            hosts="%s:%s"%(zkaddress, zkport),
             connection_retry = KazooRetry(delay=1, max_tries=10, max_delay=30)
         )
         
@@ -331,7 +330,7 @@ class ZkOpers(object):
         clusterUUID = self.getClusterUUID()
         path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_name) 
         lock = self.zk.Lock(path, threading.current_thread())
-        isLock = lock.acquire()
+        isLock = lock.acquire(blocking=True, timeout=5)
         return (isLock,lock)
         
     def _unLock_base_action(self, lock):
