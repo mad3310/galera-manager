@@ -35,7 +35,7 @@ class Monitor_Backend_Handle_Worker(object):
                 self.zkOper.unLock_aysnc_monitor_action(self.lock)
                 
             if self.zkOper is not None:
-                self.zkOper.stop()
+                self.zkOper.close()
         
                 
     def __action_monitor_async(self, data_node_info_list):

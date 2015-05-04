@@ -41,6 +41,8 @@ class Scheduler_Opers(object):
         except Exception:
             self.threading_exception_queue.put(sys.exc_info())
             
+        del monitor_backend_worker
+            
     def thread_exception_hanlder(self, action_timeout = 5):
         if action_timeout > 0:
             _exception_async_t = PeriodicCallback(self.__create_worker_exception_handler,
