@@ -1,12 +1,11 @@
 import logging
 import kazoo
-import threading
 
 from handlers.monitor import Cluster_Info_Async_Handler, Node_Info_Async_Handler, DB_Info_Async_Handler
 from common.zkOpers import ZkOpers
 from common.utils.exceptions import CommonException
 
-class Monitor_Backend_Handle_Worker(threading.Thread):
+class Monitor_Backend_Handle_Worker(object):
     
     cluster_handler = Cluster_Info_Async_Handler()
   
@@ -18,7 +17,6 @@ class Monitor_Backend_Handle_Worker(threading.Thread):
         super(Monitor_Backend_Handle_Worker,self).__init__()
         
         self.zkOper = ZkOpers()
-        
         try:
             self.isLock, self.lock = self.zkOper.lock_async_monitor_action()
         except kazoo.exceptions.LockTimeout:

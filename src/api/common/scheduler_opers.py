@@ -23,7 +23,7 @@ class Scheduler_Opers(object):
         Constructor
         '''
         self.thread_exception_hanlder(5)
-        self.sced_monitor_handler(50)
+        self.sced_monitor_handler(55)
         
         
         
@@ -37,7 +37,7 @@ class Scheduler_Opers(object):
     def __create_worker_check_monitor(self):
         monitor_backend_worker = Monitor_Backend_Handle_Worker()
         try:
-            monitor_backend_worker.start()
+            monitor_backend_worker.run()
         except Exception:
             self.threading_exception_queue.put(sys.exc_info())
             
