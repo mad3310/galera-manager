@@ -1,8 +1,12 @@
 #! /bin/sh
 
-mclustermanager3="172.17.0.99"
-mclustermanager2="172.17.0.98"
-mclustermanager1="172.17.0.97"
+mclustermanager3="172.17.0.14"
+mclustermanager2="172.17.0.13"
+mclustermanager1="172.17.0.12"
+
+zookeeper3="172.17.0.19"
+zookeeper2="172.17.0.18"
+zookeeper1="172.17.0.17"
 
 curl "http://${mclustermanager1}:8888/admin/reset"
 
@@ -16,11 +20,11 @@ curl -d "adminUser=root&adminPassword=root" "http://${mclustermanager2}:8888/adm
 
 curl -d "adminUser=root&adminPassword=root" "http://${mclustermanager3}:8888/admin/user"
 
-curl -d "zkAddress=172.17.0.11&zkPort=2181" "http://${mclustermanager1}:8888/admin/conf"
+curl -d "zkAddress=${zookeeper1}&zkPort=2181" "http://${mclustermanager1}:8888/admin/conf"
 
-curl -d "zkAddress=172.17.0.10&zkPort=2181" "http://${mclustermanager2}:8888/admin/conf"
+curl -d "zkAddress=${zookeeper2}&zkPort=2181" "http://${mclustermanager2}:8888/admin/conf"
 
-curl -d "zkAddress=172.17.0.9&zkPort=2181" "http://${mclustermanager3}:8888/admin/conf"
+curl -d "zkAddress=${zookeeper3}&zkPort=2181" "http://${mclustermanager3}:8888/admin/conf"
 
 curl --user root:root -d "clusterName=letv_mcluster_test_1&dataNodeIp=${mclustermanager1}&dataNodeName=letv_mcluster_test_1_node_1" "http://${mclustermanager1}:8888/cluster"
 
