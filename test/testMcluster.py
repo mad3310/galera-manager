@@ -25,3 +25,5 @@ class TestMcluster(unittest.TestCase):
         
     def test_admin_conf(self):
         requests.
+        
+    docker run -i -t --privileged -h manager-zk-3 --name manager-zk-3 letv:centos6 bin/bash
