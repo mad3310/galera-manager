@@ -18,18 +18,12 @@ TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class Check_Status_Base(object):
     
-    zkOper = None
+    zkOper = ZkOpers()
     
     def __init__(self):
         if self.__class__ == Check_Status_Base:
             raise NotImplementedError, \
             "Cannot create object of class Check_Status_Base"
-            
-    def retrieve_zkOper(self):
-        if None == self.zkOper:
-            self.zkOper = ZkOpers()
-            
-        return self.zkOper
     
     @abstractmethod
     def check(self, data_node_info_list):
@@ -42,7 +36,6 @@ class Check_Status_Base(object):
     @tornado.gen.engine
     def check_status(self, data_node_info_list, url_post, monitor_type, monitor_key):
         zk_data_node_count = len(data_node_info_list)
-        self.retrieve_zkOper()
         pre_stat = self.zkOper.retrieveClusterStatus()
         ''' The following logic expression means 
             1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.
@@ -116,7 +109,6 @@ class Check_Status_Base(object):
 
     def write_status(self, total_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key):
         dt = datetime.datetime.now()
-        self.retrieve_zkOper()
         _include_timeout_num_from_response = 0
         if {} != error_record_dict:
             _error_record_message = error_record_dict.get('msg')
@@ -255,9 +247,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
     
     def check(self, data_node_info_list):
         
-        zkOper = self.retrieve_zkOper()
-        
-        if not is_monitoring(get_localhost_ip(), zkOper):
+        if not is_monitoring(get_localhost_ip(), self.zkOper):
             return
         
         conn = self.dba_opers.get_mysql_connection()
@@ -421,7 +411,6 @@ class Check_Node_Active(Check_Status_Base):
     
     @tornado.gen.engine
     def check(self, data_node_info_list):
-        self.retrieve_zkOper()
         started_nodes_list = self.zkOper.retrieve_started_nodes()
         
         error_record = {}
@@ -518,9 +507,7 @@ class Check_Database_User(Check_Status_Base):
     @tornado.gen.engine
     def check(self, data_node_info_list):
         #url_post = "/dbuser/inner/check"
-        zkOper = self.retrieve_zkOper()
-        
-        if not is_monitoring(get_localhost_ip(), zkOper):
+        if not is_monitoring(get_localhost_ip(), self.zkOper):
             return
         
         monitor_type = "db"
@@ -528,11 +515,7 @@ class Check_Database_User(Check_Status_Base):
         
         conn = self.dba_opers.get_mysql_connection()
         user_tuple = self.dba_opers.get_db_users(conn)
-        logging.info(str(user_tuple))
-        logging.info(len(user_tuple))
         
-        #user_src_mysql_list = []
-
         user_mysql_src_dict = {}
 
 # We convert origin tuple grabbed from mysql into list, then  combine the elements subscripted 0 ,1 as key of dict and combine the elements subscripted -3, -4 ,-5, -6 as the value of the dict.Finally we append the dict into list.
@@ -559,8 +542,6 @@ class Check_Database_User(Check_Status_Base):
                 prop = self.zkOper.get_db_user_prop(db_name, db_user)
                 inner_list.append(prop)
                 user_zk_src_list.append(inner_list)
-                logging.info("result" + str(inner_list))
-            #logging.info("user_zk_src_list :" + str(user_zk_src_list))
         
         differ_dict_set = {}
         count_dict_set = {}
