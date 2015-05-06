@@ -17,6 +17,7 @@ class Monitor_Backend_Handle_Worker(object):
         super(Monitor_Backend_Handle_Worker,self).__init__()
         
         self.zkOper = ZkOpers()
+        logging.info("Monitoring part, create zkOper successful!")
         try:
             self.isLock, self.lock = self.zkOper.lock_async_monitor_action()
         except kazoo.exceptions.LockTimeout:
@@ -36,6 +37,10 @@ class Monitor_Backend_Handle_Worker(object):
                 
             if self.zkOper is not None:
                 self.zkOper.close()
+                logging.info("Monitoring part, close zkOper successful!")
+                
+                del self.zkOper
+                logging.info("Monitoring part, del zkOper object successufl!")
         
                 
     def __action_monitor_async(self, data_node_info_list):
