@@ -133,4 +133,8 @@ def get_zk_address():
     ret_dict = confOpers.getValue(options.zk_address, ['zkAddress','zkPort'])
     zk_address = ret_dict['zkAddress']
     zk_port = ret_dict['zkPort']
+    
+    if "" == zk_port:
+        zk_port = "2181"
+        
     return zk_address ,zk_port
