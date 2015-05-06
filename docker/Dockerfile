@@ -1,6 +1,8 @@
 FROM letv:centos6
 MAINTAINER bingzheng.zhou <zhoubingzheng@letv.com>
 
+RUN yum clean all
+RUN rpm -ivh http://pkg-repo.oss.letv.com/pkgs/centos6/letv-release.noarch.rpm 
 RUN yum --enablerepo=staging install mcluster-mysql-server -y
 RUN yum install vim -y
 RUN yum install python-tornado -y
