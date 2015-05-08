@@ -6,7 +6,7 @@ from handlers.monitor import Cluster_Info_Async_Handler, Node_Info_Async_Handler
 from common.zkOpers import ZkOpers
 from common.helper import check_leader
 from common.utils.exceptions import CommonException
-class Monitor_Backend_Handle_Worker(threading.Thread):
+class Monitor_Backend_Handle_Worker(object):
     
     cluster_handler = Cluster_Info_Async_Handler()
   
