@@ -9,7 +9,7 @@ from common.utils.mail import send_email
 
 from common.invokeCommand import InvokeCommand
 from common.helper import get_localhost_ip
-from common.zkOpers import ZkOpers
+from common.zkOpers import Requests_ZkOpers
 import logging
 import traceback
 
@@ -33,7 +33,7 @@ class APIHandler(BaseHandler):
     
     def retrieve_zkOper(self):
         if None == self.zkOper:
-            self.zkOper = ZkOpers()
+            self.zkOper = Requests_ZkOpers()
             
         return self.zkOper
     

@@ -3,7 +3,7 @@ import logging
 from common.invokeCommand import InvokeCommand
 from abc import abstractmethod
 from common.configFileOpers import ConfigFileOpers
-from common.zkOpers import ZkOpers
+from common.zkOpers import Abstract_ZkOpers
 from tornado.options import options
 
 
@@ -22,7 +22,7 @@ class Abstract_Stat_Service(object):
         
     def retrieve_zkOper(self):
         if None == self.zkOper:
-            self.zkOper = ZkOpers()
+            self.zkOper = Abstract_ZkOpers()
             
         return self.zkOper
         
@@ -81,7 +81,7 @@ class Abstract_Stat_Service(object):
         return sub_dict
     
     def _check_mysql_processor_exist(self):
-        zkOper = ZkOpers()
+        zkOper = Abstract_ZkOpers()
         try:
             started_nodes = zkOper.retrieve_started_nodes()
         finally:

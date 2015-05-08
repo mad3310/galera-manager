@@ -1,7 +1,7 @@
 from common.invokeCommand import InvokeCommand
 from common.helper import retrieve_kv_from_db_rows 
 from common.dba_opers import DBAOpers
-from common.zkOpers import ZkOpers
+from common.zkOpers import Scheduler_ZkOpers
 from tornado.gen import Callback, Wait
 from tornado.options import options
 from abc import abstractmethod
@@ -18,9 +18,8 @@ TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class Check_Status_Base(object):
     
-    zkOper = ZkOpers()
-    
     def __init__(self):
+        self.zkOper = Scheduler_ZkOpers()
         if self.__class__ == Check_Status_Base:
             raise NotImplementedError, \
             "Cannot create object of class Check_Status_Base"

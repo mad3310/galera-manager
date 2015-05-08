@@ -8,15 +8,16 @@ Created on 2013-7-11
 '''
 import json
 import threading
+import logging
 
 from tornado.options import options
 from common.configFileOpers import ConfigFileOpers
 from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import SessionExpiredError
-from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
 from common.utils.exceptions import CommonException
 from common.my_logging import debug_log
+from common.utils.decorators import singleton
 
 
 log_obj = debug_log('zkOpers')
@@ -43,6 +44,7 @@ class ZkOpers(object):
             )
             
             self.zk.add_listener(self.listener)
+            logging.info('connect zookeeper')
             self.zk.start()
         
         
@@ -365,20 +367,43 @@ class ZkOpers(object):
         local_data = data.replace("'", "\"").replace("[u\"", "[\"").replace(" u\"", " \"")
         formatted_data = json.loads(local_data)
         return formatted_data
-        
-if __name__ == "__main__":
-    try:
-        zkOpers = ZkOpers('127.0.0.1', 2181)
-        path = "/letv/mysql/mcluster/"
-        # Print the version of a node and its data
-        data, stat = zkOpers.ensureinstance().get(path)
-        #data, stat = zkOpers.zk.get(path)
-        print("Version: %s, data: %s" % (stat.version, data.decode("utf-8")))
 
-    # List the children
-        while True:
-            children = zkOpers.ensureinstance().get_children(path)
-            #children = zkOpers.zk.get_children(path)
-            print("There are %s children with names %s" % (len(children), children))
-    except TimeoutError, e:
-        print e
+
+@singleton
+class Scheduler_ZkOpers(ZkOpers):
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        ZkOpers.__init__(self)
+
+
+@singleton
+class Requests_ZkOpers(ZkOpers):
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        ZkOpers.__init__(self)
+
+
+@singleton
+class Abstract_ZkOpers(ZkOpers):
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        ZkOpers.__init__(self) 
+
+
+@singleton
+class Mysql_Thread_ZkOpers(ZkOpers):
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        ZkOpers.__init__(self)     

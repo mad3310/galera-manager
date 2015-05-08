@@ -2,7 +2,7 @@ import logging
 import kazoo
 
 from handlers.monitor import Cluster_Info_Async_Handler, Node_Info_Async_Handler, DB_Info_Async_Handler
-from common.zkOpers import ZkOpers
+from common.zkOpers import Scheduler_ZkOpers
 from common.utils.exceptions import CommonException
 
 class Monitor_Backend_Handle_Worker(object):
@@ -16,7 +16,7 @@ class Monitor_Backend_Handle_Worker(object):
     def __init__(self):
         super(Monitor_Backend_Handle_Worker,self).__init__()
         
-        self.zkOper = ZkOpers()
+        self.zkOper = Scheduler_ZkOpers()
         logging.info("Monitoring part, create zkOper successful!")
         try:
             self.isLock, self.lock = self.zkOper.lock_async_monitor_action()
@@ -35,12 +35,12 @@ class Monitor_Backend_Handle_Worker(object):
             if self.lock is not None:
                 self.zkOper.unLock_aysnc_monitor_action(self.lock)
                 
-            if self.zkOper is not None:
-                self.zkOper.close()
-                logging.info("Monitoring part, close zkOper successful!")
-                
-                del self.zkOper
-                logging.info("Monitoring part, del zkOper object successufl!")
+#             if self.zkOper is not None:
+#                 self.zkOper.close()
+#                 logging.info("Monitoring part, close zkOper successful!")
+#                 
+#                 del self.zkOper
+#                 logging.info("Monitoring part, del zkOper object successufl!")
         
                 
     def __action_monitor_async(self, data_node_info_list):

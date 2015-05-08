@@ -12,6 +12,7 @@ from base import APIHandler
 from common.status_opers import Check_Cluster_Available, Check_Node_Size, Check_Node_Log_Health, Check_Node_Log_Error, Check_Node_Log_Warning, Check_Node_Active, Check_DB_WR_Avalialbe,\
 Check_DB_Wsrep_Status, Check_DB_Cur_Conns, Check_DB_Anti_Item, Check_Backup_Status, Check_Database_User
 
+
 class Cluster_Info_Sync_Handler(object):
     
     check_cluster_available = Check_Cluster_Available()
@@ -81,7 +82,7 @@ class DB_Info_Sync_Handler(object):
     def _action(self, data_node_info_list):
         logging.info("_retrieve_db_info_sync:do nothing!")
     
-        
+
 class DB_Info_Async_Handler(object):    
     
     check_db_wr_available = Check_DB_WR_Avalialbe()
@@ -110,6 +111,7 @@ class DB_Info_Async_Handler(object):
     
 # retrieve the status of mcluster
 # eg. curl "http://localhost:8888/mcluster/monitor"
+
 class Mcluster_Monitor_Sync(APIHandler):
     
     cluster_handler = Cluster_Info_Sync_Handler()

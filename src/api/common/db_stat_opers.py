@@ -12,7 +12,6 @@ from common.configFileOpers import ConfigFileOpers
 from common.abstract_stat_service import Abstract_Stat_Service
 from common.helper import retrieve_kv_from_db_rows
 from common.utils.exceptions import HTTPAPIError
-from common.zkOpers import ZkOpers
 
 
 class DBStatOpers(Abstract_Stat_Service):
