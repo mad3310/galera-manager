@@ -39,9 +39,18 @@ class ZkOpers(object):
         self.zkport = zkPort
         self.retry = KazooRetry(max_tries=3, delay=0.5)
         self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
+        self.zk.add_listener(self.listener)
         self.zk.start()
         #self.zk = self.ensureinstance()
         logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
+        
+    def listener(self, state):
+        if state == KazooState.LOST:
+            self.zk.start()
+        elif state == KazooState.SUSPENDED:
+            pass
+        else:
+            pass
         
     def ensureinstance(self, count=0, zk=None):
         while count < 5:
