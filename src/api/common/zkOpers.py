@@ -7,13 +7,13 @@ Created on 2013-7-11
 @author: asus
 '''
 import json
+import logging
 
-from kazoo.client import KazooClient
+from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import SessionExpiredError
 from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
 
-import logging
 import threading
 from common.my_logging import debug_log
 from common.utils.exceptions import CommonException
@@ -37,7 +37,7 @@ class ZkOpers(object):
 #         self.logger = self.log_obj.get_logger_object()
         self.zkaddress = zkAddress
         self.zkport = zkPort
-        self.retry = KazooRetry(max_tries=3, delay=0.5)
+        self.retry = KazooRetry(max_tries=3600, delay=10000)
         self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
         self.zk.add_listener(self.listener)
         self.zk.start()
@@ -46,11 +46,15 @@ class ZkOpers(object):
         
     def listener(self, state):
         if state == KazooState.LOST:
+            logging.info("zk connect lost, stop this connection and then start new one!")
+            self.zk.stop()
             self.zk.start()
         elif state == KazooState.SUSPENDED:
-            pass
+            logging.info("zk connect suspended, stop this connection and then start new one!")
+            self.zk.stop()
+            self.zk.start()
         else:
-            pass
+            logging.info("zk connect unknown status, only record it on logger!")
         
     def ensureinstance(self, count=0, zk=None):
         while count < 5:
