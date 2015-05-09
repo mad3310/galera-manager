@@ -22,6 +22,12 @@ class ZkOpers(object):
     
     zk = None
     
+    
+    DEFAULT_RETRY_POLICY = KazooRetry(
+        max_tries=None,
+        max_delay=10000,
+    )
+    
     rootPath = "/letv/mysql/mcluster"
     log_obj = debug_log('root')
     logger = log_obj.get_logger_object()
@@ -37,8 +43,10 @@ class ZkOpers(object):
 #         self.logger = self.log_obj.get_logger_object()
         self.zkaddress = zkAddress
         self.zkport = zkPort
-        self.retry = KazooRetry(max_tries=3600, delay=10000)
-        self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
+        self.zk = KazooClient(
+                              hosts=self.zkaddress+':'+str(self.zkport), 
+                              connection_retry=self.DEFAULT_RETRY_POLICY,
+                              timeout=20)
         self.zk.add_listener(self.listener)
         self.zk.start()
         #self.zk = self.ensureinstance()
@@ -46,15 +54,17 @@ class ZkOpers(object):
         
     def listener(self, state):
         if state == KazooState.LOST:
-            logging.info("zk connect lost, stop this connection and then start new one!")
-            self.zk.stop()
-            self.zk.start()
+#             logging.info("zk connect lost, stop this connection and then start new one!")
+#             self.zk.restart()
+            exit(2)
         elif state == KazooState.SUSPENDED:
             logging.info("zk connect suspended, stop this connection and then start new one!")
-            self.zk.stop()
-            self.zk.start()
+            self.zk.restart()
         else:
             logging.info("zk connect unknown status, only record it on logger!")
+            
+    def is_connected(self):
+        return self.zk.state == KazooState.CONNECTED
         
     def ensureinstance(self, count=0, zk=None):
         while count < 5:
