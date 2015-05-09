@@ -46,11 +46,13 @@ class ZkOpers(object):
         
     def listener(self, state):
         if state == KazooState.LOST:
+            self.zk.stop()
             self.zk.start()
         elif state == KazooState.SUSPENDED:
+            self.zk.stop()
             self.zk.start()
         else:
-            pass
+            logging.info("zk connect unknown status, only record it on logger!")
         
     def ensureinstance(self, count=0, zk=None):
         while count < 5:
