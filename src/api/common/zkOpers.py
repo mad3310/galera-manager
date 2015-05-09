@@ -7,13 +7,13 @@ Created on 2013-7-11
 @author: asus
 '''
 import json
+import logging
 
-from kazoo.client import KazooClient
+from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import SessionExpiredError
 from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
 
-import logging
 import threading
 from common.my_logging import debug_log
 from common.utils.exceptions import CommonException
