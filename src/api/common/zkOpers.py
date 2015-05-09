@@ -48,7 +48,7 @@ class ZkOpers(object):
         if state == KazooState.LOST:
             self.zk.start()
         elif state == KazooState.SUSPENDED:
-            pass
+            self.zk.start()
         else:
             pass
         
