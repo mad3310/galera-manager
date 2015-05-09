@@ -1,11 +1,9 @@
 import logging
 import kazoo
-import threading
 
 from handlers.monitor import Cluster_Info_Async_Handler, Node_Info_Async_Handler, DB_Info_Async_Handler
 from common.zkOpers import ZkOpers
 from common.helper import check_leader
-from common.utils.exceptions import CommonException
 class Monitor_Backend_Handle_Worker(object):
     
     cluster_handler = Cluster_Info_Async_Handler()
@@ -26,7 +24,7 @@ class Monitor_Backend_Handle_Worker(object):
         
         leader_flag = check_leader()
         if leader_flag == False:
-            raise CommonException('This node is not leader of zookeeper!')
+            return
             
         logging.info("This node is leader of zookeeper.")
         isLock = False
