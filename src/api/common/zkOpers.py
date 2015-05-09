@@ -48,10 +48,16 @@ class ZkOpers(object):
         if state == KazooState.LOST:
             logging.info("zk connect lost, stop this connection and then start new one!")
             self.zk.stop()
+            
+            self.retry = KazooRetry(max_tries=3600, delay=10)
+            self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
             self.zk.start()
         elif state == KazooState.SUSPENDED:
             logging.info("zk connect suspended, stop this connection and then start new one!")
             self.zk.stop()
+            
+            self.retry = KazooRetry(max_tries=3600, delay=10)
+            self.zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
             self.zk.start()
         else:
             logging.info("zk connect unknown status, only record it on logger!")
