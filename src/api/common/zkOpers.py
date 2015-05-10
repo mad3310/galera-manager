@@ -54,14 +54,9 @@ class ZkOpers(object):
         
     def listener(self, state):
         if state == KazooState.LOST:
-#             logging.info("zk connect lost, stop this connection and then start new one!")
-#             self.zk.restart()
-            exit(2)
+            logging.info("zk connect lost, stop this connection and then start new one!")
         elif state == KazooState.SUSPENDED:
             logging.info("zk connect suspended, stop this connection and then start new one!")
-            self.zk.restart()
-        else:
-            logging.info("zk connect unknown status, only record it on logger!")
             
     def is_connected(self):
         return self.zk.state == KazooState.CONNECTED
