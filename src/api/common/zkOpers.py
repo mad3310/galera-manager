@@ -10,11 +10,12 @@ import json
 import threading
 import logging
 
-from tornado.options import options
-from common.configFileOpers import ConfigFileOpers
 from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import SessionExpiredError
+from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
+from tornado.options import options
+from common.configFileOpers import ConfigFileOpers
 from common.utils.exceptions import CommonException
 from common.my_logging import debug_log
 from common.utils.decorators import singleton
@@ -26,6 +27,13 @@ logger = log_obj.get_logger_object()
         
 class ZkOpers(object):
     
+    zk = None
+    
+    DEFAULT_RETRY_POLICY = KazooRetry(
+        max_tries=None,
+        max_delay=10000,
+    )
+    
     rootPath = "/letv/mysql/mcluster"
     
     '''
@@ -35,26 +43,16 @@ class ZkOpers(object):
         '''
         Constructor
         '''
-        zkaddress, zkport = self.local_get_zk_address()
-        
-        if "" != zkaddress and "" != zkport:
+        self.zkaddress, self.zkport = self.local_get_zk_address()
+        if "" != self.zkaddress and "" != self.zkport:
             self.zk = KazooClient(
-                hosts="%s:%s"%(zkaddress, zkport),
-                connection_retry = KazooRetry(delay=1, max_tries=10, max_delay=30)
-            )
-            
+                                  hosts=self.zkaddress+':'+str(self.zkport), 
+                                  connection_retry=self.DEFAULT_RETRY_POLICY,
+                                  timeout=20)
             self.zk.add_listener(self.listener)
-            logging.info('connect zookeeper')
             self.zk.start()
-        
-        
-    def listener(self, state):
-        if state == KazooState.LOST:
-            self.zk.start()
-        elif state == KazooState.SUSPENDED:
-            pass
-        else:
-            pass
+            #self.zk = self.ensureinstance()
+            logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
         
     def local_get_zk_address(self):
         self.confOpers = ConfigFileOpers()
@@ -78,7 +76,43 @@ class ZkOpers(object):
             self.logger.error(e)
             raise
 
+    def listener(self, state):
+        if state == KazooState.LOST:
+            logging.info("zk connect lost, stop this connection and then start new one!")
+            self.zk.start()
+        elif state == KazooState.SUSPENDED:
+            logging.info("zk connect suspended, stop this connection and then start new one!")
+        else:
+            pass
+            
+    def is_connected(self):
+        return self.zk.state == KazooState.CONNECTED
+
+    def reset_zk_client(self, count=0):
+
+        while count < 5:
+            try:
+                zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.DEFAULT_RETRY_POLICY)
+                zk.start()
+                self.zk = zk
+                return zk
+            
+            except SessionExpiredError, e:
+                logging.info("zk client retry time: %s, for zookeeper service may stop" % (count))
+                return self.reset_zk_client(count + 1)
+            
+            except TimeoutError, e:
+                logging.info("zk client retry time: %s, for connect timeout" % (count))
+                return self.reset_zk_client(count + 1)
         
+        raise TimeoutError, "zookeeper connection timeout"
+
+    def ensureinstance(self, count=0):
+        if self.is_connected():
+            return self.zk
+        else:
+            return self.reset_zk_client(count)
+
     def existCluster(self):
         self.zk.ensure_path(self.rootPath)
         clusters = self.zk.get_children(self.rootPath)

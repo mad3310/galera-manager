@@ -44,7 +44,6 @@ class Thread_Exception_Handler_Worker(threading.Thread):
             logging.error(exc_type)
             logging.error(exc_obj)
             logging.error(exc_trace)
-            self._send_error_email(exc_type+exc_obj+exc_trace)
             
     def _send_error_email(self, exception):
         try:
