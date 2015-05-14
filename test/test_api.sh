@@ -1,12 +1,12 @@
 #! /bin/sh
 
-mclustermanager3="172.17.0.14"
-mclustermanager2="172.17.0.13"
-mclustermanager1="172.17.0.12"
+mclustermanager3="172.17.0.85"
+mclustermanager2="172.17.0.84"
+mclustermanager1="172.17.0.83"
 
-zookeeper3="172.17.0.19"
-zookeeper2="172.17.0.18"
-zookeeper1="172.17.0.17"
+zookeeper3="172.17.0.34"
+zookeeper2="172.17.0.33"
+zookeeper1="172.17.0.32"
 
 curl "http://${mclustermanager1}:8888/admin/reset"
 

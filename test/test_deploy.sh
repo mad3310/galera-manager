@@ -24,7 +24,7 @@ function remove_docker_container(){
 function create_docker_container(){
 	local docker_name=$1
 	
-	docker run -i -t --rm --privileged --memory="512m" -h $1 -v /srv/mcluster/  --name $1 letv/mcluster-manager-test:0.0.1 /bin/bash
+	docker run -i -t --rm --privileged --memory="512m" -h $1 -v /srv/mcluster/  --name $1 letv/mcluster-manager-test:0.0.2 /bin/bash
 }
 
 function copy_src_to_container(){

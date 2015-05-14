@@ -18,7 +18,7 @@ from tornado.options import options
 from common.configFileOpers import ConfigFileOpers
 from common.utils.exceptions import CommonException
 from common.my_logging import debug_log
-from common.utils.decorators import singleton
+from common.utils.decorators import singleton, timeout_handler
 
 
 log_obj = debug_log('zkOpers')
@@ -79,23 +79,27 @@ class ZkOpers(object):
     def listener(self, state):
         if state == KazooState.LOST:
             logging.info("zk connect lost, stop this connection and then start new one!")
-            self.zk.start()
+            
         elif state == KazooState.SUSPENDED:
             logging.info("zk connect suspended, stop this connection and then start new one!")
+            self.re_connect()
         else:
             pass
             
     def is_connected(self):
         return self.zk.state == KazooState.CONNECTED
 
+    def re_connect(self):
+        zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.DEFAULT_RETRY_POLICY)
+        zk.start()
+        self.zk = zk
+        return zk
+
     def reset_zk_client(self, count=0):
 
         while count < 5:
             try:
-                zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.DEFAULT_RETRY_POLICY)
-                zk.start()
-                self.zk = zk
-                return zk
+                return self.re_connect()
             
             except SessionExpiredError, e:
                 logging.info("zk client retry time: %s, for zookeeper service may stop" % (count))
@@ -112,24 +116,27 @@ class ZkOpers(object):
             return self.zk
         else:
             return self.reset_zk_client(count)
-
+    
+    @timeout_handler
     def existCluster(self):
-        self.zk.ensure_path(self.rootPath)
-        clusters = self.zk.get_children(self.rootPath)
+        self.DEFAULT_RETRY_POLICY(self.zk.ensure_path, self.rootPath)
+        clusters = self.DEFAULT_RETRY_POLICY(self.zk.get_children, self.rootPath)
         if len(clusters) != 0:
             return True
         return False
     
+    @timeout_handler
     def getDataNodeNumber(self,clusterUUID):
         path = self.rootPath + "/" + clusterUUID
-        dataNodeNumber = self.zk.get_children(path)
+        dataNodeNumber = self.DEFAULT_RETRY_POLICY(self.zk.get_children, path)
         return dataNodeNumber
     
+    @timeout_handler
     def getClusterUUID(self):
         try: 
-            dataNodeName = self.zk.get_children(self.rootPath)
+            dataNodeName = self.DEFAULT_RETRY_POLICY(self.zk.get_children, self.rootPath)
         except SessionExpiredError:
-            dataNodeName = self.zk.get_children(self.rootPath)
+            dataNodeName = self.DEFAULT_RETRY_POLICY(self.zk.get_children, self.rootPath)
             
         if dataNodeName is None or dataNodeName.__len__() == 0:
             raise CommonException('cluster uuid is null.please check the zk connection or check if existed cluster uuid.')
@@ -140,13 +147,13 @@ class ZkOpers(object):
     def writeClusterInfo(self,clusterUUID,clusterProps):
         path = self.rootPath + "/" + clusterUUID
         self.zk.ensure_path(path)
-        self.zk.set(path, str(clusterProps))#vesion need to write
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(clusterProps))#vesion need to write
         
     def writeClusterStatus(self, clusterProps):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/cluster_status"
         self.zk.ensure_path(path)
-        self.zk.set(path, str(clusterProps))  
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(clusterProps))  
         
     def retrieveClusterStatus(self):
         #self.zk = self.ensureinstance()
@@ -159,7 +166,7 @@ class ZkOpers(object):
         dataNodeIp = dataNodeProps['dataNodeIp']
         path = self.rootPath + "/" + clusterUUID + "/dataNode/" + dataNodeIp
         self.zk.ensure_path(path)
-        self.zk.set(path, str(dataNodeProps))#version need to write
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(dataNodeProps))#version need to write
         
     def retrieve_data_node_list(self):
         clusterUUID = self.getClusterUUID()
@@ -172,17 +179,18 @@ class ZkOpers(object):
         path = self.rootPath + "/" + clusterUUID + "/dataNode/" + ip_address
         resultValue = self._retrieveSpecialPathProp(path)
         return resultValue
-        
+    
+    @timeout_handler
     def writeMysqlCnf(self,clusterUUID,mysqlCnfPropsFullText,func):
         path = self.rootPath + "/" + clusterUUID + "/mycnf"
         self.zk.ensure_path(path)
-        self.zk.set(path, mysqlCnfPropsFullText)#version need to write
-        self.zk.get(path, func)
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, mysqlCnfPropsFullText)#version need to write
+        self.DEFAULT_RETRY_POLICY(self.zk.get, path, func)
         
-    def write_db_info(self,clusterUUID,dbName,dbProps):
+    def write_db_info(self, clusterUUID, dbName, dbProps):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName 
         self.zk.ensure_path(path)
-        self.zk.set(path, str(dbProps))#version need to write
+        self.DEFAULT_RETRY_POLICY(set, path, str(dbProps))#version need to write
     
     def retrieve_db_list(self):
         clusterUUID = self.getClusterUUID()
@@ -206,27 +214,28 @@ class ZkOpers(object):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/" + "db/" + "backup"
         self.zk.ensure_path(path)
-        self.zk.set(path, str(dict_status))
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(dict_status))
 
     def write_user_info(self,clusterUUID,dbName,username,ipAddress,userProps):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + username + "|" + ipAddress
         self.zk.ensure_path(path)
-        self.zk.set(path, str(userProps))#version need to write
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(userProps))#version need to write
         
-        
+    @timeout_handler  
     def retrieveClusterProp(self,clusterUUID):
         resultValue = {}
         path = self.rootPath + "/" + clusterUUID
         if self.zk.exists(path):
-            resultValue = self.zk.get(path)
+            resultValue = self.DEFAULT_RETRY_POLICY(self.zk.get, path)
             
         return resultValue
-        
+    
+    @timeout_handler    
     def retrieveMysqlProp(self,clusterUUID,func=None):
         resultValue = {}
         path = self.rootPath + "/" + clusterUUID + "/mycnf"
         if self.zk.exists(path):
-            resultValue = self.zk.get(path,func)
+            resultValue = self.DEFAULT_RETRY_POLICY(self.zk.get, path,func)
             
         return resultValue
     
@@ -235,10 +244,11 @@ class ZkOpers(object):
         resultValue = self._retrieveSpecialPathProp(path)
         return resultValue
     
+    @timeout_handler
     def retrieve_db_user_prop(self,clusterUUID,dbName):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName
         self.zk.ensure_path(path)
-        user_ipAddress_list = self.zk.get_children(path)
+        user_ipAddress_list = self.DEFAULT_RETRY_POLICY(self.zk.get_children, path)
         
         user_ipAddress_list_return = {}
         if len(user_ipAddress_list) != 0:
@@ -251,12 +261,12 @@ class ZkOpers(object):
     def remove_db(self, clusterUUID, dbName):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName
         if self.zk.exists(path):
-            self.zk.delete(path)
+            self.DEFAULT_RETRY_POLICY(self.zk.delete, path)
             
     def remove_db_user(self, clusterUUID, dbName, userName, ipAddress):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + userName + "|" + ipAddress
         if self.zk.exists(path):
-            self.zk.delete(path)
+            self.DEFAULT_RETRY_POLICY(self.zk.delete, path)
             
     def retrieve_user_limit_props(self, clusterUUID, dbName, userName, ipAddress):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + userName + "|" + ipAddress
@@ -295,7 +305,7 @@ class ZkOpers(object):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/node/started/" + data_node_ip
         if self.zk.exists(path):
-            self.zk.delete(path)
+            self.DEFAULT_RETRY_POLICY(self.zk.delete, path)
             
     def retrieve_started_nodes(self):
         #self.zk = self.ensureinstance()
@@ -308,7 +318,7 @@ class ZkOpers(object):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/" + monitor_type +"/"+ monitor_key
         self.zk.ensure_path(path)
-        self.zk.set(path, str(monitor_value))#version need to write
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(monitor_value))#version need to write
         
     def retrieve_monitor_status_list(self, monitor_type):
         clusterUUID = self.getClusterUUID()
@@ -366,7 +376,7 @@ class ZkOpers(object):
     def _lock_base_action(self, lock_name):
         clusterUUID = self.getClusterUUID()
         path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_name) 
-        lock = self.zk.Lock(path, threading.current_thread())
+        lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
         isLock = lock.acquire(blocking=True, timeout=5)
         return (isLock,lock)
         
@@ -374,10 +384,10 @@ class ZkOpers(object):
         if lock is not None:
             lock.release()
     
-    
+    @timeout_handler
     def _return_children_to_list(self, path):
         self.zk.ensure_path(path)
-        children = self.zk.get_children(path)
+        children = self.DEFAULT_RETRY_POLICY(self.zk.get_children, path)
         
         children_to_list = []
         if len(children) != 0:
@@ -385,11 +395,12 @@ class ZkOpers(object):
                 children_to_list.append(children[i])
         return children_to_list
     
+    @timeout_handler
     def _retrieveSpecialPathProp(self,path):
         data = None
         
         if self.zk.exists(path):
-            data,_ = self.zk.get(path)
+            data,_ = self.DEFAULT_RETRY_POLICY(self.zk.get, path)
         
         resultValue = {}
         if data != None and data != '':
