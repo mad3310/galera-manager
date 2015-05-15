@@ -18,8 +18,10 @@ TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class Check_Status_Base(object):
     
+    zkOper = Scheduler_ZkOpers()
+    
     def __init__(self):
-        self.zkOper = Scheduler_ZkOpers()
+        
         if self.__class__ == Check_Status_Base:
             raise NotImplementedError, \
             "Cannot create object of class Check_Status_Base"
@@ -106,12 +108,14 @@ class Check_Status_Base(object):
         self.write_status(zk_data_node_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key)
 
 
-    def write_status(self, total_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key):
+    def write_status(self, total_count, success_count, failed_count, alarm_level, error_record_dict, 
+                     monitor_type, monitor_key, timeout_num_threshold=3):
+        
         dt = datetime.datetime.now()
         _include_timeout_num_from_response = 0
         if {} != error_record_dict:
             _error_record_message = error_record_dict.get('msg')
-            _include_timeout_list = re.findall(r'HTTP 599: Timeout', str(_error_record_message))
+            _include_timeout_list = re.findall(r'HTTP 599:', str(_error_record_message))
             _include_timeout_num_from_response = len(_include_timeout_list)
         
         _timeout_num_from_zk = 0    
@@ -123,11 +127,13 @@ class Check_Status_Base(object):
                 
             _timeout_num_from_zk += 1
                 
-        if _timeout_num_from_zk < 2 and _include_timeout_num_from_response > 0:
+        if _timeout_num_from_zk <= timeout_num_threshold and _include_timeout_num_from_response > 0:
             success_count = total_count
             failed_count = 0
             alarm_level = "nothing"
             error_record_dict = {}
+        else:
+            _timeout_num_from_zk = 0
     
         result_dict = {
             "message": "total=%s, success count=%s, failed count=%s" % (total_count, success_count, failed_count),

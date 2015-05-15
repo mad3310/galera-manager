@@ -14,11 +14,10 @@ from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import SessionExpiredError
 from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
-from tornado.options import options
-from common.configFileOpers import ConfigFileOpers
 from common.utils.exceptions import CommonException
 from common.my_logging import debug_log
 from common.utils.decorators import singleton, timeout_handler
+from common.utils import local_get_zk_address
 
 
 log_obj = debug_log('zkOpers')
@@ -43,7 +42,7 @@ class ZkOpers(object):
         '''
         Constructor
         '''
-        self.zkaddress, self.zkport = self.local_get_zk_address()
+        self.zkaddress, self.zkport = local_get_zk_address()
         if "" != self.zkaddress and "" != self.zkport:
             self.zk = KazooClient(
                                   hosts=self.zkaddress+':'+str(self.zkport), 
@@ -53,14 +52,6 @@ class ZkOpers(object):
             self.zk.start()
             #self.zk = self.ensureinstance()
             logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
-        
-    def local_get_zk_address(self):
-        self.confOpers = ConfigFileOpers()
-        ret_dict = self.confOpers.getValue(options.zk_address, ['zkAddress','zkPort'])
-        zk_address_local = ret_dict['zkAddress']
-        zk_port_local = ret_dict['zkPort']
-        del self.confOpers
-        return zk_address_local, zk_port_local
 
     def close(self):
         try:
@@ -93,7 +84,7 @@ class ZkOpers(object):
         zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.DEFAULT_RETRY_POLICY)
         zk.start()
         self.zk = zk
-        return zk
+        return self.zk
 
     def reset_zk_client(self, count=0):
 
@@ -424,7 +415,7 @@ class Scheduler_ZkOpers(ZkOpers):
         ZkOpers.__init__(self)
 
 
-@singleton
+
 class Requests_ZkOpers(ZkOpers):
     
     def __init__(self):
@@ -434,7 +425,7 @@ class Requests_ZkOpers(ZkOpers):
         ZkOpers.__init__(self)
 
 
-@singleton
+
 class Abstract_ZkOpers(ZkOpers):
     
     def __init__(self):
@@ -444,7 +435,7 @@ class Abstract_ZkOpers(ZkOpers):
         ZkOpers.__init__(self) 
 
 
-@singleton
+
 class Mysql_Thread_ZkOpers(ZkOpers):
     
     def __init__(self):
