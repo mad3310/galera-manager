@@ -1,8 +1,11 @@
+import logging
+
 from common.invokeCommand import InvokeCommand
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from common.configFileOpers import ConfigFileOpers
-from common.zkOpers import ZkOpers
+from common.zkOpers import Abstract_ZkOpers
 from tornado.options import options
+
 
 class Abstract_Stat_Service(object):
     
@@ -10,12 +13,18 @@ class Abstract_Stat_Service(object):
     
     confOpers = ConfigFileOpers()
     
-    zkOper = ZkOpers('127.0.0.1',2181)
+    zkOper = None
     
     def __init__(self):
         '''
         Constructor
         '''
+        
+    def retrieve_zkOper(self):
+        if None == self.zkOper:
+            self.zkOper = Abstract_ZkOpers()
+            
+        return self.zkOper
         
     @abstractmethod
     def stat(self):
@@ -29,9 +38,9 @@ class Abstract_Stat_Service(object):
         title_list = title_value_result[0].split('\t')
         value_list = []
         if len(title_value_result) == 2:
-		    value_list = title_value_result[1].split('\t') 
+            value_list = title_value_result[1].split('\t') 
            
-        dict = {}
+        result = {}
         for i in range(len(title_list)):
             title = title_list[i]
             if value_list == [] or value_list is None:
@@ -42,14 +51,14 @@ class Abstract_Stat_Service(object):
                 value = 0
             else:
                 value = value_list[i]
-            dict.setdefault(title,value)
+            result.setdefault(title,value)
         
-        return dict
+        return result
     
-    def _convert_dict_to_str(self, dict):
+    def _convert_dict_to_str(self, param):
         title_list_str = ''
         value_list_str = ''
-        for (key, value) in dict.iteritems():
+        for (key, value) in param.iteritems():
             title_list_str += key + '\t'
             value_list_str += value + '\t'
             
@@ -72,8 +81,13 @@ class Abstract_Stat_Service(object):
         return sub_dict
     
     def _check_mysql_processor_exist(self):
-        started_nodes = self.zkOper.retrieve_started_nodes()
-        
+        zkOper = Abstract_ZkOpers()
+        try:
+            started_nodes = zkOper.retrieve_started_nodes()
+        finally:
+            zkOper.stop()
+            
+        logging.info("close zk client connection successfully") 
         confDict = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         data_node_ip = confDict['dataNodeIp']
         

@@ -6,10 +6,7 @@ Created on 2013-7-21
 @author: asus
 '''
 
-from time import *
-import subprocess
 import urllib2
-import logging
 import json
 
 MCLUSTER_VIP = 'localhost'

@@ -7,21 +7,26 @@ Created on 2013-7-11
 @author: asus
 '''
 import json
+import threading
 import logging
 
 from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import SessionExpiredError
 from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
-
-import threading
-from common.my_logging import debug_log
 from common.utils.exceptions import CommonException
+from common.my_logging import debug_log
+from common.utils.decorators import singleton, timeout_handler
+from common.utils import local_get_zk_address
 
+
+log_obj = debug_log('zkOpers')
+logger = log_obj.get_logger_object()
+        
+        
 class ZkOpers(object):
     
     zk = None
-    
     
     DEFAULT_RETRY_POLICY = KazooRetry(
         max_tries=None,
@@ -29,75 +34,100 @@ class ZkOpers(object):
     )
     
     rootPath = "/letv/mysql/mcluster"
-    log_obj = debug_log('root')
-    logger = log_obj.get_logger_object()
     
     '''
     classdocs
     '''
-    def __init__(self,zkAddress,zkPort):
+    def __init__(self):
         '''
         Constructor
         '''
-#         self.log_obj = debug_log('root')
-#         self.logger = self.log_obj.get_logger_object()
-        self.zkaddress = zkAddress
-        self.zkport = zkPort
-        self.zk = KazooClient(
-                              hosts=self.zkaddress+':'+str(self.zkport), 
-                              connection_retry=self.DEFAULT_RETRY_POLICY,
-                              timeout=20)
-        self.zk.add_listener(self.listener)
-        self.zk.start()
-        #self.zk = self.ensureinstance()
-        logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
-        
+        self.zkaddress, self.zkport = local_get_zk_address()
+        if "" != self.zkaddress and "" != self.zkport:
+            self.zk = KazooClient(
+                                  hosts=self.zkaddress+':'+str(self.zkport), 
+                                  connection_retry=self.DEFAULT_RETRY_POLICY,
+                                  timeout=20)
+            self.zk.add_listener(self.listener)
+            self.zk.start()
+            #self.zk = self.ensureinstance()
+            logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
+
+    def close(self):
+        try:
+            self.zk.stop()
+            self.zk.close()
+        except Exception, e:
+            self.logger.error(e)
+            
+    def stop(self):
+        try:
+            self.zk.stop()
+        except Exception, e:
+            self.logger.error(e)
+            raise
+
     def listener(self, state):
         if state == KazooState.LOST:
             logging.info("zk connect lost, stop this connection and then start new one!")
+            
         elif state == KazooState.SUSPENDED:
             logging.info("zk connect suspended, stop this connection and then start new one!")
+            self.re_connect()
+        else:
+            pass
             
     def is_connected(self):
         return self.zk.state == KazooState.CONNECTED
-        
-    def ensureinstance(self, count=0, zk=None):
+
+    def re_connect(self):
+        zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.DEFAULT_RETRY_POLICY)
+        zk.start()
+        self.zk = zk
+        return self.zk
+
+    def reset_zk_client(self, count=0):
+
         while count < 5:
             try:
-                if not zk:
-                    zk = KazooClient(hosts=self.zkaddress+':'+str(self.zkport), connection_retry=self.retry)
-                    zk.start()
-                    print ("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
-                clusters = zk.get_children(self.rootPath)
-                if len(clusters) != 0:
-                    return zk
+                return self.re_connect()
+            
             except SessionExpiredError, e:
-                zk.stop()
-                print ("zk client retry time: %s" % (count))
-                return self.ensureinstance(count + 1)
+                logging.info("zk client retry time: %s, for zookeeper service may stop" % (count))
+                return self.reset_zk_client(count + 1)
+            
             except TimeoutError, e:
-                zk.stop()
-                print ("zk client retry time: %s" % (count))
-                return self.ensureinstance(count + 1)
-        raise TimeoutError, "zookeeper connection timeout"
+                logging.info("zk client retry time: %s, for connect timeout" % (count))
+                return self.reset_zk_client(count + 1)
         
+        raise TimeoutError, "zookeeper connection timeout"
+
+    def ensureinstance(self, count=0):
+        if self.is_connected():
+            return self.zk
+        else:
+            return self.reset_zk_client(count)
+    
+    @timeout_handler
     def existCluster(self):
-        self.zk.ensure_path(self.rootPath)
-        clusters = self.zk.get_children(self.rootPath)
+        self.DEFAULT_RETRY_POLICY(self.zk.ensure_path, self.rootPath)
+        clusters = self.DEFAULT_RETRY_POLICY(self.zk.get_children, self.rootPath)
         if len(clusters) != 0:
             return True
         return False
     
+    @timeout_handler
     def getDataNodeNumber(self,clusterUUID):
         path = self.rootPath + "/" + clusterUUID
-        dataNodeNumber = self.zk.get_children(path)
+        dataNodeNumber = self.DEFAULT_RETRY_POLICY(self.zk.get_children, path)
         return dataNodeNumber
     
+    @timeout_handler
     def getClusterUUID(self):
         try: 
-            dataNodeName = self.zk.get_children(self.rootPath)
+            dataNodeName = self.DEFAULT_RETRY_POLICY(self.zk.get_children, self.rootPath)
         except SessionExpiredError:
-            dataNodeName = self.zk.get_children(self.rootPath)
+            dataNodeName = self.DEFAULT_RETRY_POLICY(self.zk.get_children, self.rootPath)
             
         if dataNodeName is None or dataNodeName.__len__() == 0:
             raise CommonException('cluster uuid is null.please check the zk connection or check if existed cluster uuid.')
@@ -108,13 +138,13 @@ class ZkOpers(object):
     def writeClusterInfo(self,clusterUUID,clusterProps):
         path = self.rootPath + "/" + clusterUUID
         self.zk.ensure_path(path)
-        self.zk.set(path, str(clusterProps))#vesion need to write
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(clusterProps))#vesion need to write
         
     def writeClusterStatus(self, clusterProps):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/cluster_status"
         self.zk.ensure_path(path)
-        self.zk.set(path, str(clusterProps))  
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(clusterProps))  
         
     def retrieveClusterStatus(self):
         #self.zk = self.ensureinstance()
@@ -127,7 +157,7 @@ class ZkOpers(object):
         dataNodeIp = dataNodeProps['dataNodeIp']
         path = self.rootPath + "/" + clusterUUID + "/dataNode/" + dataNodeIp
         self.zk.ensure_path(path)
-        self.zk.set(path, str(dataNodeProps))#version need to write
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(dataNodeProps))#version need to write
         
     def retrieve_data_node_list(self):
         clusterUUID = self.getClusterUUID()
@@ -140,21 +170,21 @@ class ZkOpers(object):
         path = self.rootPath + "/" + clusterUUID + "/dataNode/" + ip_address
         resultValue = self._retrieveSpecialPathProp(path)
         return resultValue
-        
+    
+    @timeout_handler
     def writeMysqlCnf(self,clusterUUID,mysqlCnfPropsFullText,func):
         path = self.rootPath + "/" + clusterUUID + "/mycnf"
         self.zk.ensure_path(path)
-        self.zk.set(path, mysqlCnfPropsFullText)#version need to write
-        self.zk.get(path, func)
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, mysqlCnfPropsFullText)#version need to write
+        self.DEFAULT_RETRY_POLICY(self.zk.get, path, func)
         
-    def write_db_info(self,clusterUUID,dbName,dbProps):
+    def write_db_info(self, clusterUUID, dbName, dbProps):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName 
         self.zk.ensure_path(path)
-        self.zk.set(path, str(dbProps))#version need to write
+        self.DEFAULT_RETRY_POLICY(set, path, str(dbProps))#version need to write
     
     def retrieve_db_list(self):
         clusterUUID = self.getClusterUUID()
-        logging.info("ClusterUUID:" + clusterUUID)
         path = self.rootPath + "/" + clusterUUID + "/db"
         db_list = self._return_children_to_list(path)
         return  db_list
@@ -175,27 +205,28 @@ class ZkOpers(object):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/" + "db/" + "backup"
         self.zk.ensure_path(path)
-        self.zk.set(path, str(dict_status))
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(dict_status))
 
     def write_user_info(self,clusterUUID,dbName,username,ipAddress,userProps):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + username + "|" + ipAddress
         self.zk.ensure_path(path)
-        self.zk.set(path, str(userProps))#version need to write
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(userProps))#version need to write
         
-        
+    @timeout_handler  
     def retrieveClusterProp(self,clusterUUID):
         resultValue = {}
         path = self.rootPath + "/" + clusterUUID
         if self.zk.exists(path):
-            resultValue = self.zk.get(path)
+            resultValue = self.DEFAULT_RETRY_POLICY(self.zk.get, path)
             
         return resultValue
-        
+    
+    @timeout_handler    
     def retrieveMysqlProp(self,clusterUUID,func=None):
         resultValue = {}
         path = self.rootPath + "/" + clusterUUID + "/mycnf"
         if self.zk.exists(path):
-            resultValue = self.zk.get(path,func)
+            resultValue = self.DEFAULT_RETRY_POLICY(self.zk.get, path,func)
             
         return resultValue
     
@@ -204,10 +235,11 @@ class ZkOpers(object):
         resultValue = self._retrieveSpecialPathProp(path)
         return resultValue
     
+    @timeout_handler
     def retrieve_db_user_prop(self,clusterUUID,dbName):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName
         self.zk.ensure_path(path)
-        user_ipAddress_list = self.zk.get_children(path)
+        user_ipAddress_list = self.DEFAULT_RETRY_POLICY(self.zk.get_children, path)
         
         user_ipAddress_list_return = {}
         if len(user_ipAddress_list) != 0:
@@ -220,12 +252,12 @@ class ZkOpers(object):
     def remove_db(self, clusterUUID, dbName):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName
         if self.zk.exists(path):
-            self.zk.delete(path)
+            self.DEFAULT_RETRY_POLICY(self.zk.delete, path)
             
     def remove_db_user(self, clusterUUID, dbName, userName, ipAddress):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + userName + "|" + ipAddress
         if self.zk.exists(path):
-            self.zk.delete(path)
+            self.DEFAULT_RETRY_POLICY(self.zk.delete, path)
             
     def retrieve_user_limit_props(self, clusterUUID, dbName, userName, ipAddress):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + userName + "|" + ipAddress
@@ -258,15 +290,13 @@ class ZkOpers(object):
     def write_started_node(self, data_node_ip):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/node/started/" + data_node_ip
-        self.logger.debug("the started data node:" + data_node_ip)
         self.zk.ensure_path(path)
         
     def remove_started_node(self, data_node_ip):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/node/started/" + data_node_ip
-        self.logger.debug("the removed data node:" + data_node_ip)
         if self.zk.exists(path):
-            self.zk.delete(path)
+            self.DEFAULT_RETRY_POLICY(self.zk.delete, path)
             
     def retrieve_started_nodes(self):
         #self.zk = self.ensureinstance()
@@ -278,9 +308,8 @@ class ZkOpers(object):
     def write_monitor_status(self, monitor_type, monitor_key, monitor_value):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/" + monitor_type +"/"+ monitor_key
-        self.logger.debug("monitor status:" + path)
         self.zk.ensure_path(path)
-        self.zk.set(path, str(monitor_value))#version need to write
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(monitor_value))#version need to write
         
     def retrieve_monitor_status_list(self, monitor_type):
         clusterUUID = self.getClusterUUID()
@@ -338,19 +367,18 @@ class ZkOpers(object):
     def _lock_base_action(self, lock_name):
         clusterUUID = self.getClusterUUID()
         path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_name) 
-        lock = self.zk.Lock(path, threading.current_thread())
-        isLock = lock.acquire(True,1)
+        lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
+        isLock = lock.acquire(blocking=True, timeout=5)
         return (isLock,lock)
         
     def _unLock_base_action(self, lock):
         if lock is not None:
             lock.release()
     
-    
+    @timeout_handler
     def _return_children_to_list(self, path):
-        self.logger.debug("check children:" + path)
         self.zk.ensure_path(path)
-        children = self.zk.get_children(path)
+        children = self.DEFAULT_RETRY_POLICY(self.zk.get_children, path)
         
         children_to_list = []
         if len(children) != 0:
@@ -358,16 +386,12 @@ class ZkOpers(object):
                 children_to_list.append(children[i])
         return children_to_list
     
+    @timeout_handler
     def _retrieveSpecialPathProp(self,path):
-        self.logger.debug(path)
-        
         data = None
         
         if self.zk.exists(path):
-            self.logger.debug(path+" existed")
-            data,stat = self.zk.get(path)
-            
-        self.logger.debug(data)
+            data,_ = self.DEFAULT_RETRY_POLICY(self.zk.get, path)
         
         resultValue = {}
         if data != None and data != '':
@@ -379,20 +403,43 @@ class ZkOpers(object):
         local_data = data.replace("'", "\"").replace("[u\"", "[\"").replace(" u\"", " \"")
         formatted_data = json.loads(local_data)
         return formatted_data
-        
-if __name__ == "__main__":
-    try:
-        zkOpers = ZkOpers('127.0.0.1', 2181)
-        path = "/letv/mysql/mcluster/"
-        # Print the version of a node and its data
-        data, stat = zkOpers.ensureinstance().get(path)
-        #data, stat = zkOpers.zk.get(path)
-        print("Version: %s, data: %s" % (stat.version, data.decode("utf-8")))
 
-    # List the children
-        while True:
-            children = zkOpers.ensureinstance().get_children(path)
-            #children = zkOpers.zk.get_children(path)
-            print("There are %s children with names %s" % (len(children), children))
-    except TimeoutError, e:
-        print e
+
+@singleton
+class Scheduler_ZkOpers(ZkOpers):
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        ZkOpers.__init__(self)
+
+
+
+class Requests_ZkOpers(ZkOpers):
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        ZkOpers.__init__(self)
+
+
+
+class Abstract_ZkOpers(ZkOpers):
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        ZkOpers.__init__(self) 
+
+
+
+class Mysql_Thread_ZkOpers(ZkOpers):
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        ZkOpers.__init__(self)     

@@ -30,7 +30,6 @@ class InvokeCommand():
     def runBootstrapScript(self):
         stop_command_result = self._runSysCmd(options.mysql_stop_command)
         if(stop_command_result[1] == 0):
-            print stop_command_result[0]
             boot_strap_result = self._runSysCmd(options.mysql_boot_strape_script)
             if(boot_strap_result[1] == 0):
                 boot_strap_text = boot_strap_result[0]

@@ -8,6 +8,7 @@ import logging
 
 from tornado.options import options
 from common.helper import retrieve_kv_from_db_rows
+from common.utils.exceptions import CommonException
 
 class DBAOpers(object):
     '''
@@ -68,7 +69,7 @@ class DBAOpers(object):
         cursor = conn.cursor()
         sql = "INSERT INTO %s (time, identifier ) VALUES('%s','%s')" % (tb_name, time_data, identifier)
         try:
-             cursor.execute(sql)
+            cursor.execute(sql)
         
         except Exception,e:
             logging.exception(e)
@@ -88,6 +89,7 @@ class DBAOpers(object):
         rows = cursor.fetchall()
         ret = rows[0][0]
         return ret
+    
     def delete_tb_contents(self, conn, tb_name, db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
@@ -112,6 +114,7 @@ class DBAOpers(object):
         rows = cursor.fetchall()   
         ret = rows[0][0]
         return ret
+    
     def check_tb_data(self, conn, tb_name, db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
@@ -143,13 +146,14 @@ class DBAOpers(object):
     def drop_table(self, conn, tb_name, db_name ):
         conn.select_db(db_name)
         cursor = conn.cursor()
-     	
+    
         try:
             sql = "DROP table `%s`" %(tb_name)
             cursor.execute(sql)
         except Exception, e:
             logging.exception(e)
         logging.info('drop ' + tb_name + 'success')
+        
     def create_user(self, conn, username, passwd, ip_address='%',dbName = None):
         cursor = conn.cursor()
         cursor.execute("""select count(*) as c from mysql.user where user='{username}' and host='{ip_address}'"""

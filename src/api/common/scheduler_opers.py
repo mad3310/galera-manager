@@ -23,7 +23,7 @@ class Scheduler_Opers(object):
         Constructor
         '''
         self.thread_exception_hanlder(5)
-        self.sced_monitor_handler(50)
+        self.sced_monitor_handler(55)
         
         
         
@@ -40,6 +40,8 @@ class Scheduler_Opers(object):
             monitor_backend_worker.run()
         except Exception:
             self.threading_exception_queue.put(sys.exc_info())
+            
+        #del monitor_backend_worker
             
     def thread_exception_hanlder(self, action_timeout = 5):
         if action_timeout > 0:

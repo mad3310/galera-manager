@@ -2,26 +2,30 @@
 #-*- coding: utf-8 -*-
 
 import os
+from common.utils.exceptions import CommonException
 
-class ConfigFileOpers():
+class ConfigFileOpers(object):
+    
     def getValue(self,fileName,keyList=None):
         resultValue = {}
         f = file(fileName, 'r')
         
         totalDict = {}
-        while True:
-            line = f.readline()
-            
-            if not line:
-                break
-            
-            pos1 = line.find('=')
-            key = line[:pos1]
-            value = line[pos1+1:len(line)].strip('\n')
-            totalDict.setdefault(key,value)
-            
-        f.close()
-            
+        
+        try:
+            while True:
+                line = f.readline()
+                
+                if not line:
+                    break
+                
+                pos1 = line.find('=')
+                key = line[:pos1]
+                value = line[pos1+1:len(line)].strip('\n')
+                totalDict.setdefault(key,value)
+        finally:
+            f.close()
+       
         if keyList == None:
             resultValue = totalDict
         else:
@@ -58,8 +62,11 @@ class ConfigFileOpers():
         
     def retrieveFullText(self, fileName):
         inputstream = open(fileName)
-        lines = inputstream.readlines()
-        inputstream.close()
+        
+        try:
+            lines = inputstream.readlines()
+        finally:
+            inputstream.close()
         
         resultValue = ''
         for line in lines:
@@ -69,11 +76,11 @@ class ConfigFileOpers():
     
     
     def writeFullText(self, fileName,fullText):
-        if os.path.exists(fileName):
-            outputstream = open(fileName,'w')
-            outputstream.write('')
-            outputstream.close()
+        if not os.path.exists(fileName):
+            raise CommonException("%s file not existed!" % (fileName))
+        
         outputstream = open(fileName,'w')
+        outputstream.write('')
         outputstream.write(fullText)
         outputstream.close()
                     

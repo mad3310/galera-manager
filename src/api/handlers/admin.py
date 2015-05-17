@@ -9,74 +9,65 @@ from common.configFileOpers import ConfigFileOpers
 from base import BaseHandler, APIHandler
 from tornado.options import options
 from common.utils.exceptions import HTTPAPIError
-
+from configuration.adminOpers import AdminOpers
 
 
 # admin conf
-# eg. curl -d "zkAddress=10.204.8.211" "http://localhost:8888/admin/conf"
+# eg. curl -d "zkAddress=10.204.8.211&zkPort=2181" "http://localhost:8888/admin/conf"
 class AdminConf(APIHandler):
     
     confOpers = ConfigFileOpers()
     
+    adminOpers = AdminOpers()
+    
     def post(self):
         requestParam = {}
         args = self.request.arguments
-        logging.info("args:" + str(args))
-        try:
-            for key in args:
-                requestParam.setdefault(key,args[key][0])
+        
+        for key in args:
+            requestParam.setdefault(key,args[key][0])
+        
+        if requestParam != {}:
+            self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
             
-            if requestParam != {}:
-                self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
-        except Exception,e:
-            logging.error(e)
-            error_message="server error in cluster conf"
-            raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                                    notification = "direct", \
-                                    log_message= error_message,\
-                                    response =  error_message)
-        dict = {}
+        self.adminOpers.sync_info_from_zk()
+            
+        result = {}
 #        dict.setdefault("code", '000000')
-        dict.setdefault("message", "admin conf successful!")
-        self.finish(dict)
+        result.setdefault("message", "admin conf successful!")
+        self.finish(result)
+        
+        
         
 # admin reset
 # eg. curl --user root:root "http://localhost:8888/admin/reset"
 class AdminReset(APIHandler):
     
     def get(self):
-        try:
-            template_path=os.path.join(options.base_dir, "templates")
-            config_path = os.path.join(options.base_dir, "config")
+        template_path=os.path.join(options.base_dir, "templates")
+        config_path = os.path.join(options.base_dir, "config")
+    
+        clusterPropTemFileName = os.path.join(template_path,"cluster.property.template")
+        dataNodePropTemFileName = os.path.join(template_path,"dataNode.property.template")
+        mclusterManagerCnfTemFileName = os.path.join(template_path,"mclusterManager.cnf.template")
+    
+        clusterPropFileName = os.path.join(config_path,"cluster.property")
+        dataNodePropFileName = os.path.join(config_path,"dataNode.property")
+        mclusterManagerCnfFileName = os.path.join(config_path,"mclusterManager.cnf")
+        fileNameList = [clusterPropFileName,dataNodePropFileName,mclusterManagerCnfFileName]
+    
+        for fileName in fileNameList:
+            if os.path.exists(fileName):
+                os.chmod(fileName, stat.S_IWRITE)
+                os.remove(fileName)
         
-            clusterPropTemFileName = os.path.join(template_path,"cluster.property.template")
-            dataNodePropTemFileName = os.path.join(template_path,"dataNode.property.template")
-            mclusterManagerCnfTemFileName = os.path.join(template_path,"mclusterManager.cnf.template")
-        
-            clusterPropFileName = os.path.join(config_path,"cluster.property")
-            dataNodePropFileName = os.path.join(config_path,"dataNode.property")
-            mclusterManagerCnfFileName = os.path.join(config_path,"mclusterManager.cnf")
-            fileNameList = [clusterPropFileName,dataNodePropFileName,mclusterManagerCnfFileName]
-        
-            for fileName in fileNameList:
-                if os.path.exists(fileName):
-                    os.chmod(fileName, stat.S_IWRITE)
-                    os.remove(fileName)
-            
-            shutil.copyfile(clusterPropTemFileName, clusterPropFileName)
-            shutil.copyfile(dataNodePropTemFileName, dataNodePropFileName)
-            shutil.copyfile(mclusterManagerCnfTemFileName, mclusterManagerCnfFileName)
+        shutil.copyfile(clusterPropTemFileName, clusterPropFileName)
+        shutil.copyfile(dataNodePropTemFileName, dataNodePropFileName)
+        shutil.copyfile(mclusterManagerCnfTemFileName, mclusterManagerCnfFileName)
    
-        except Exception,e:
-            logging.error(e)
-            error_message="server error in cluster reset"
-            raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                                    notification = "direct", \
-                                    log_message= error_message,\
-                                    response =  error_message)
-        dict = {}
-        dict.setdefault("message", "admin reset successful!")
-        self.finish(dict)
+        result = {}
+        result.setdefault("message", "admin reset successful!")
+        self.finish(result)
         
         
         
@@ -104,10 +95,10 @@ class AdminUser(APIHandler):
         if requestParam != {}:
             self.confOpers.setValue(options.cluster_property, requestParam)
         
-        dict = {}
+        result = {}
         #dict.setdefault("code", '000000')
-        dict.setdefault("message", "creating admin user successful!")
-        self.finish(dict)
+        result.setdefault("message", "creating admin user successful!")
+        self.finish(result)
 #         
 # no used        
 # download cnf and property file, this is inner-API
@@ -135,7 +126,7 @@ class GenerateConfigFileHandler(APIHandler):
         
         del configFileContentText # remove the configFileContentText
         
-        dict = {}
-        dict.setdefault("message", "finished")
+        result = {}
+        result.setdefault("message", "finished")
         
-        self.finish(dict)
+        self.finish(result)

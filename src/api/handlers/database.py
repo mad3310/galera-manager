@@ -15,23 +15,23 @@ from common.utils.exceptions import HTTPAPIError
 from common.db_stat_opers import DBStatOpers
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
-from common.helper import check_leader, is_monitoring, get_localhost_ip
-from common.my_logging import debug_log
-
+from common.helper import is_monitoring, get_localhost_ip
 import socket
 import datetime
 import time
 import logging
-TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+
 # create database in mcluster
 # eg. curl --user root:root -d "dbName=managerTest&userName=zbz" "http://localhost:8888/db"
 
 # delete database in mcluster
 # eg. curl --user root:root -X DELETE "http://localhost:8888/db/{dbName}"
 
+TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
 @require_basic_auth
 class DBOnMCluster(APIHandler):
-    
     dba_opers = DBAOpers()
     
     conf_opers = ConfigFileOpers()
@@ -45,9 +45,6 @@ class DBOnMCluster(APIHandler):
         max_connections_per_hour = self.get_argument("max_connections_per_hour", 0)
         max_user_connections = self.get_argument("max_user_connections", 200)
         userPassword = get_random_password()
-        dict = {}
-        dict = self.request.arguments
-        logging.info(str(dict))
         conn = self.dba_opers.get_mysql_connection()
         
         try:
@@ -65,21 +62,22 @@ class DBOnMCluster(APIHandler):
         #check if exist cluster
         dbProps = {'db_name':dbName}
         
-        clusterUUID = self.zkOper.getClusterUUID()
-        self.zkOper.write_db_info(clusterUUID, dbName, dbProps)
-        
+        zkOper = self.retrieve_zkOper()
+        clusterUUID = zkOper.getClusterUUID()
+        zkOper.write_db_info(clusterUUID, dbName, dbProps)
+    
         userProps = {'role':'manager',
                      'max_queries_per_hour':max_queries_per_hour,
                      'max_updates_per_hour':max_updates_per_hour,
                      'max_connections_per_hour':max_connections_per_hour,
                      'max_user_connections':max_user_connections}
-        self.zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
-        
-        dict = {}
-        dict.setdefault("message", "database create successful")
-        dict.setdefault("manager_user_name", userName)
-        dict.setdefault("manager_user_password", userPassword)
-        self.finish(dict)
+        zkOper.write_user_info(clusterUUID,dbName,userName,ip_address,userProps)
+            
+        result = {}
+        result.setdefault("message", "database create successful")
+        result.setdefault("manager_user_name", userName)
+        result.setdefault("manager_user_password", userPassword)
+        self.finish(result)
         
         
         
@@ -90,34 +88,34 @@ class DBOnMCluster(APIHandler):
                                 log_message= "when remove the db, no have database name",\
                                 response =  "please provide database name you want to removed!")
         
-        clusterUUID = self.zkOper.getClusterUUID()
-        user_ipAddress_map = self.zkOper.retrieve_db_user_prop(clusterUUID, dbName)
-        
+        zkOper = self.retrieve_zkOper()
+        clusterUUID = zkOper.getClusterUUID()
+        user_ipAddress_map = zkOper.retrieve_db_user_prop(clusterUUID, dbName)
+    
         conn = self.dba_opers.get_mysql_connection()
-        
+    
         try:
             if user_ipAddress_map is not None:
                 for (user_name,ip_address) in user_ipAddress_map.items():
                     self.dba_opers.delete_user(conn, user_name, ip_address)
-        
+    
                 self.dba_opers.drop_database(conn, dbName)
         finally:
             conn.close()
-        
+    
         user_name_list = ''
         if user_ipAddress_map is not None:
             for (user_name,ip_address) in user_ipAddress_map.items():
-                self.zkOper.remove_db_user(clusterUUID, dbName, user_name, ip_address)
+                zkOper.remove_db_user(clusterUUID, dbName, user_name, ip_address)
                 user_name_list += user_name + ","
-                
-        self.zkOper.remove_db(clusterUUID, dbName)
-        
-        dict = {}
-        dict.setdefault("message", "database remove successful!")
-        dict.setdefault("removed_db_name", dbName)
-        dict.setdefault("removed_user_with_db_name", user_name_list)
-        self.finish(dict)
-        
+            
+        zkOper.remove_db(clusterUUID, dbName)
+            
+        result = {}
+        result.setdefault("message", "database remove successful!")
+        result.setdefault("removed_db_name", dbName)
+        result.setdefault("removed_user_with_db_name", user_name_list)
+        self.finish(result)
 
 # After mcluster shut down, manager want to recover the cluster, then need to retrieve the node's uuid and seqno. 
 # Though this api, user can get it.
@@ -127,21 +125,19 @@ class Inner_DB_Retrieve_Recover_UUID_Seqno(APIHandler):
     node_mysql_service_opers = Node_Mysql_Service_Opers()
     
     def get(self):
-        dict = self.node_mysql_service_opers.retrieve_recover_position()
-        self.finish(dict)
+        result = self.node_mysql_service_opers.retrieve_recover_position()
+        self.finish(result)
 
         
 # when mcluster db instance's current connections exceed to 70 percent of max connections,
 # we need to know this issue and notification.
 # eg. curl "http://localhost:8888/inner/db/check/cur_conns" 
 class Inner_DB_Check_CurConns(APIHandler):
-    log_obj = debug_log('root')
-    logger = log_obj.get_logger_object()
-    
     dba_opers = DBAOpers()
     
     def get(self):
-        if not is_monitoring(get_localhost_ip()):
+        zkOper = self.retrieve_zkOper()
+        if not is_monitoring(get_localhost_ip(), zkOper):
             self.finish("true")
             return
         conn = self.dba_opers.get_mysql_connection()
@@ -164,8 +160,6 @@ class Inner_DB_Check_CurConns(APIHandler):
             self.finish("true")
             return
         
-        self.logger.debug("[DBMonitorForMaxConns] the count of current connections: " + str(current_connections_count) + 
-                     " the count of db instance's variables (max_connections):" + max_connections)
         self.finish("false")
         
         
@@ -178,11 +172,14 @@ class Inner_DB_Check_WsrepStatus(APIHandler):
     dba_opers = DBAOpers()
     
     def get(self):
-        if not is_monitoring(get_localhost_ip()):
+        zkOper = self.retrieve_zkOper()
+        
+        if not is_monitoring(get_localhost_ip(), zkOper):
             self.finish("true")
             return
         try:
             check_result = self.dba_opers.retrieve_wsrep_status()
+            logging.info("check_wsrepstatus : %s" %(check_result))
         except:
             error_message = "connection break down"
             raise HTTPAPIError(status_code=417, error_detail= error_message,\
@@ -204,32 +201,40 @@ class Inner_DB_Check_WR(APIHandler):
     dba_opers = DBAOpers()
     
     confOpers = ConfigFileOpers()
-    log_obj = debug_log('root')
-    logger = log_obj.get_logger_object()
     
     invokeCommand = InvokeCommand()
-
+ 
 #     
     def get(self):
-        
-        dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
-        data_node_ip = dataNodeProKeyValue['dataNodeIp']
-        self.logger.info('data_node_ip is :' + str(data_node_ip))
-        started_ip_list = self.zkOper.retrieve_started_nodes()
-        self.logger.info('started_ip_list is: ' + str(started_ip_list))
-        identifier = socket.gethostname()
-        
         conn = self.dba_opers.get_mysql_connection()
-        try:       
+        try:
+            dataNodeProKeyValue = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
+            data_node_ip = dataNodeProKeyValue['dataNodeIp']
+            
+            zkOper = self.retrieve_zkOper()
+            started_ip_list = zkOper.retrieve_started_nodes()
+            identifier = socket.gethostname()
+        
+            '''
+            @todo: review the comment code for arbitrator way
+            '''
+#           ret_dict = self.confOpers.getValue(options.data_node_property, ['dataNodeName','dataNodeIp'])
+#           node_name = ret_dict['dataNodeName']
+#           obj = re.search("-n-2", node_name)
+#           if obj != None:
+#               self.finish("true") 
+#               return
+
             if conn is None:
                 if data_node_ip in started_ip_list:
-                    self.zkOper.remove_started_node(data_node_ip)
+                    zkOper.remove_started_node(data_node_ip)
                     self.invokeCommand.run_check_shell(options.kill_innotop)
                 self.finish("false")
                 return
-            self.zkOper.write_started_node(data_node_ip)
+            
+            zkOper.write_started_node(data_node_ip)
 
-            if not is_monitoring(get_localhost_ip()):
+            if not is_monitoring(get_localhost_ip(), zkOper):
                 self.finish("true")
                 return
             
@@ -258,53 +263,38 @@ class Inner_DB_Check_WR(APIHandler):
                 int_tbName = (offset + 2 ) % 4
                 del_tbName = "%s_%s" %(pre_tbname,int_tbName)
                 self.dba_opers.delete_tb_contents(conn, del_tbName, dbName)
-                self.logger.info('delete the contents in database (%s) before 12 hours success!' % (del_tbName))
+                logging.info('delete the contents in database (%s) before 12 hours success!' % (del_tbName))
                 str_time = n_time.strftime(TIME_FORMAT)
-                self.logger.info("delete contents time is %s:" % (str_time))
+                logging.info("delete contents time is %s:" % (str_time))
 
             
             str_time = n_time.strftime(TIME_FORMAT)
-            self.logger.info("time is :" + str_time)
+            logging.info("time is :" + str_time)
             self.dba_opers.insert_record_time(conn, str_time , identifier ,tbName , dbName)
-            self.logger.info('Insert time %s into table %s ' % (str_time, tbName))
-          
-
-        except Exception,e:
-            self.logger.error(e)
-            self.finish("false")
-            return
-        finally:
-            conn.close()
-               
-        return_flag = "true"
-        try: 
-            conn = self.dba_opers.get_mysql_connection()
-        except Exception, e:
-            return_flag = 'false'
-            self.logger.error(e)
-            self.finish(return_flag)
-            return
-        try: 
+            logging.info('Insert time %s into table %s ' % (str_time, tbName))
+            
             record_time = self.dba_opers.query_record_time(conn ,identifier ,tbName , dbName)
             record_stamp_time = time.mktime(time.strptime(record_time, TIME_FORMAT))
             n_stamp_time = time.time()
             
             t_threshold = options.delta_time
             delta_time = n_stamp_time - record_stamp_time
-            
-            if delta_time > t_threshold:
-                error_message = 'delta_time bewteen read and write is too long -- delta_time is %s' % (delta_time)
-                self.logger.error(error_message)
-                raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                            notification = "direct", \
-                            log_message= error_message,\
-                            response = error_message)             
-
-        except Exception, e:
-            self.logger.error(e)
-            return_flag = "false"
-        finally: 
+        except Exception,e:
+            return_flag = 'false'
+            logging.error(e)
+            self.finish(return_flag)
+            return
+        finally:
             conn.close()
+            
+        if delta_time > t_threshold:
+            error_message = 'delta_time bewteen read and write is too long -- delta_time is %s' % (delta_time)
+            raise HTTPAPIError(status_code=500, error_detail= error_message,\
+                        notification = "direct", \
+                        log_message= error_message,\
+                        response = error_message)
+        
+        return_flag = 'true'       
         self.finish(return_flag)
         
 

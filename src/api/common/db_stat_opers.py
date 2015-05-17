@@ -5,7 +5,6 @@ Created on 2013-7-21
 '''
 import json
 import logging
-import socket
 import tornado.httpclient
 from common.dba_opers import DBAOpers
 from tornado.options import options
@@ -13,6 +12,8 @@ from common.configFileOpers import ConfigFileOpers
 from common.abstract_stat_service import Abstract_Stat_Service
 from common.helper import retrieve_kv_from_db_rows
 from common.utils.exceptions import HTTPAPIError
+
+
 class DBStatOpers(Abstract_Stat_Service):
     
     dba_opers = DBAOpers()
@@ -45,25 +46,28 @@ class DBStatOpers(Abstract_Stat_Service):
             rows_oper_dict = self._stat_rows_oper()
             innodb_buffer_dict = self._stat_innodb_buffer()
             variable_status_dict = self._stat_variable_status()
-        dict = {}
+        
         # If we find that the local database is not in use, then the all results come from peer node.
         if (rows_oper_dict == {} or rows_oper_dict["oper_total"]["num_reads"] == 0):
-           return result_dict
+            return result_dict
+        
+        result = {}
         # Else we know that local database in in use, we return it in the original way.   
-        dict.setdefault('wsrep_status_dict',wsrep_status_dict)
-        dict.setdefault('rows_oper',rows_oper_dict)
-        dict.setdefault('innodb_buffer',innodb_buffer_dict)
-        dict.setdefault('variable_status',variable_status_dict)
-        logging.info("dict:" + str(dict))
-        return dict
+        result.setdefault('wsrep_status_dict',wsrep_status_dict)
+        result.setdefault('rows_oper',rows_oper_dict)
+        result.setdefault('innodb_buffer',innodb_buffer_dict)
+        result.setdefault('variable_status',variable_status_dict)
+        logging.info("dict:" + str(result))
+        return result
     
     def get_peer_wsrep_status(self):
         logging.info("can not connect to local database site")
+        
         cluster_started_nodes = self.zkOper.retrieve_started_nodes()
+        
         confDict = self.confOpers.getValue(options.data_node_property, ['dataNodeIp'])
         local_ip = confDict['dataNodeIp']
 
-        #local_ip = socket.gethostbyname(socket.gethostname())
         logging.info("local ip:" + str(local_ip))
         if cluster_started_nodes.count(local_ip) != 0:
             cluster_started_nodes.remove(local_ip)
@@ -107,12 +111,13 @@ class DBStatOpers(Abstract_Stat_Service):
         slowest_node_param_dict.setdefault('wsrep_flow_control_sent',key_value.get('wsrep_flow_control_sent'))
         slowest_node_param_dict.setdefault('wsrep_local_recv_queue_avg', key_value.get('wsrep_local_recv_queue_avg'))
     
-        dict = {}
-        dict.setdefault('wsrep_flow_control_paused', key_value.get('wsrep_flow_control_paused'))
-        dict.setdefault('slowest_node_param', slowest_node_param_dict)
-        dict.setdefault('wsrep_local_send_queue_avg', key_value.get('wsrep_local_send_queue_avg'))
+        result = {}
+        result.setdefault('wsrep_flow_control_paused', key_value.get('wsrep_flow_control_paused'))
+        result.setdefault('slowest_node_param', slowest_node_param_dict)
+        result.setdefault('wsrep_local_send_queue_avg', key_value.get('wsrep_local_send_queue_avg'))
     
-        return dict
+        return result
+    
     def communicate(self, peer_ip, url):
         http_client = tornado.httpclient.HTTPClient()
         requesturi = "http://"+peer_ip+":"+str(options.port)+url
@@ -126,26 +131,27 @@ class DBStatOpers(Abstract_Stat_Service):
         return response.body
 
     def stat_wsrep_status_flow_control_paused(self):
-        dict = self._stat_wsrep_status()
-        value = dict.get('wsrep_flow_control_paused')
+        status_dict = self._stat_wsrep_status()
+        value = status_dict.get('wsrep_flow_control_paused')
         return {'wsrep_flow_control_paused': value}
     
     def stat_wsrep_status_slowest_node_param(self):
-        dict = self._stat_wsrep_status()
-        sub_dict = dict.get('slowest_node_param')
+        status_dict = self._stat_wsrep_status()
+        sub_dict = status_dict.get('slowest_node_param')
         return sub_dict
     
     def stat_wsrep_status_slowest_network_param(self):
-        dict = self._stat_wsrep_status()
-        value = dict.get('wsrep_local_send_queue_avg')
+        status_dict = self._stat_wsrep_status()
+        value = status_dict.get('wsrep_local_send_queue_avg')
         return {'wsrep_local_send_queue_avg': value}
         
     def _stat_rows_oper(self ):
         processor_existed = self._check_mysql_processor_exist()
         
-        dict = {}
+        result = {}
         if not processor_existed:
-            return dict 
+            return result
+        
         target_dict = self._retrieve_dict_with_result(options.stat_rows_oper)
         
         key_list = ['num_updates','num_reads','num_deletes','num_inserts']
@@ -153,28 +159,28 @@ class DBStatOpers(Abstract_Stat_Service):
         key_list = ['num_reads_sec','num_updates_sec','num_deletes_sec','num_inserts_sec']
         oper_per_second_dict = self._split_key_value(key_list, target_dict)
         
-        dict.setdefault("oper_total", oper_total_dict)
-        dict.setdefault("oper_per_second", oper_per_second_dict)
+        result.setdefault("oper_total", oper_total_dict)
+        result.setdefault("oper_per_second", oper_per_second_dict)
         
-        return dict
+        return result
     
     def stat_rows_oper_total(self):
-        dict = self._stat_rows_oper()
-        sub_dict = dict.get('oper_total')
+        oper_dict = self._stat_rows_oper()
+        sub_dict = oper_dict.get('oper_total')
         return sub_dict
     
     def stat_rows_oper_per_second(self):
-        dict = self._stat_rows_oper()
-        sub_dict = dict.get('oper_per_second')
+        oper_dict = self._stat_rows_oper()
+        sub_dict = oper_dict.get('oper_per_second')
         return sub_dict
     
     
     def _stat_innodb_buffer(self):
         processor_existed = self._check_mysql_processor_exist()
         
-        dict = {}
+        result = {}
         if not processor_existed:
-            return dict
+            return result
         
         target_dict = self._retrieve_dict_with_result(options.stat_innodb_buffer)
         
@@ -195,33 +201,33 @@ class DBStatOpers(Abstract_Stat_Service):
             
         buffer_pool_dict['buf_pool_hit_rate'] = str(value)
         
-        dict.setdefault("mem_alloc", mem_alloc_dict)
-        dict.setdefault("page", page_dict)
-        dict.setdefault("buffer_pool", buffer_pool_dict)
+        result.setdefault("mem_alloc", mem_alloc_dict)
+        result.setdefault("page", page_dict)
+        result.setdefault("buffer_pool", buffer_pool_dict)
         
-        return dict
+        return result
     
     def stat_innodb_buffer_mem_alloc(self):
-        dict = self._stat_innodb_buffer()
-        sub_dict = dict.get('mem_alloc')
+        buffer_dict = self._stat_innodb_buffer()
+        sub_dict = buffer_dict.get('mem_alloc')
         return sub_dict
     
     def stat_innodb_buffer_page(self):
-        dict = self._stat_innodb_buffer()
-        sub_dict = dict.get('page')
+        buffer_dict = self._stat_innodb_buffer()
+        sub_dict = buffer_dict.get('page')
         return sub_dict
     
     def stat_innodb_buffer_buffer_pool(self):
-        dict = self._stat_innodb_buffer()
-        sub_dict = dict.get('buffer_pool')
+        buffer_dict = self._stat_innodb_buffer()
+        sub_dict = buffer_dict.get('buffer_pool')
         return sub_dict
         
     def _stat_variable_status(self):
         processor_existed = self._check_mysql_processor_exist()
         
-        dict = {}
+        result = {}
         if not processor_existed:
-            return dict
+            return result
         
         target_dict = self._retrieve_dict_with_result(options.stat_variable_status)
         
@@ -232,23 +238,23 @@ class DBStatOpers(Abstract_Stat_Service):
         key_list = ['R_W_Ratio','Rollback_Commit','Write_Commit']
         ratio_dict = self._split_key_value(key_list, target_dict)
         
-        dict.setdefault("ps", ps_dict)
-        dict.setdefault("used", used_dict)
-        dict.setdefault("ration", ratio_dict)
+        result.setdefault("ps", ps_dict)
+        result.setdefault("used", used_dict)
+        result.setdefault("ration", ratio_dict)
         
-        return dict
+        return result
     
     def stat_variable_status_ps(self):
-        dict = self._stat_variable_status()
-        sub_dict = dict.get('ps')
+        status_dict = self._stat_variable_status()
+        sub_dict = status_dict.get('ps')
         return sub_dict
     
     def stat_variable_status_used(self):
-        dict = self._stat_variable_status()
-        sub_dict = dict.get('used')
+        status_dict = self._stat_variable_status()
+        sub_dict = status_dict.get('used')
         return sub_dict
     
     def stat_variable_status_ration(self):
-        dict = self._stat_variable_status()
-        sub_dict = dict.get('ration')
+        status_dict = self._stat_variable_status()
+        sub_dict = status_dict.get('ration')
         return sub_dict
