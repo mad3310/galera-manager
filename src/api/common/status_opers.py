@@ -36,6 +36,10 @@ class Check_Status_Base(object):
     
     @tornado.gen.engine
     def check_status(self, data_node_info_list, url_post, monitor_type, monitor_key):
+        leader_flag = check_leader()
+        if leader_flag == False:
+            return
+        
         zk_data_node_count = len(data_node_info_list)
         pre_stat = self.zkOper.retrieveClusterStatus()
         ''' The following logic expression means 
@@ -350,7 +354,6 @@ class Check_DB_WR_Avalialbe(Check_Status_Base):
         url_post = "/inner/db/check/wr"
         monitor_type = "db"
         monitor_key = "write_read_avaliable"
-        logging.info("check_db_wr_avaliable data_node_info_list: %s ." %(data_node_info_list))
         super(Check_DB_WR_Avalialbe, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
         
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
