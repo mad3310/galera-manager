@@ -1,12 +1,29 @@
 #! /bin/sh
 
-mclustermanager3="172.17.0.85"
-mclustermanager2="172.17.0.84"
-mclustermanager1="172.17.0.83"
+export docker_ip=""
+function get_docker_ip(){
+	local docker_name=$1
+	
+	docker_ip=`docker inspect ${docker_name} | grep "IPAddress" | awk '{printf $(2)}' | sed -n -e 's/"//gp' | sed -n -e 's/,//gp'`
+}
 
-zookeeper3="172.17.0.34"
-zookeeper2="172.17.0.33"
-zookeeper1="172.17.0.32"
+get_docker_ip 'mcluster-manager-test-3'
+mclustermanager3=${docker_ip}
+
+get_docker_ip 'mcluster-manager-test-2'
+mclustermanager2=${docker_ip}
+
+get_docker_ip 'mcluster-manager-test-1'
+mclustermanager1=${docker_ip}
+
+get_docker_ip 'manager-zk-3'
+zookeeper3=${docker_ip}
+
+get_docker_ip 'manager-zk-2'
+zookeeper2=${docker_ip}
+
+get_docker_ip 'manager-zk-1'
+zookeeper1=${docker_ip}
 
 curl "http://${mclustermanager1}:8888/admin/reset"
 
