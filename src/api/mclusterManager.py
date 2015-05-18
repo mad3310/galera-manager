@@ -44,26 +44,6 @@ def main():
 #         pass 
     tornado.options.parse_command_line()
     
-#     zk_client = ZkOpers('127.0.0.1', 2181)
-#     
-#     cluster_existed = zk_client.existCluster()
-#     if cluster_existed:
-#         clusterUUID = zk_client.getClusterUUID() 
-#         data, _ = zk_client.retrieveClusterProp(clusterUUID) 
-#         
-#         node_ip_addr = socket.gethostbyname(socket.gethostname())
-#         return_result = zk_client.retrieve_data_node_info(node_ip_addr)
-#         
-#         json_str_data = data.replace("'", "\"")
-#         dict_data = json.loads(json_str_data)
-#         if type(return_result) is dict and type(dict_data) is dict:
-#             config_file_obj = ConfigFileOpers()
-#             config_file_obj.setValue(options.data_node_property, return_result)
-#             config_file_obj.setValue(options.cluster_property, dict_data)
-#             logging.debug("program has re-written zk data into configuration file")
-#         else:
-#             logging.info("write data into configuration failed")
-        
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(options.port)
      
