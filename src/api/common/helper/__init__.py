@@ -7,6 +7,7 @@ from common.configFileOpers import ConfigFileOpers
 from tornado.httpclient import HTTPClient
 from tornado.httpclient import HTTPError
 from common.invokeCommand import InvokeCommand
+from common.utils import local_get_zk_address
 
 from common.configFileOpers import ConfigFileOpers
 
@@ -101,7 +102,7 @@ def getDictFromText(sourceText, keyList):
 
 def check_leader():
     invokeCommand = InvokeCommand()
-    zk_address, zk_port = get_zk_address()
+    zk_address, zk_port = local_get_zk_address()
     cmd = "echo stat |nc %s %s| grep Mode" %(zk_address, zk_port)
     ret_str, _ = invokeCommand._runSysCmd(cmd)
     invokeCommand = None
@@ -128,13 +129,3 @@ def get_localhost_ip():
     ret_str, _ = invokeCommand._runSysCmd(cmd)
     invokeCommand = None
     return ret_str
-
-def get_zk_address():
-    ret_dict = confOpers.getValue(options.zk_address, ['zkAddress','zkPort'])
-    zk_address = ret_dict['zkAddress']
-    zk_port = ret_dict['zkPort']
-    
-    if "" == zk_port:
-        zk_port = "2181"
-        
-    return zk_address ,zk_port
