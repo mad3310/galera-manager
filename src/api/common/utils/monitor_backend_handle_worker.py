@@ -30,7 +30,9 @@ class Monitor_Backend_Handle_Worker(object):
         
         try:
             '''
-                if no logic below, singleton Scheduler_ZkOpers may have no self.zk object
+                if no logic below, singleton Scheduler_ZkOpers may have no self.zk object.
+                if config zk and port, then restart mcluster-manager,
+                then such logic can remove.
             '''
             
             zk_addr, zk_port = local_get_zk_address()
