@@ -18,8 +18,6 @@ TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class Check_Status_Base(object):
     
-    zkOper = Scheduler_ZkOpers()
-    
     def __init__(self):
         
         if self.__class__ == Check_Status_Base:
@@ -37,13 +35,14 @@ class Check_Status_Base(object):
     @tornado.gen.engine
     def check_status(self, data_node_info_list, url_post, monitor_type, monitor_key):
         zk_data_node_count = len(data_node_info_list)
-        pre_stat = self.zkOper.retrieveClusterStatus()
+        zkOper = Scheduler_ZkOpers()
+        pre_stat = zkOper.retrieveClusterStatus()
         ''' The following logic expression means 
             1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.
             2. else the pre_stat is not {}, then it must have value in pre_stat dictionary and judge whether it is right or not.
         '''
         if pre_stat.has_key('_status') and pre_stat['_status'] != 'initializing' or pre_stat == {}:
-            online_node_list = self.zkOper.retrieve_started_nodes()
+            online_node_list = zkOper.retrieve_started_nodes()
             result = {}
         
             online_num = len(online_node_list)
@@ -53,7 +52,7 @@ class Check_Status_Base(object):
                 result['_status'] = 'sub-health'
             else :
                 result['_status'] = 'failed' 
-            self.zkOper.writeClusterStatus(result)
+            zkOper.writeClusterStatus(result)
             
             
         success_count = 0
@@ -118,9 +117,10 @@ class Check_Status_Base(object):
             _include_timeout_list = re.findall(r'HTTP 599:', str(_error_record_message))
             _include_timeout_num_from_response = len(_include_timeout_list)
         
-        _timeout_num_from_zk = 0    
+        _timeout_num_from_zk = 0
+        zkOper = Scheduler_ZkOpers()
         if _include_timeout_num_from_response > 0:
-            _monitor_value_dict = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
+            _monitor_value_dict = zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
             _timeout_num = _monitor_value_dict.get("timeout_num")
             if _timeout_num is not None:
                 _timeout_num_from_zk = _timeout_num
@@ -143,7 +143,7 @@ class Check_Status_Base(object):
             "timeout_num": _timeout_num_from_zk
         }
         
-        self.zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
+        zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
 
 class Check_Cluster_Available(Check_Status_Base):
     
@@ -252,7 +252,8 @@ class Check_DB_Anti_Item(Check_Status_Base):
     
     def check(self, data_node_info_list):
         
-        if not is_monitoring(get_localhost_ip(), self.zkOper):
+        zkOper = Scheduler_ZkOpers()
+        if not is_monitoring(get_localhost_ip(), zkOper):
             return
         
         conn = self.dba_opers.get_mysql_connection()
@@ -265,7 +266,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
         failed_count = 0
         _path_value = {}
         
-        _path_value = self.zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
+        _path_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
         
         if _path_value != {}:
             failed_count = int(re.findall(r'failed count=(\d)', _path_value['message'])[0])
@@ -416,7 +417,8 @@ class Check_Node_Active(Check_Status_Base):
     
     @tornado.gen.engine
     def check(self, data_node_info_list):
-        started_nodes_list = self.zkOper.retrieve_started_nodes()
+        zkOper = Scheduler_ZkOpers()
+        started_nodes_list = zkOper.retrieve_started_nodes()
         
         error_record = {}
         ip = []
@@ -512,7 +514,8 @@ class Check_Database_User(Check_Status_Base):
     @tornado.gen.engine
     def check(self, data_node_info_list):
         #url_post = "/dbuser/inner/check"
-        if not is_monitoring(get_localhost_ip(), self.zkOper):
+        zkOper = Scheduler_ZkOpers()
+        if not is_monitoring(get_localhost_ip(), zkOper):
             return
         
         monitor_type = "db"
@@ -535,16 +538,16 @@ class Check_Database_User(Check_Status_Base):
             user_mysql_src_dict.setdefault(dict_key_str, inner_value_list)
 
           
-        db_list = self.zkOper.retrieve_db_list()
+        db_list = zkOper.retrieve_db_list()
     
         user_zk_src_list = []
         for db_name in db_list:
-            db_user_list = self.zkOper.retrieve_db_user_list(db_name)
+            db_user_list = zkOper.retrieve_db_user_list(db_name)
             logging.info("dbName: " + db_name + " db_user_list : " + str(db_user_list))
             for db_user in db_user_list:
                 inner_list = []
                 inner_list.append(db_user)
-                prop = self.zkOper.get_db_user_prop(db_name, db_user)
+                prop = zkOper.get_db_user_prop(db_name, db_user)
                 inner_list.append(prop)
                 user_zk_src_list.append(inner_list)
         

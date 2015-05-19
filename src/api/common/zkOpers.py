@@ -415,7 +415,7 @@ class Scheduler_ZkOpers(ZkOpers):
         ZkOpers.__init__(self)
 
 
-
+@singleton
 class Requests_ZkOpers(ZkOpers):
     
     def __init__(self):
@@ -425,7 +425,7 @@ class Requests_ZkOpers(ZkOpers):
         ZkOpers.__init__(self)
 
 
-
+@singleton
 class Abstract_ZkOpers(ZkOpers):
     
     def __init__(self):
@@ -435,7 +435,7 @@ class Abstract_ZkOpers(ZkOpers):
         ZkOpers.__init__(self) 
 
 
-
+@singleton
 class Mysql_Thread_ZkOpers(ZkOpers):
     
     def __init__(self):
