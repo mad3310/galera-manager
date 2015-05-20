@@ -10,6 +10,7 @@ def singleton(cls):
     
     def _singleton(*args, **kw):
         if cls not in instances:
+            logging.info('init class : %s' % str(cls))
             instances[cls] = cls(*args, **kw)
         return instances[cls]
     return _singleton
