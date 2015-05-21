@@ -23,7 +23,7 @@ from common.utils import local_get_zk_address
 log_obj = debug_log('zkOpers')
 logger = log_obj.get_logger_object()
         
-        
+
 class ZkOpers(object):
     
     zk = None
