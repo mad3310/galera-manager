@@ -22,7 +22,7 @@ from common.tornado_basic_auth import require_basic_auth
 # Start backing up database data.
 #eq curl --user root:root "http://localhost:8888/backup" backup data by full dose.
 
-def resolve_time(self, str_time):
+def resolve_time(str_time):
     resolve_result = []
 
     year = str_time[0:4]
@@ -41,7 +41,7 @@ def resolve_time(self, str_time):
     return resolve_result
 
 
-def get_latest_date_id(self, _path):
+def get_latest_date_id(_path):
     result_list = []
     list_dir = []
     

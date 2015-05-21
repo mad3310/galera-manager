@@ -20,7 +20,7 @@ class AdminOpers(object):
             cluster_existed = zkOper.existCluster()
             if cluster_existed:
                 clusterUUID = zkOper.getClusterUUID() 
-                data = zkOper.retrieveClusterProp(clusterUUID)
+                data,_ = zkOper.retrieveClusterProp(clusterUUID)
                 
                 node_ip_addr = get_localhost_ip()
                 return_result = zkOper.retrieve_data_node_info(node_ip_addr)
