@@ -58,13 +58,13 @@ class ZkOpers(object):
             self.zk.stop()
             self.zk.close()
         except Exception, e:
-            self.logger.error(e)
+            logging.error(e)
             
     def stop(self):
         try:
             self.zk.stop()
         except Exception, e:
-            self.logger.error(e)
+            logging.error(e)
             raise
 
     def listener(self, state):
