@@ -2,6 +2,8 @@
 #coding:utf-8
 import logging
 from kazoo.handlers.threading import TimeoutError
+from common.utils import local_get_zk_address
+from common.utils.exceptions import CommonException
 
 
 def singleton(cls):
@@ -9,6 +11,11 @@ def singleton(cls):
     instances = {}
     
     def _singleton(*args, **kw):
+
+        zk_addr, zk_port = local_get_zk_address()
+        if not (zk_addr and zk_port):
+            raise CommonException('zookeeper address and port are not written!')
+        
         if cls not in instances:
             logging.info('init class : %s' % str(cls))
             instances[cls] = cls(*args, **kw)
