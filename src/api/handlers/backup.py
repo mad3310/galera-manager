@@ -120,7 +120,6 @@ class BackUper(APIHandler):
             result.setdefault("message", "not n-3 node")
         else:
             backup_worker = backup_thread()
-            backup_worker.flag = "full"
             backup_worker.start()
             result.setdefault("message", "Process is running ,wait")
             
