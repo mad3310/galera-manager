@@ -11,7 +11,7 @@ TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class backup_thread(threading.Thread):
     
-    def __init__(self, backup_mode):
+    def __init__(self, backup_mode='full'):
         self._backup_mode = backup_mode
         threading.Thread.__init__(self)
 
@@ -20,7 +20,6 @@ class backup_thread(threading.Thread):
         invokeCommand = InvokeCommand()
         now = datetime.datetime.now()
         logging.info("Backup start time is " + now.strftime(TIME_FORMAT))
-        logging.info(str(self.flag))
         if self._backup_mode == "full":
             ret_sub_p = invokeCommand._runSysCmdnoWait(options.full_back_sh)
             logging.info("ret_sub_p" + str(ret_sub_p))
