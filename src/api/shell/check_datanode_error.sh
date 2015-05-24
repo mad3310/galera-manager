@@ -24,5 +24,3 @@ if [ $COUNT -eq $EXPECTED_VALUE ]; then
 else
 	echo false
 fi
-
-rm $PROBLEM_FILE_PATH

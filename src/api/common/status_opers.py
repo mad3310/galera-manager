@@ -484,7 +484,12 @@ class Check_Node_Log_Error(Check_Status_Base):
         super(Check_Node_Log_Error, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
 
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
-        return options.alarm_nothing
+        if failed_count == 0:
+            return options.alarm_nothing
+        elif failed_count == 1:
+            return options.alarm_general
+        else:
+            return options.alarm_serious
         
 #eq curl  "http://localhost:8888/backup/inner/check" backup data by full dose.
 class Check_Backup_Status(Check_Status_Base):
@@ -645,5 +650,10 @@ class Check_Node_Log_Warning(Check_Status_Base):
         super(Check_Node_Log_Warning, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
         
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
-        return options.alarm_nothing
+        if failed_count == 0:
+            return options.alarm_nothing
+        elif failed_count == 1:
+            return options.alarm_general
+        else:
+            return options.alarm_serious
 

@@ -65,7 +65,7 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         result = self.invokeCommand.run_check_shell(options.check_datanode_error)
         
         if cmp('false',result) == 0:
-            _tmp_error_log_file_path = '%s/tmp_check_datanode_error' % (options.base_dir)
+            _tmp_error_log_file_path = '/tmp_check_datanode_error'
             _mysql_error_log_message = self.confFileOper.retrieveFullText(_tmp_error_log_file_path)
             _email_subject = "[%s] MySQL log error message" % options.sitename
             self._send_log_info_email(_email_subject, _mysql_error_log_message)
@@ -76,7 +76,7 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         result = self.invokeCommand.run_check_shell(options.check_datanode_warning)
         
         if cmp('false',result) == 0:
-            _tmp_warning_log_file_path = '%s/tmp_check_datanode_warning' % (options.base_dir)
+            _tmp_warning_log_file_path = '/tmp_check_datanode_warning'
             _mysql_error_log_message = self.confFileOper.retrieveFullText(_tmp_warning_log_file_path)
             _email_subject = "[%s] MySQL log warning message" % options.sitename
             self._send_log_info_email(_email_subject, _mysql_error_log_message)
