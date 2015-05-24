@@ -336,10 +336,9 @@ class Check_DB_Anti_Item(Check_Status_Base):
         local_ip = get_localhost_ip()
         # send email
         subject = "[%s] Auti-Item existed in MySQL according to Galera way" % options.sitename
-        body = self.render_string("errors/500_email.html",
-                                  exception=anti_item_content)
+#         body = self.render_string("errors/500_email.html", exception=anti_item_content)
         
-        body += "\nip:" + local_ip
+        body = anti_item_content + "\nip:" + local_ip
         
         if options.send_email_switch:
             send_email(options.admins, subject, body)

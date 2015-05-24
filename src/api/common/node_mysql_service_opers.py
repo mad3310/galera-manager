@@ -86,10 +86,9 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
     def _send_log_info_email(self, subject, content):
         local_ip = get_localhost_ip()
         # send email
-        body = self.render_string("errors/500_email.html",
-                                  exception=content)
+#         body = self.render_string("errors/500_email.html", exception=content)
         
-        body += "\nip:" + local_ip
+        body = content + "\nip:" + local_ip
         
         if options.send_email_switch:
             send_email(options.admins, subject, body)
