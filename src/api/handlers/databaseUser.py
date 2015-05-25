@@ -50,6 +50,8 @@ class DBUser(APIHandler):
         max_updates_per_hour = self.get_argument("max_updates_per_hour", 0)
         max_connections_per_hour = self.get_argument("max_connections_per_hour", 0)
         max_user_connections = self.get_argument("max_user_connections", 200)
+        dict = {}
+        dict = self.request.arguments
         if dict.has_key("user_password"):
             del dict["user_password"]
         logging.info(str(dict))
