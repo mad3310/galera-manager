@@ -181,7 +181,7 @@ class ZkOpers(object):
     def write_db_info(self, clusterUUID, dbName, dbProps):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName 
         self.zk.ensure_path(path)
-        self.DEFAULT_RETRY_POLICY(set, path, str(dbProps))#version need to write
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(dbProps))#version need to write
     
     def retrieve_db_list(self):
         clusterUUID = self.getClusterUUID()
