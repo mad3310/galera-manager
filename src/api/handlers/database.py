@@ -287,12 +287,12 @@ class Inner_DB_Check_WR(APIHandler):
         finally:
             conn.close()
             
-        if delta_time > t_threshold:
-            error_message = 'delta_time bewteen read and write is too long -- delta_time is %s' % (delta_time)
-            raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                        notification = "direct", \
-                        log_message= error_message,\
-                        response = error_message)
+#         if delta_time > t_threshold:
+#             error_message = 'delta_time bewteen read and write is too long -- delta_time is %s' % (delta_time)
+#             raise HTTPAPIError(status_code=500, error_detail= error_message,\
+#                         notification = "direct", \
+#                         log_message= error_message,\
+#                         response = error_message)
         
         return_flag = 'true'       
         self.finish(return_flag)
