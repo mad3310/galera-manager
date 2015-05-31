@@ -264,21 +264,14 @@ class Inner_DB_Check_WR(APIHandler):
                 del_tbName = "%s_%s" %(pre_tbname,int_tbName)
                 self.dba_opers.delete_tb_contents(conn, del_tbName, dbName)
                 logging.info('delete the contents in database (%s) before 12 hours success!' % (del_tbName))
-                str_time = n_time.strftime(TIME_FORMAT)
-                logging.info("delete contents time is %s:" % (str_time))
 
             
             str_time = n_time.strftime(TIME_FORMAT)
-            logging.info("time is :" + str_time)
             self.dba_opers.insert_record_time(conn, str_time , identifier ,tbName , dbName)
             logging.info('Insert time %s into table %s ' % (str_time, tbName))
             
             record_time = self.dba_opers.query_record_time(conn ,identifier ,tbName , dbName)
-            record_stamp_time = time.mktime(time.strptime(record_time, TIME_FORMAT))
-            n_stamp_time = time.time()
             
-            t_threshold = options.delta_time
-            delta_time = n_stamp_time - record_stamp_time
         except Exception,e:
             return_flag = 'false'
             logging.error(e)
@@ -286,13 +279,18 @@ class Inner_DB_Check_WR(APIHandler):
             return
         finally:
             conn.close()
+        
+        t_threshold = options.delta_time
+        n_stamp_time = time.time()
+        record_stamp_time = time.mktime(time.strptime(record_time, TIME_FORMAT))
+        delta_time = n_stamp_time - record_stamp_time
             
-#         if delta_time > t_threshold:
-#             error_message = 'delta_time bewteen read and write is too long -- delta_time is %s' % (delta_time)
-#             raise HTTPAPIError(status_code=500, error_detail= error_message,\
-#                         notification = "direct", \
-#                         log_message= error_message,\
-#                         response = error_message)
+        if delta_time > t_threshold:
+            error_message = 'delta_time between read and write exceed the threshold time, the delta_time is %s' % (delta_time)
+            raise HTTPAPIError(status_code=500, error_detail= error_message,\
+                         notification = "direct", \
+                         log_message= error_message,\
+                         response = error_message)
         
         return_flag = 'true'       
         self.finish(return_flag)
