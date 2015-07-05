@@ -186,22 +186,24 @@ class Check_Node_Size(Check_Status_Base):
     dba_opers = DBAOpers()
     
     def check(self, data_node_info_list):
-        conn = self.dba_opers.get_mysql_connection()
-            
-        if conn == None:
+        false_nodes=[]
+        for data_node_ip in data_node_info_list:
+            conn = self.dba_opers.get_mysql_connection(data_node_ip)
+            if conn != None:
+                try:
+                    rows = self.dba_opers.show_status(conn)
+                finally:
+                    conn.close()
+                key_value = retrieve_kv_from_db_rows(rows,['wsrep_incoming_addresses','wsrep_cluster_size'])
+                node_size_dict = self._check_wsrep_incoming_addresses(key_value, data_node_info_list)
+                return node_size_dict
+            else:
+                false_nodes.append(data_node_ip)
+        if(len(false_nodes)==3):
             exception_dict = {}
             exception_dict.setdefault("message", "no way to connect to db")
             exception_dict.setdefault("alarm", options.alarm_serious)
             return exception_dict
-        
-        try:
-            rows = self.dba_opers.show_status(conn)
-        finally:
-            conn.close()
-        
-        key_value = retrieve_kv_from_db_rows(rows,['wsrep_incoming_addresses','wsrep_cluster_size'])
-        node_size_dict = self._check_wsrep_incoming_addresses(key_value, data_node_info_list)
-        return node_size_dict
         
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:

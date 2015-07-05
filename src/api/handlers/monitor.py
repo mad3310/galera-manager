@@ -60,7 +60,7 @@ class Node_Info_Async_Handler(object):
     
     check_node_log_error = Check_Node_Log_Error()
     
-    check_node_log_warning = Check_Node_Log_Warning()
+    #check_node_log_warning = Check_Node_Log_Warning()
     
     check_node_active = Check_Node_Active()
  
@@ -93,9 +93,9 @@ class DB_Info_Async_Handler(object):
     
     check_db_anti_itme = Check_DB_Anti_Item()
 
-    check_db_backup =  Check_Backup_Status()
+    #check_db_backup =  Check_Backup_Status()
     
-    check_db_user =  Check_Database_User()
+    #check_db_user =  Check_Database_User()
 
     def retrieve_info(self, data_node_info_list):
         self._action(data_node_info_list)
