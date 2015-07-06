@@ -118,7 +118,7 @@ class ZkOpers(object):
     
     @timeout_handler
     def getDataNodeNumber(self,clusterUUID):
-        path = self.rootPath + "/" + clusterUUID
+        path = self.rootPath + "/" + clusterUUID + "/dataNode"
         dataNodeNumber = self.DEFAULT_RETRY_POLICY(self.zk.get_children, path)
         return dataNodeNumber
     
