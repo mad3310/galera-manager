@@ -284,14 +284,14 @@ class Inner_DB_Check_WR(APIHandler):
         n_stamp_time = time.time()
         record_stamp_time = time.mktime(time.strptime(record_time, TIME_FORMAT))
         delta_time = n_stamp_time - record_stamp_time
-            
+        
         if delta_time > t_threshold:
             error_message = 'delta_time between read and write exceed the threshold time, the delta_time is %s' % (delta_time)
             raise HTTPAPIError(status_code=500, error_detail= error_message,\
                          notification = "direct", \
                          log_message= error_message,\
                          response = error_message)
-        
+                    
         return_flag = 'true'       
         self.finish(return_flag)
         
