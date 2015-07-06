@@ -394,7 +394,7 @@ class DBAOpers(object):
         conn = None
         
         try:
-            conn=MySQLdb.Connect(host,user,passwd,port=options.mysql_port)
+            conn=MySQLdb.Connect(host, user, passwd, port=options.mysql_port)
             conn.autocommit(autocommit)
         except Exception,e:
             logging.exception(e)
