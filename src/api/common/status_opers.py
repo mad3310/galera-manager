@@ -191,7 +191,7 @@ class Check_Node_Size(Check_Status_Base):
         
         false_nodes, value, _password =[], {}, ''
         value = confOpers.getValue(options.mysql_cnf_file_name)["wsrep_sst_auth"]
-        _password = value.split(":")[1]
+        _password = value.split(":")[1][:-1]
         
         for data_node_ip in data_node_info_list:
             conn = self.dba_opers.get_mysql_connection(data_node_ip, user="monitor", passwd=_password)
