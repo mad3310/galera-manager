@@ -70,7 +70,7 @@ class Node_Info_Async_Handler(object):
     def _action(self, data_node_info_list):
         self.check_node_log_health.check(data_node_info_list)
         self.check_node_log_error.check(data_node_info_list)
-        self.check_node_log_warning.check(data_node_info_list)
+        #self.check_node_log_warning.check(data_node_info_list)
         self.check_node_active.check(data_node_info_list)
     
         
@@ -105,8 +105,8 @@ class DB_Info_Async_Handler(object):
         self.check_db_wsrep_status.check(data_node_info_list)
         self.check_db_cur_conns.check(data_node_info_list)
         self.check_db_anti_itme.check(data_node_info_list)
-        self.check_db_backup.check(data_node_info_list)
-        self.check_db_user.check(data_node_info_list)
+        #self.check_db_backup.check(data_node_info_list)
+        #self.check_db_user.check(data_node_info_list)
         
     
 # retrieve the status of mcluster

@@ -390,11 +390,11 @@ class DBAOpers(object):
         rows = cursor.fetchall()
         return rows
     
-    def get_mysql_connection(self, host = None, autocommit = True):
+    def get_mysql_connection(self, host ='127.0.0.1', autocommit = True):
         conn = None
         
         try:
-            conn=MySQLdb.Connect(host=options.mysql_host,user='root',passwd='Mcluster',port=options.mysql_port)
+            conn=MySQLdb.Connect(host,user='root',passwd='Mcluster',port=options.mysql_port)
             conn.autocommit(autocommit)
         except Exception,e:
             logging.exception(e)
