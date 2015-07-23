@@ -42,7 +42,7 @@ class Scheduler_Opers(object):
         except Exception:
             self.threading_exception_queue.put(sys.exc_info())
     
-    def check_db_anti_item(self,action_timeout):
+    def check_db_anti_item(self, action_timeout):
         if action_timeout > 0:
             _anti_async_t = PeriodicCallback(self.__check_db_anti,
                 action_timeout * 1000)

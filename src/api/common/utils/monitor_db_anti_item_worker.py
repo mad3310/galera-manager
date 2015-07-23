@@ -23,33 +23,21 @@ class Monitor_Db_Anti_Item(object):
         
         logging.info("This node is leader of zookeeper.")
         
-        try:
-            '''
-                if no logic below, singleton Scheduler_ZkOpers may have no self.zk object.
-            '''
-            
-            zk_addr, zk_port = local_get_zk_address()
-            if not (zk_addr and zk_port):
-                return
-            
-            zkOper = Scheduler_ZkOpers()
-            if not is_monitoring(get_localhost_ip(), zkOper):
-                return
-            logging.info('check zk is connected :%s' % str(zkOper.is_connected()) )
-            isLock, lock = zkOper.lock_async_monitor_action()
-        except kazoo.exceptions.LockTimeout:
-            logging.info("a thread is running the monitor async, give up this oper on this machine!")
-            return
-            
-        if not isLock:
-            raise CommonException('a thread is running the monitor async, give up this oper on this machine!')
+        '''
+            if no logic below, singleton Scheduler_ZkOpers may have no self.zk object.
+        '''
         
-        try:
-            data_node_info_list = zkOper.retrieve_data_node_list()
-            self.__action_monitor_async(data_node_info_list)
-        finally:
-            if lock is not None:
-                zkOper.unLock_aysnc_monitor_action(lock)
+        zk_addr, zk_port = local_get_zk_address()
+        if not (zk_addr and zk_port):
+            return
+        
+        zkOper = Scheduler_ZkOpers()
+        if not is_monitoring(get_localhost_ip(), zkOper):
+            return
+        logging.info('check zk is connected :%s' % str(zkOper.is_connected()) )
+
+        data_node_info_list = zkOper.retrieve_data_node_list()
+        self.__action_monitor_async(data_node_info_list)
 
     def __action_monitor_async(self, data_node_info_list):
         __check_db_anti_itmes = Check_DB_Anti_Item()

@@ -9,8 +9,6 @@ from common.utils import local_get_zk_address
 
 
 class Monitor_Backend_Handle_Worker(object):
-    
-    #cluster_handler = Cluster_Info_Async_Handler()
   
     node_handler = Node_Info_Async_Handler()
     
@@ -55,6 +53,5 @@ class Monitor_Backend_Handle_Worker(object):
                 zkOper.unLock_aysnc_monitor_action(lock)
 
     def __action_monitor_async(self, data_node_info_list):
-        #cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)
         db_status_dict = self.db_handler.retrieve_info(data_node_info_list)
