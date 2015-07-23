@@ -1,7 +1,7 @@
 import logging
 import kazoo
 
-from handlers.monitor import Cluster_Info_Async_Handler, Node_Info_Async_Handler, DB_Info_Async_Handler
+from handlers.monitor import Node_Info_Async_Handler, DB_Info_Async_Handler
 from common.zkOpers import Scheduler_ZkOpers
 from common.utils.exceptions import CommonException
 from common.helper import check_leader
@@ -10,7 +10,7 @@ from common.utils import local_get_zk_address
 
 class Monitor_Backend_Handle_Worker(object):
     
-    cluster_handler = Cluster_Info_Async_Handler()
+    #cluster_handler = Cluster_Info_Async_Handler()
   
     node_handler = Node_Info_Async_Handler()
     
@@ -55,6 +55,6 @@ class Monitor_Backend_Handle_Worker(object):
                 zkOper.unLock_aysnc_monitor_action(lock)
 
     def __action_monitor_async(self, data_node_info_list):
-        cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
+        #cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)
         db_status_dict = self.db_handler.retrieve_info(data_node_info_list)
