@@ -48,6 +48,7 @@ class Monitor_Backend_Handle_Worker(object):
         try:
             data_node_info_list = zkOper.retrieve_data_node_list()
             self.__action_monitor_async(data_node_info_list)
+            logging.info('this monitoring is over~')
         finally:
             if lock is not None:
                 zkOper.unLock_aysnc_monitor_action(lock)

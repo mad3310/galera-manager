@@ -13,7 +13,7 @@ import time
 
 MCLUSTER_VIP = 'localhost'
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-WARNING_TIME_DIFF = 90
+WARNING_TIME_DIFF = 210
 
 def check_monitor_detail(serious_dict, general_dict, nothing_dict):
     url = "http://%s:8888/mcluster/status" % (MCLUSTER_VIP)
