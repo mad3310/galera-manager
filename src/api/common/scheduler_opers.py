@@ -4,7 +4,7 @@ import sys
 from tornado.ioloop import PeriodicCallback
 from common.utils.threading_exception_handle_worker import Thread_Exception_Handler_Worker
 from common.utils.monitor_backend_handle_worker import Monitor_Backend_Handle_Worker
-from common.utils.monitor_db_anti_item import Monitor_Db_Anti_Item
+from common.utils.monitor_db_anti_item_worker import Monitor_Db_Anti_Item
 from common.utils.threading_exception_queue import Threading_Exception_Queue
 
 '''
