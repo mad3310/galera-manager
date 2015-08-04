@@ -11,6 +11,7 @@ import tornado
 from base import APIHandler
 from common.status_opers import Check_Cluster_Available, Check_Node_Size, Check_Node_Log_Health, Check_Node_Log_Error, Check_Node_Log_Warning, Check_Node_Active, Check_DB_WR_Avalialbe,\
 Check_DB_Wsrep_Status, Check_DB_Cur_Conns, Check_DB_Anti_Item, Check_Backup_Status, Check_Database_User
+from common.node_stat_opers import NodeStatDetailOpers
 
 
 class Cluster_Info_Sync_Handler(object):
@@ -134,11 +135,27 @@ class Mcluster_Monitor_Async(APIHandler):
     def get(self):
         zkOper = self.retrieve_zkOper()
         data_node_info_list = zkOper.retrieve_data_node_list()
-            
+
         cluster_status_dict =  self.cluster_handler.retrieve_info(data_node_info_list)
         node_status_dict = self.node_handler.retrieve_info(data_node_info_list)
         db_status_dict = self.db_handler.retrieve_info(data_node_info_list)
     
         result = {}
         result.setdefault("message", "finished")
+        self.finish(result)
+
+# retrieve the detailed status of mcluster
+# eg. curl "http://localhost:8888/node/stat/info"
+class Dbinfo_Monitor_Status(APIHandler):
+    
+    detail_stat_opers = NodeStatDetailOpers()
+   
+    def post(self):
+        params = self.request.arguments
+        logging.info("params is %s" %params)
+        
+        if params != None:
+            result = self.detail_stat_opers.stat_basic_info(params)
+        else:
+            result.setdefault('message','no passing params ')
         self.finish(result)

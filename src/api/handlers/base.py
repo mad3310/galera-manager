@@ -4,7 +4,7 @@ from tornado.web import RequestHandler,HTTPError
 from tornado import escape
 from tornado.options import options
 
-from common.utils.exceptions import HTTPAPIError
+from common.utils.exceptions import HTTPAPIError, UserVisiableException
 from common.utils.mail import send_email
 
 from common.invokeCommand import InvokeCommand
@@ -72,6 +72,10 @@ class APIHandler(BaseHandler):
 
             if isinstance(e, HTTPAPIError):
                 pass
+            elif isinstance(e, UserVisiableException):
+                user_message = e.__str__()
+                e = HTTPAPIError(417, error_detail=user_message)
+                status_code = e.status_code
             elif isinstance(e, HTTPError):
                 e = HTTPAPIError(e.status_code)
             else:
