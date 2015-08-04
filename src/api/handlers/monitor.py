@@ -152,10 +152,6 @@ class Dbinfo_Monitor_Status(APIHandler):
    
     def post(self):
         params = self.request.arguments
-        logging.info("params is %s" %params)
-        
-        if params != None:
-            result = self.detail_stat_opers.stat_basic_info(params)
-        else:
-            result.setdefault('message','no passing params ')
+        logging.info("params is %s" % params)
+        result = self.detail_stat_opers.node_stat_detail_info(params)
         self.finish(result)

@@ -7,7 +7,7 @@ import logging
 from tornado.options import options
 from common.abstract_stat_service import Abstract_Stat_Service
 from common.helper import is_monitoring, get_localhost_ip
-from common.helper.monitor_shell_dict import mysql_shell_dict
+from common.helper.mysql_shell_dict import MYSQL_SHELL_DICT
 from common.invokeCommand import InvokeCommand
 from common.utils.exceptions import UserVisiableException
 
@@ -110,22 +110,19 @@ class NodeStatDetailOpers(Abstract_Stat_Service):
     '''
     classdocs
     '''
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        self.mysql_shell_dict = mysql_shell_dict
-    
-    def stat_basic_info(self, param_dicts):
-        result=self.__get_db_monitor_res(param_dicts)
-        return result
-    
+
+    def node_stat_detail_info(self, param_dicts):
+        return self.__get_db_monitor_res(param_dicts)
+
     def __get_db_monitor_res(self, param_dicts):
         ret_list, sql_list = {} , []
+        if not param_dicts:
+            raise UserVisiableException('params are not given')
+        
         for param in param_dicts.keys():
-            sql_result = InvokeCommand()._runSysCmd(self.mysql_shell_dict.get(param))
+            sql_result = InvokeCommand()._runSysCmd(MYSQL_SHELL_DICT.get(param))
             if param == 'stat_database_size_command':
-                sql_result = InvokeCommand()._runSysCmd(self.mysql_shell_dict.get(param).format(param_dicts['stat_database_size_command'][0]))
+                sql_result = InvokeCommand()._runSysCmd(MYSQL_SHELL_DICT.get(param).format(param_dicts['stat_database_size_command'][0]))
                 if sql_result[0]:
                     sql_list = sql_result[0].strip('\n').split('\t')[::-1]
                 else:
@@ -134,7 +131,7 @@ class NodeStatDetailOpers(Abstract_Stat_Service):
             elif param == 'stat_table_space_analyze_command':
                 sql_list_init, sql_list_dict, sql_list_dict_two = [], {}, {}
                 mysql_schema_name=param_dicts['stat_table_space_analyze_command'][0]
-                sql_result = InvokeCommand()._runSysCmd(self.mysql_shell_dict.get(param).format(mysql_schema_name))
+                sql_result = InvokeCommand()._runSysCmd(MYSQL_SHELL_DICT.get(param).format(mysql_schema_name))
                 if sql_result[0]:
                     sql_list_init = sql_result[0].strip('\n').split('\n')[1:]
                     sql_list.append(0)
@@ -142,7 +139,7 @@ class NodeStatDetailOpers(Abstract_Stat_Service):
                         sql_list_dict_two['table_comment'] = i.split('\t')[2]
                         sql_list_dict_two['total_kb'] = i.split('\t')[3]
                         sql_list_dict[i.split('\t')[1]] = sql_list_dict_two
-                        sql_list_dict_two = {}                  
+                        sql_list_dict_two = {}
                     sql_list.append(sql_list_dict)
                 else:
                     raise UserVisiableException('database not exist')
@@ -152,6 +149,6 @@ class NodeStatDetailOpers(Abstract_Stat_Service):
             
             ret_list.setdefault(param, sql_list[1])
             sql_list = []
-
+            
             return ret_list
 

@@ -1,4 +1,4 @@
-mysql_shell_dict = {
+MYSQL_SHELL_DICT = {
                     "stat_version_command" : 'mysql -uroot -pMcluster -e "select version()"|grep -v "-"| grep -v "Var"|grep -v \'version\' | awk \'{print "version\t"$1 }\'',
                     "stat_wsrep_status_command" : 'mysql -uroot -pMcluster -e "show status like \'wsrep_cluster_status\'"|grep -v "-"| grep -v "Var"',
                     
