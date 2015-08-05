@@ -45,7 +45,7 @@ MYSQL_SHELL_DICT = {
                     "stat_database_size_command" : 'du -kP /srv/mcluster/mysql/{0}',
 
                     "stat_innodb_dml_command" : 'mysql -uroot -pMcluster -e "show engine innodb status\G;"|grep "inserts/s"',
-                    "stat_table_space_analyze_command" : '''mysql -uroot -pMcluster -Be "select TABLE_SCHEMA, table_name, table_comment, (data_length+index_length)/1024 as total_kb from information_schema.tables where table_schema='{0}'"''',
+                    "stat_table_space_analyze_command" : 'mysql -uroot -pMcluster -Be "select TABLE_SCHEMA, table_name, table_comment, (data_length+index_length)/1024 as total_kb from information_schema.tables where table_schema=\'{0}\'"',
                     
                     "stat_wsrep_local_fail_command" : 'mysql -uroot -pMcluster -Bse "show status like \'wsrep_local_cert_failures\'"',
                     "stat_wsrep_local_bf_aborts_command" : 'mysql -uroot -pMcluster -Bse "show status like \'wsrep_local_bf_aborts\'"',

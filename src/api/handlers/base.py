@@ -25,7 +25,13 @@ class BaseHandler(RequestHandler):
         if not user_id: return None
         return self.db.get("SELECT * FROM authors WHERE id = %s", int(user_id))
     
-    
+    def get_all_arguments(self):
+        request_param = {}
+        args = self.request.arguments
+        for key in args:
+            request_param.setdefault(key, args[key][0])
+        return request_param
+
     
 class APIHandler(BaseHandler):
     

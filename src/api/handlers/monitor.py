@@ -151,7 +151,7 @@ class Dbinfo_Monitor_Status(APIHandler):
     detail_stat_opers = NodeStatDetailOpers()
    
     def post(self):
-        params = self.request.arguments
+        params = self.get_all_arguments()
         logging.info("params is %s" % params)
         result = self.detail_stat_opers.node_stat_detail_info(params)
         self.finish(result)

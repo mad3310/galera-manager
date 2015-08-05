@@ -110,45 +110,66 @@ class NodeStatDetailOpers(Abstract_Stat_Service):
     '''
     classdocs
     '''
+    
+    invoke_command = InvokeCommand()
 
     def node_stat_detail_info(self, param_dicts):
         return self.__get_db_monitor_res(param_dicts)
 
     def __get_db_monitor_res(self, param_dicts):
-        ret_list, sql_list = {} , []
+        ret_dict = {}
         if not param_dicts:
             raise UserVisiableException('params are not given')
         
-        for param in param_dicts.keys():
-            sql_result = InvokeCommand()._runSysCmd(MYSQL_SHELL_DICT.get(param))
+        for param in param_dicts:
+            if param not in MYSQL_SHELL_DICT:
+                raise UserVisiableException('%s param given is wrong!' %param)
+            mysql_database_name = param_dicts[param]            
             if param == 'stat_database_size_command':
-                sql_result = InvokeCommand()._runSysCmd(MYSQL_SHELL_DICT.get(param).format(param_dicts['stat_database_size_command'][0]))
-                if sql_result[0]:
-                    sql_list = sql_result[0].strip('\n').split('\t')[::-1]
-                else:
-                    raise UserVisiableException('database does not exist')
+                self._get_stat_database_size_res(param, mysql_database_name, ret_dict)
 
             elif param == 'stat_table_space_analyze_command':
-                sql_list_init, sql_list_dict, sql_list_dict_two = [], {}, {}
-                mysql_schema_name=param_dicts['stat_table_space_analyze_command'][0]
-                sql_result = InvokeCommand()._runSysCmd(MYSQL_SHELL_DICT.get(param).format(mysql_schema_name))
-                if sql_result[0]:
-                    sql_list_init = sql_result[0].strip('\n').split('\n')[1:]
-                    sql_list.append(0)
-                    for i in sql_list_init:
-                        sql_list_dict_two['table_comment'] = i.split('\t')[2]
-                        sql_list_dict_two['total_kb'] = i.split('\t')[3]
-                        sql_list_dict[i.split('\t')[1]] = sql_list_dict_two
-                        sql_list_dict_two = {}
-                    sql_list.append(sql_list_dict)
-                else:
-                    raise UserVisiableException('database not exist')
+                self._get_stat_table_space_analyze_res(param, mysql_database_name, ret_dict)
 
             else:
-                sql_list = sql_result[0].strip('\n').split('\t')
-            
-            ret_list.setdefault(param, sql_list[1])
-            sql_list = []
-            
-            return ret_list
+                self._get_stat_common_detail_res(param, ret_dict)
+                  
+        return ret_dict
 
+    def _get_stat_database_size_res(self, param, name, mysql_dict):
+        sql_result = self.invoke_command._runSysCmd(MYSQL_SHELL_DICT.get(param).format(name))
+        if sql_result[1]:
+            raise UserVisiableException(sql_result[0])
+        sql_list = sql_result[0].strip('\n').split('\t')[::-1]
+        mysql_dict.setdefault(param, sql_list[1])
+
+    def _get_stat_table_space_analyze_res(self, param, name, mysql_dict):
+        sql_list_init, sql_list_dict = [], {}              
+        sql_result = self.invoke_command._runSysCmd(MYSQL_SHELL_DICT.get(param).format(name))
+        if sql_result[0]:
+            sql_list_init = sql_result[0].strip('\n').split('\n')[1:]
+            for item in sql_list_init:
+                _dict = {}
+                item_list=item.split('\t')
+                _dict['table_comment'] = item_list[2]
+                _dict['total_kb'] = item_list[3]
+                sql_list_dict[item_list[1]] = _dict                
+                mysql_dict.setdefault(param, sql_list_dict)
+        else:
+            raise UserVisiableException('database %s does not exist' %name)
+
+        sql_list_init = sql_result[0].strip('\n').split('\n')[1:]
+        for item in sql_list_init:
+            _dict = {}
+            item_list=item.split('\t')
+            _dict['table_comment'] = item_list[2]
+            _dict['total_kb'] = item_list[3]
+            sql_list_dict[item_list[1]] = _dict                
+            mysql_dict.setdefault(param, sql_list_dict)
+
+    def _get_stat_common_detail_res(self, param, mysql_dict):        
+        sql_result = self.invoke_command._runSysCmd(MYSQL_SHELL_DICT.get(param))
+        if sql_result[1]:
+            raise UserVisiableException(sql_result[0])
+        sql_list = sql_result[0].strip('\n').split('\t')
+        mysql_dict.setdefault(param, sql_list[1])
