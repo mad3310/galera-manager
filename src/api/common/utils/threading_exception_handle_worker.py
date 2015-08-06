@@ -8,6 +8,9 @@ from common.utils.mail import send_email
 from tornado.web import HTTPError
 from common.utils.exceptions import HTTPAPIError
 from common.utils.threading_exception_queue import Threading_Exception_Queue
+from common.helper import get_localhost_ip
+from common.invokeCommand import InvokeCommand
+
 
 class Thread_Exception_Handler_Worker(threading.Thread):
     
@@ -50,9 +53,12 @@ class Thread_Exception_Handler_Worker(threading.Thread):
             # send email
             subject = "[%s]Internal Server Error" % options.sitename
 #            body = self.render_string("errors/500_email.html", exception=exception)
-            
+            host_ip = get_localhost_ip()
+            invokeCommand = InvokeCommand()
+            version_str = invokeCommand._runSysCmd("rpm -qa container-manager")
+            exception += "\n" + version_str[0] + "\nhost ip :" + host_ip
 #            email_from = "%s <noreply@%s>" % (options.sitename, options.domain)
             if options.send_email_switch:
-                send_email(options.admins, subject, exception)
+                send_email(options.admins, subject, exception + '')
         except Exception:
             logging.error(traceback.format_exc())
