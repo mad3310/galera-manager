@@ -7,9 +7,6 @@ import logging
 from tornado.options import options
 from common.abstract_stat_service import Abstract_Stat_Service
 from common.helper import is_monitoring, get_localhost_ip
-from common.helper.mysql_shell_dict import MYSQL_SHELL_DICT
-from common.invokeCommand import InvokeCommand
-from common.utils.exceptions import UserVisiableException
 
 class NodeStatOpers(Abstract_Stat_Service):
     '''
@@ -105,71 +102,3 @@ class NodeStatOpers(Abstract_Stat_Service):
         
         return result
 
-    
-class NodeStatDetailOpers(Abstract_Stat_Service):
-    '''
-    classdocs
-    '''
-    
-    invoke_command = InvokeCommand()
-
-    def node_stat_detail_info(self, param_dicts):
-        return self.__get_db_monitor_res(param_dicts)
-
-    def __get_db_monitor_res(self, param_dicts):
-        ret_dict = {}
-        if not param_dicts:
-            raise UserVisiableException('params are not given')
-        
-        for param in param_dicts:
-            if param not in MYSQL_SHELL_DICT:
-                raise UserVisiableException('%s param given is wrong!' %param)
-            mysql_database_name = param_dicts[param]            
-            if param == 'stat_database_size_command':
-                self._get_stat_database_size_res(param, mysql_database_name, ret_dict)
-
-            elif param == 'stat_table_space_analyze_command':
-                self._get_stat_table_space_analyze_res(param, mysql_database_name, ret_dict)
-
-            else:
-                self._get_stat_common_detail_res(param, ret_dict)
-                  
-        return ret_dict
-
-    def _get_stat_database_size_res(self, param, name, mysql_dict):
-        sql_result = self.invoke_command._runSysCmd(MYSQL_SHELL_DICT.get(param).format(name))
-        if sql_result[1]:
-            raise UserVisiableException(sql_result[0])
-        sql_list = sql_result[0].strip('\n').split('\t')[::-1]
-        mysql_dict.setdefault(param, sql_list[1])
-
-    def _get_stat_table_space_analyze_res(self, param, name, mysql_dict):
-        sql_list_init, sql_list_dict = [], {}              
-        sql_result = self.invoke_command._runSysCmd(MYSQL_SHELL_DICT.get(param).format(name))
-        if sql_result[0]:
-            sql_list_init = sql_result[0].strip('\n').split('\n')[1:]
-            for item in sql_list_init:
-                _dict = {}
-                item_list=item.split('\t')
-                _dict['table_comment'] = item_list[2]
-                _dict['total_kb'] = item_list[3]
-                sql_list_dict[item_list[1]] = _dict                
-                mysql_dict.setdefault(param, sql_list_dict)
-        else:
-            raise UserVisiableException('database %s does not exist' %name)
-
-        sql_list_init = sql_result[0].strip('\n').split('\n')[1:]
-        for item in sql_list_init:
-            _dict = {}
-            item_list=item.split('\t')
-            _dict['table_comment'] = item_list[2]
-            _dict['total_kb'] = item_list[3]
-            sql_list_dict[item_list[1]] = _dict                
-            mysql_dict.setdefault(param, sql_list_dict)
-
-    def _get_stat_common_detail_res(self, param, mysql_dict):        
-        sql_result = self.invoke_command._runSysCmd(MYSQL_SHELL_DICT.get(param))
-        if sql_result[1]:
-            raise UserVisiableException(sql_result[0])
-        sql_list = sql_result[0].strip('\n').split('\t')
-        mysql_dict.setdefault(param, sql_list[1])

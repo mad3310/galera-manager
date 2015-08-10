@@ -11,8 +11,8 @@ import tornado
 from base import APIHandler
 from common.status_opers import Check_Cluster_Available, Check_Node_Size, Check_Node_Log_Health, Check_Node_Log_Error, Check_Node_Log_Warning, Check_Node_Active, Check_DB_WR_Avalialbe,\
 Check_DB_Wsrep_Status, Check_DB_Cur_Conns, Check_DB_Anti_Item, Check_Backup_Status, Check_Database_User
-from common.node_stat_opers import NodeStatDetailOpers
-
+from common.dba_opers import DBAOpers
+from common.utils.exceptions import UserVisiableException
 
 class Cluster_Info_Sync_Handler(object):
     
@@ -145,13 +145,13 @@ class Mcluster_Monitor_Async(APIHandler):
         self.finish(result)
 
 # retrieve the detailed status of mcluster
-# eg. curl "http://localhost:8888/node/stat/info"
+# eg. curl "http://localhost:8888/node/stat/info?stat_connection_count_command=mysql"
 class Dbinfo_Monitor_Status(APIHandler):
     
-    detail_stat_opers = NodeStatDetailOpers()
+    dba_opers = DBAOpers()
    
     def post(self):
         params = self.get_all_arguments()
-        logging.info("params is %s" % params)
-        result = self.detail_stat_opers.node_stat_detail_info(params)
+        result = self.dba_opers.retrieve_node_info_stat(params)
         self.finish(result)
+
