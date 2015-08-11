@@ -9,7 +9,7 @@ from tornado.web import HTTPError
 from common.utils.exceptions import HTTPAPIError
 from common.utils.threading_exception_queue import Threading_Exception_Queue
 from common.helper import get_localhost_ip
-from common.helper.version import __version__
+from common.helper.version import __version__, __app__
 
 
 
@@ -54,7 +54,7 @@ class Thread_Exception_Handler_Worker(threading.Thread):
             # send email
             subject = "[%s]Internal Server Error" % options.sitename
             host_ip = get_localhost_ip()
-            version_str = '{0}'.format(__version__)
+            version_str = '{0}-{1}'.format(__app__,__version__)
             exception += "\n" + version_str + "\nhost ip :" + host_ip
             if options.send_email_switch:
                 send_email(options.admins, subject, exception + '')

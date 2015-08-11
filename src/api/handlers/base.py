@@ -6,8 +6,7 @@ from tornado.options import options
 
 from common.utils.exceptions import HTTPAPIError, UserVisiableException
 from common.utils.mail import send_email
-
-from common.invokeCommand import InvokeCommand
+from common.helper.version import __version__, __app__
 from common.helper import get_localhost_ip
 from common.zkOpers import Requests_ZkOpers
 import logging
@@ -107,16 +106,14 @@ class APIHandler(BaseHandler):
     def _send_error_email(self, exception):
         try:
             local_ip = get_localhost_ip()
-            invokeCommand = InvokeCommand()
-            cmd_str = "rpm -qa mcluster-manager"
-            version_str = invokeCommand._runSysCmd(cmd_str)
+            version_str = '{0}-{1}'.format(__app__,__version__)
             logging.info("version_str :" + str(version_str)) 
             # send email
             subject = "[%s]Internal Server Error " % options.sitename
             body = self.render_string("errors/500_email.html",
                                       exception=exception)
             
-            body += "\n" + version_str[0] + "\nip:" + local_ip
+            body += "\n" + version_str + "\nip:" + local_ip
             
 #            email_from = "%s <noreply@%s>" % (options.sitename, options.domain)
             if options.send_email_switch:
