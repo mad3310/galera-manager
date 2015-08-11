@@ -9,9 +9,7 @@ import logging
 from tornado.options import options
 from common.helper import retrieve_kv_from_db_rows
 from common.utils.exceptions import CommonException
-from common.helper.mysql_shell_dict import MYSQL_SHELL_DICT
 from common.utils.exceptions import UserVisiableException
-
 
 class DBAOpers(object):
     '''
