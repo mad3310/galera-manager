@@ -115,7 +115,7 @@ class InitMCluster(APIHandler):
             sst_user_password = self.invokeCommand.runBootstrapScript()
             
             mysql_cnf_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-            zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_text, issue_mycnf_changed)
+            zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_text)
             zkOper.write_started_node(data_node_ip)
         except kazoo.exceptions.LockTimeout:
             raise HTTPAPIError(status_code=578, error_detail="a server is initing, need to wait for the completion of init oper.",\
