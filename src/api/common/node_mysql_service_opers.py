@@ -183,6 +183,9 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
             self._issue_stop_action()
         except:
             self.threading_exception_queue.put(sys.exc_info())
+        finally:
+            if self.isLock is not None:
+                self.zkOper.unLock_node_start_stop_action(self.lock)
         
     def _issue_stop_action(self):
         finished_flag = False
