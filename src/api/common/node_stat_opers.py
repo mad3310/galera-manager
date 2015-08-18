@@ -7,6 +7,11 @@ import logging
 from tornado.options import options
 from common.abstract_stat_service import Abstract_Stat_Service
 from common.helper import is_monitoring, get_localhost_ip
+from common.zkOpers import ZkOpers
+from common.helper import getDictFromText
+from common.configFileOpers import ConfigFileOpers
+
+confOpers = ConfigFileOpers()
 
 class NodeStatOpers(Abstract_Stat_Service):
     '''
@@ -101,3 +106,21 @@ class NodeStatOpers(Abstract_Stat_Service):
         result.setdefault('node_mem_free_size', node_mem_free_size)
         
         return result
+
+
+def issue_mycnf_changed(self):
+    keyList = []
+    keyList.append('wsrep_cluster_address')
+
+    zkOper = ZkOpers()
+
+    try:
+        clusterUUID = zkOper.getClusterUUID()
+        sourceText,_ = zkOper.retrieveMysqlProp(clusterUUID, issue_mycnf_changed)
+    finally:
+        zkOper.stop()
+
+    keyValueDict = getDictFromText(sourceText, keyList)
+    confOpers.setValue(options.mysql_cnf_file_name, keyValueDict)
+
+
