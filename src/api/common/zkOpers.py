@@ -268,6 +268,12 @@ class ZkOpers(object):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName
         if self.zk.exists(path):
             self.DEFAULT_RETRY_POLICY(self.zk.delete, path)
+    
+    def remove_data_node_name(self, data_node_ip):
+        clusterUUID = self.getClusterUUID()
+        path = self.rootPath + "/" + clusterUUID + "/dataNode/" + data_node_ip
+        if self.zk.exists(path):
+            self.DEFAULT_RETRY_POLICY(self.zk.delete, path)
             
     def remove_db_user(self, clusterUUID, dbName, userName, ipAddress):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + userName + "|" + ipAddress
