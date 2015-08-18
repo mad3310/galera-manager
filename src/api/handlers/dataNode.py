@@ -8,7 +8,6 @@ from common.tornado_basic_auth import require_basic_auth
 from base import APIHandler
 from tornado.options import options
 from common.invokeCommand import InvokeCommand
-from common.helper import issue_mycnf_changed
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.utils.exceptions import HTTPAPIError
 from common.node_stat_opers import NodeStatOpers

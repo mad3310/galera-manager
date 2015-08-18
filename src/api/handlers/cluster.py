@@ -4,7 +4,6 @@ from common.configFileOpers import ConfigFileOpers
 from common.invokeCommand import InvokeCommand
 from base import APIHandler
 from common.tornado_basic_auth import require_basic_auth
-from common.helper import issue_mycnf_changed
 from common.cluster_mysql_service_opers import Cluster_Mysql_Service_Opers
 from tornado.options import options
 from tornado.web import asynchronous
