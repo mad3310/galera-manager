@@ -183,6 +183,9 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
             self._issue_stop_action()
         except:
             self.threading_exception_queue.put(sys.exc_info())
+        finally:
+            if self.isLock is not None:
+                self.zkOper.unLock_node_start_stop_action(self.lock)
         
     def _issue_stop_action(self):
         finished_flag = False
@@ -196,7 +199,7 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
         finally:
             self.zkoper.unLock_node_start_stop_action(self.lock)
             
-        if finished_flag:
+        if finished_flag:    
             self._send_email(data_node_ip, " mysql service stop operation finished")
         
         
@@ -221,6 +224,3 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
             
         return finished_flag
     
-
-
-            
