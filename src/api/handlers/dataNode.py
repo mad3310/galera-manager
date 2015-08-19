@@ -67,7 +67,7 @@ class AddDataNodeToMCluster(APIHandler):
         #self.confOpers.writeFullText(options.mysql_cnf_file_name, mysql_cnf_full_text)
 
         keyValueMap = {}
-        keyValueMap.setdefault('wsrep_cluster_address',new_cluster_address)
+        keyValueMap.setdefault('wsrep_cluster_address', new_cluster_address)
         keyValueMap.setdefault('wsrep_node_name', str(data_node_name))
         keyValueMap.setdefault('wsrep_node_address' ,str(data_node_ip))
         self.confOpers.setValue(options.mysql_cnf_file_name, keyValueMap)

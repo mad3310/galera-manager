@@ -104,9 +104,9 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
         
         self.isNewCluster = isNewCluster
         
-        zkOper = self.retrieve_zkOper()
+        self.zkOper = self.retrieve_zkOper()
         try:
-            self.isLock, self.lock = zkOper.lock_node_start_stop_action()
+            self.isLock, self.lock = self.zkOper.lock_node_start_stop_action()
         except kazoo.exceptions.LockTimeout:
             raise CommonException("When start node, can't retrieve the start atcion lock!")
             
@@ -169,9 +169,9 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
         
         super(Node_stop_action, self).__init__()
         
-        zkOper = self.retrieve_zkOper()
+        self.zkOper = self.retrieve_zkOper()
         try:
-            self.isLock, self.lock = zkOper.lock_node_start_stop_action()
+            self.isLock, self.lock = self.zkOper.lock_node_start_stop_action()
         except kazoo.exceptions.LockTimeout:
             raise CommonException("When stop node, can't retrieve the stop atcion lock!")
         
@@ -197,7 +197,8 @@ class Node_stop_action(Abstract_Mysql_Service_Action_Thread):
             self.invokeCommand.mysql_service_stop()
             finished_flag = self._check_stop_status(data_node_ip)
         finally:
-            self.zkoper.unLock_node_start_stop_action(self.lock)
+            if self.isLock is not None:
+                self.zkOper.unLock_node_start_stop_action(self.lock)
             
         if finished_flag:    
             self._send_email(data_node_ip, " mysql service stop operation finished")
