@@ -10,6 +10,7 @@ import json
 import threading
 import logging
 
+from tornado.options import options
 from kazoo.client import KazooClient, KazooState
 from kazoo.exceptions import SessionExpiredError
 from kazoo.handlers.threading import TimeoutError
@@ -18,10 +19,14 @@ from common.utils.exceptions import CommonException
 from common.my_logging import debug_log
 from common.utils.decorators import singleton, timeout_handler
 from common.utils import local_get_zk_address
+from common.configFileOpers import ConfigFileOpers
+from common.helper import getDictFromText
 
 
 log_obj = debug_log('zkOpers')
 logger = log_obj.get_logger_object()
+
+confOpers = ConfigFileOpers()
         
 
 class ZkOpers(object):
@@ -52,6 +57,16 @@ class ZkOpers(object):
             self.zk.start()
             #self.zk = self.ensureinstance()
             logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
+
+    def watch(self):
+        clusterUUID = self.getClusterUUID()
+
+        myConfPath = self.rootPath + "/" + clusterUUID + "/mycnf"
+        @self.zk.DataWatch(myConfPath)
+        def watch_my_conf(data, stat):
+            keyList = ["wsrep_cluster_address"]
+            dic = getDictFromText(data, keyList)
+            confOpers.setValue(options.mysql_cnf_file_name, dic)
 
     def close(self):
         try:
@@ -172,11 +187,11 @@ class ZkOpers(object):
         return resultValue
     
     @timeout_handler
-    def writeMysqlCnf(self,clusterUUID,mysqlCnfPropsFullText,func):
+    def writeMysqlCnf(self,clusterUUID,mysqlCnfPropsFullText):
         path = self.rootPath + "/" + clusterUUID + "/mycnf"
         self.zk.ensure_path(path)
         self.DEFAULT_RETRY_POLICY(self.zk.set, path, mysqlCnfPropsFullText)#version need to write
-        self.DEFAULT_RETRY_POLICY(self.zk.get, path, func)
+        #self.DEFAULT_RETRY_POLICY(self.zk.get, path, func)
         
     def write_db_info(self, clusterUUID, dbName, dbProps):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName 
@@ -251,6 +266,12 @@ class ZkOpers(object):
     
     def remove_db(self, clusterUUID, dbName):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName
+        if self.zk.exists(path):
+            self.DEFAULT_RETRY_POLICY(self.zk.delete, path)
+    
+    def remove_data_node_name(self, data_node_ip):
+        clusterUUID = self.getClusterUUID()
+        path = self.rootPath + "/" + clusterUUID + "/dataNode/" + data_node_ip
         if self.zk.exists(path):
             self.DEFAULT_RETRY_POLICY(self.zk.delete, path)
             
@@ -423,6 +444,7 @@ class Requests_ZkOpers(ZkOpers):
         Constructor
         '''
         ZkOpers.__init__(self)
+        self.watch()
 
 
 @singleton

@@ -4,7 +4,6 @@ from common.configFileOpers import ConfigFileOpers
 from common.invokeCommand import InvokeCommand
 from base import APIHandler
 from common.tornado_basic_auth import require_basic_auth
-from common.helper import issue_mycnf_changed
 from common.cluster_mysql_service_opers import Cluster_Mysql_Service_Opers
 from tornado.options import options
 from tornado.web import asynchronous
@@ -115,7 +114,7 @@ class InitMCluster(APIHandler):
             sst_user_password = self.invokeCommand.runBootstrapScript()
             
             mysql_cnf_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-            zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_text, issue_mycnf_changed)
+            zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_text)
             zkOper.write_started_node(data_node_ip)
         except kazoo.exceptions.LockTimeout:
             raise HTTPAPIError(status_code=578, error_detail="a server is initing, need to wait for the completion of init oper.",\

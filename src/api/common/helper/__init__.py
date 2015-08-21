@@ -1,9 +1,7 @@
 import base64
 import logging
 
-from common.zkOpers import ZkOpers
 from tornado.options import options
-from common.configFileOpers import ConfigFileOpers
 from tornado.httpclient import HTTPClient
 from tornado.httpclient import HTTPError
 from common.invokeCommand import InvokeCommand
@@ -13,21 +11,6 @@ from common.configFileOpers import ConfigFileOpers
 
 confOpers = ConfigFileOpers()
 
-def issue_mycnf_changed(self):
-    keyList = []
-    keyList.append('wsrep_cluster_address')
-    
-    zkOper = ZkOpers()
-    
-    try:
-        clusterUUID = zkOper.getClusterUUID()
-        sourceText,_ = zkOper.retrieveMysqlProp(clusterUUID, issue_mycnf_changed)
-    finally:
-        zkOper.stop()
-    
-    keyValueDict = getDictFromText(sourceText, keyList)
-    confOpers.setValue(options.mysql_cnf_file_name, keyValueDict)
-    
     
 def retrieve_kv_from_db_rows(rows, key_list=None):
     key_value = {}

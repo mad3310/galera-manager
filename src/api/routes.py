@@ -22,6 +22,7 @@ handlers = [
             (r"/cluster/sync", SyncMCluster),
             (r"/inner/admin/file/{filename}", DownloadFile),
             (r"/cluster/node", AddDataNodeToMCluster),
+            (r"/cluster/node/remove", RemoveDataNodeFromMCluster),
             (r"/cluster/start", ClusterStart),
             (r"/cluster/stop", ClusterStop),
             (r"/cluster/check/online_node", ClusterStatus),

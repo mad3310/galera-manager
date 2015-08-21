@@ -8,7 +8,6 @@ from common.tornado_basic_auth import require_basic_auth
 from base import APIHandler
 from tornado.options import options
 from common.invokeCommand import InvokeCommand
-from common.helper import issue_mycnf_changed
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.utils.exceptions import HTTPAPIError
 from common.node_stat_opers import NodeStatOpers
@@ -68,18 +67,54 @@ class AddDataNodeToMCluster(APIHandler):
         #self.confOpers.writeFullText(options.mysql_cnf_file_name, mysql_cnf_full_text)
 
         keyValueMap = {}
-        keyValueMap.setdefault('wsrep_cluster_address',new_cluster_address)
+        keyValueMap.setdefault('wsrep_cluster_address', new_cluster_address)
         keyValueMap.setdefault('wsrep_node_name', str(data_node_name))
         keyValueMap.setdefault('wsrep_node_address' ,str(data_node_ip))
         self.confOpers.setValue(options.mysql_cnf_file_name, keyValueMap)
 
         mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-        zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_full_text, issue_mycnf_changed)
+        zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_full_text)
             
         result = {}
 #        dict.setdefault("code", "000000")
         result.setdefault("message", "add data node into cluster successful!")
         self.finish(result)
+
+
+@require_basic_auth
+class RemoveDataNodeFromMCluster(APIHandler):
+
+    confOpers = ConfigFileOpers()
+    mysql_service_opers = Node_Mysql_Service_Opers()
+
+    def post(self):
+        self.mysql_service_opers.stop()
+
+        dataNodeProprs = self.confOpers.getValue(options.data_node_property)
+        ip = dataNodeProprs['dataNodeIp']
+
+        mycnfParam = self.confOpers.getValue(options.mysql_cnf_file_name)
+        orginal_cluster_address = mycnfParam['wsrep_cluster_address']
+        index = orginal_cluster_address.find("//")
+        prefix = orginal_cluster_address[:index + 2]
+        ipStr = orginal_cluster_address[index + 2:]
+        ipLists = ipStr.rstrip().split(",")
+
+        assert ip in ipLists
+
+        ipLists.remove(ip)
+        removeRes = prefix + ','.join(ipLists)
+        self.confOpers.setValue(options.mysql_cnf_file_name, {
+                                'wsrep_cluster_address': removeRes})
+        newMyConfText = self.confOpers.retrieveFullText(
+            options.mysql_cnf_file_name)
+
+        zkOper = self.retrieve_zkOper()
+        clusterUUID = zkOper.getClusterUUID()
+        zkOper.writeMysqlCnf(clusterUUID, newMyConfText)
+        zkOper.remove_data_node_name(ip)
+
+        self.finish({"message": "remove data node from cluster successful!"})
         
         
 # sync data node info from zk
