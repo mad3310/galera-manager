@@ -50,3 +50,10 @@ class MclusterStatus(APIHandler):
             result.setdefault(monitor_type,monitor_type_sub_dict)
             
         self.finish(result)
+
+
+class MclusterHealth(APIHandler):
+
+    def get(self):
+        result = {"status":"ok"}
+        self.finish(result)
