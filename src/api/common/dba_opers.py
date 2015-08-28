@@ -464,28 +464,20 @@ class DBAOpers(object):
  
    
     def retrieve_stat_wsrep_status_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "wsrep_cluster_status"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "wsrep_cluster_status"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_running_day_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show global status like "uptime"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show global status like "uptime"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_connection_count_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "Threads_connected"')
-        rows = cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])    
+        dbsqlstr = 'show status like "Threads_connected"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
 
     def retrieve_stat_active_count_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "Threads_running"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "Threads_running"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
 
     def retrieve_stat_wating_count_command(self, conn, key, value, _dict):
         cursor = conn.cursor()
@@ -494,160 +486,108 @@ class DBAOpers(object):
         _dict.setdefault(key, rows[0][0].lstrip('wait_num '))
 
     def retrieve_stat_net_send_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show global status like "Bytes_sent"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show global status like "Bytes_sent"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_net_rev_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show global status like "Bytes_received"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show global status like "Bytes_received"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
 
     def retrieve_stat_QPS_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show global status where variable_name in("com_select")')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show global status where variable_name in("com_select")'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
 
     def retrieve_stat_Com_commit_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show global status like "Com_commit"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show global status like "Com_commit"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_Com_rollback(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show global status like "Com_rollback"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show global status like "Com_rollback"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
 
     def retrieve_stat_slow_query_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show global status like "Slow_queries"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show global status like "Slow_queries"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_max_conn_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show variables like "max_connections"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show variables like "max_connections"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_max_err_conn_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show variables like "max_connect_errors"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show variables like "max_connect_errors"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_max_open_file_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show variables like "open_files_limit"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show variables like "open_files_limit"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_opened_file_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "Open_files"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "Open_files"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_opened_table_cach_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "Open_tables"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "Open_tables"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
         
     def retrieve_stat_table_cach_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show variables like "table_open_cache"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show variables like "table_open_cache"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
  
     def retrieve_stat_table_cach_noha_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "Opened_tables"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "Opened_tables"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_key_buffer_size_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show variables like "key_buffer_size"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show variables like "key_buffer_size"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_sort_buffer_size_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show variables like "sort_buffer_size"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show variables like "sort_buffer_size"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_join_buffer_size_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show variables like "join_buffer_size"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show variables like "join_buffer_size"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_key_blocks_unused_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "Key_blocks_unused"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "Key_blocks_unused"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_key_blocks_used_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "key_blocks_used"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "key_blocks_used"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_key_blocks_not_flushed_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "key_blocks_not_flushed"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "key_blocks_not_flushed"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_key_buffer_reads_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "key_reads"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "key_reads"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_key_buffer_reads_request_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "key_read_requests"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "key_read_requests"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_key_buffer_writes_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "key_writes"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "key_writes"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_key_buffer_writes_request_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "key_write_requests"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "key_write_requests"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_innodb_bufferpool_size_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show variables like "innodb_buffer_pool_size"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show variables like "innodb_buffer_pool_size"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_innodb_bufferpool_reads_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "innodb_buffer_pool_reads"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "innodb_buffer_pool_reads"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_innodb_bufferpool_read_request_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "innodb_buffer_pool_read_requests"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "innodb_buffer_pool_read_requests"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_table_space_analyze_command(self, conn, key, value, _dict):
         cursor = conn.cursor()
@@ -664,64 +604,44 @@ class DBAOpers(object):
         _dict.setdefault(key, row_dict)
     
     def retrieve_stat_wsrep_local_fail_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "wsrep_local_cert_failures"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "wsrep_local_cert_failures"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_wsrep_local_bf_aborts_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "wsrep_local_bf_aborts"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "wsrep_local_bf_aborts"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_wsrep_local_replays_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "wsrep_local_replays"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "wsrep_local_replays"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_wsrep_replicated_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "wsrep_replicated"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "wsrep_replicated"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_wsrep_replicated_bytes_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "wsrep_replicated_bytes"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "wsrep_replicated_bytes"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_wsrep_received_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "wsrep_received"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "wsrep_received"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_wsrep_received_bytes_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "wsrep_received_bytes"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "wsrep_received_bytes"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_wsrep_flow_control_paused_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "wsrep_flow_control_paused"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "wsrep_flow_control_paused"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_wsrep_flow_control_sent_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "wsrep_flow_control_sent"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "wsrep_flow_control_sent"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_wsrep_flow_control_recv_command(self, conn, key, value, _dict):
-        cursor = conn.cursor()
-        cursor.execute('show status like "wsrep_flow_control_recv"')
-        rows=cursor.fetchall()
-        _dict.setdefault(key, rows[0][1])
+        dbsqlstr = 'show status like "wsrep_flow_control_recv"'
+        self.base_db_fecth_info(conn, key, dbsqlstr, _dict)
     
     def retrieve_stat_database_size_command(self, conn, key, value, _dict):
         cursor = conn.cursor()
@@ -737,21 +657,26 @@ class DBAOpers(object):
         rows=cursor.fetchall()
         _dict.setdefault(key, rows[0][0])
     
-    def retrieve_node_info_stat(self, params):
+    def retrieve_db_info_stat(self, params):
         if not params:
             raise UserVisiableException('params are not given')
         _dict = {}
         try:
             conn=self.get_mysql_connection()
             for item in params:
-                self.__retrieve_db_info_stat(conn, item, params[item], _dict)
-            return _dict    
+                getattr(self, 'retrieve_' + item)(conn, item, params[item], _dict)
+            return _dict
+        
+        except MySQLdb.Error, e:
+            raise UserVisiableException("Can\'t connect to mysql server")
+
+        except AttributeError, e:
+            raise UserVisiableException('%s param given is wrong!' % str(item))    
         finally:
             conn.close()
-
-    def __retrieve_db_info_stat(self, conn, item, value, _dict):
-        try:
-            getattr(self, 'retrieve_'+item)(conn, item, value, _dict)
-        except AttributeError, e:
-            raise UserVisiableException('%s param given is wrong!' % str(item))
-
+        
+    def base_db_fecth_info(self, conn, key, dbsqlstr, _dict):
+        cursor = conn.cursor()
+        cursor.execute(dbsqlstr)
+        rows=cursor.fetchall()
+        _dict.setdefault(key, rows[0][1])

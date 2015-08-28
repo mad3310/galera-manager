@@ -15,13 +15,13 @@ class backup_thread(threading.Thread):
         self._backup_mode = backup_mode
         threading.Thread.__init__(self)
 
-    def run(self):
-        
+    def run(self):       
         invokeCommand = InvokeCommand()
         now = datetime.datetime.now()
         logging.info("Backup start time is " + now.strftime(TIME_FORMAT))
         if self._backup_mode == "full":
             ret_sub_p = invokeCommand._runSysCmdnoWait(options.full_back_sh)
+            ret_str = ret_sub_p.stdout.read()
             logging.info("ret_sub_p" + str(ret_sub_p))
             if ret_sub_p == False:
                 raise HTTPAPIError(status_code=411, error_detail="Full Back up process terminated!",\

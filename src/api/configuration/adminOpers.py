@@ -13,7 +13,7 @@ from common.configFileOpers import ConfigFileOpers
 
 class AdminOpers(object):
     
-    def sync_info_from_zk(self):
+    def sync_info_from_zk(self, ip):
         zkOper = ZkOpers()
     
         try:
@@ -22,7 +22,8 @@ class AdminOpers(object):
                 clusterUUID = zkOper.getClusterUUID() 
                 data,_ = zkOper.retrieveClusterProp(clusterUUID)
                 
-                node_ip_addr = get_localhost_ip()
+                #node_ip_addr = get_localhost_ip()
+                node_ip_addr = ip
                 return_result = zkOper.retrieve_data_node_info(node_ip_addr)
                 
                 json_str_data = data.replace("'", "\"")

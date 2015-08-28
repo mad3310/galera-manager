@@ -21,7 +21,7 @@ from common.utils.decorators import singleton, timeout_handler
 from common.utils import local_get_zk_address
 from common.configFileOpers import ConfigFileOpers
 from common.helper import getDictFromText
-
+from common.invokeCommand import InvokeCommand
 
 log_obj = debug_log('zkOpers')
 logger = log_obj.get_logger_object()
@@ -58,9 +58,21 @@ class ZkOpers(object):
             #self.zk = self.ensureinstance()
             logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
 
+    def getclustername(self):
+        invokeCommand = InvokeCommand()
+        ret_str, _ = invokeCommand._runSysCmd("hostname")
+        invokeCommand = None
+        logging.info(ret_str)
+        try:
+            res_str = ret_str.strip('d-mcl-')
+            return res_str[0:res_str.find('-n-')]
+        except Exception, e:
+            logging.error(e)
+            raise 'hostname is wrong! please change it '
+
+
     def watch(self):
         clusterUUID = self.getClusterUUID()
-
         myConfPath = self.rootPath + "/" + clusterUUID + "/mycnf"
         @self.zk.DataWatch(myConfPath)
         def watch_my_conf(data, stat):
@@ -140,16 +152,16 @@ class ZkOpers(object):
     @timeout_handler
     def getClusterUUID(self):
         try: 
-            dataNodeName = self.DEFAULT_RETRY_POLICY(self.zk.get_children, self.rootPath)
+            dataNodeName = self.DEFAULT_RETRY_POLICY(self.zk.get_children, self.rootPath+'/'+self.getclustername())
         except SessionExpiredError:
-            dataNodeName = self.DEFAULT_RETRY_POLICY(self.zk.get_children, self.rootPath)
+            dataNodeName = self.DEFAULT_RETRY_POLICY(self.zk.get_children, self.rootPath+'/'+self.getclustername())
             
         if dataNodeName is None or dataNodeName.__len__() == 0:
             raise CommonException('cluster uuid is null.please check the zk connection or check if existed cluster uuid.')
         
-        return dataNodeName[0]
+        return self.getclustername() +'/'+ dataNodeName[0]
         
-        
+
     def writeClusterInfo(self,clusterUUID,clusterProps):
         path = self.rootPath + "/" + clusterUUID
         self.zk.ensure_path(path)

@@ -423,12 +423,12 @@ class StatWsrepStatusSlowestNetworkParam(APIHandler):
 
 # retrieve the detailed status of mcluster
 # eg. curl "http://localhost:8888/node/stat/info?stat_connection_count_command=mysql"
-class Dbinfo_Monitor_Status(APIHandler):
+class StatMysqlInfo(APIHandler):
     
     dba_opers = DBAOpers()
    
-    def post(self):
+    def get(self):
         params = self.get_all_arguments()
-        result = self.dba_opers.retrieve_node_info_stat(params)
+        result = self.dba_opers.retrieve_db_info_stat(params)
         self.finish(result)
 

@@ -34,7 +34,7 @@ handlers = [
             (r"/node/stat/mysqlcpu/partion", StatMysqlCpuPartion),
             (r"/node/stat/mysqlmemory/partion", StatMysqlMemoryPartion),
             (r"/node/stat/memory/size", StatNodeMemorySize),
-            (r"/node/stat/info", Dbinfo_Monitor_Status),
+            (r"/node/stat/info", StatMysqlInfo),
             (r"/admin/reset", AdminReset),
             (r"/db", DBOnMCluster),
             (r"/db/([a-zA-Z\-\_0-9]+)", DBOnMCluster),
