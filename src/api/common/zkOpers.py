@@ -59,17 +59,14 @@ class ZkOpers(object):
             logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
 
     def getclustername(self):
-        invokeCommand = InvokeCommand()
-        ret_str, _ = invokeCommand._runSysCmd("hostname")
-        invokeCommand = None
-        logging.info(ret_str)
         try:
-            res_str = ret_str.strip('d-mcl-')
+            f = open('/etc/hostname','r')
+            res_str = f.readline().strip('d-mcl-')
             return res_str[0:res_str.find('-n-')]
         except Exception, e:
-            logging.error(e)
-            raise 'hostname is wrong! please change it '
-
+            raise 'hostname is wrong! please check it %s' %f.readline()
+        finally:
+            f.close()
 
     def watch(self):
         clusterUUID = self.getClusterUUID()

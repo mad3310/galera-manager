@@ -429,6 +429,6 @@ class StatMysqlInfo(APIHandler):
    
     def get(self):
         params = self.get_all_arguments()
-        result = self.dba_opers.retrieve_db_info_stat(params)
+        result = self.dba_opers.retrieve_node_info_stat(params)
         self.finish(result)
 

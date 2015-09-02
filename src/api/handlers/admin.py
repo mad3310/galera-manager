@@ -23,17 +23,14 @@ class AdminConf(APIHandler):
     def post(self):
         requestParam = {}
         args = self.request.arguments
-        ip=''
+
         for key in args:
             requestParam.setdefault(key,args[key][0])
-            if key=='zkAddress':
-                ip=args[key][0]
-            logging.info("zk address is: "+ip)            
-        
+       
         if requestParam != {}:
             self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
             
-        self.adminOpers.sync_info_from_zk(ip)
+        self.adminOpers.sync_info_from_zk(requestParam['zkAddress'][0])
             
         result = {}
 #        dict.setdefault("code", '000000')

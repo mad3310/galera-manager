@@ -657,20 +657,18 @@ class DBAOpers(object):
         rows=cursor.fetchall()
         _dict.setdefault(key, rows[0][0])
     
-    def retrieve_db_info_stat(self, params):
+    def retrieve_node_info_stat(self, params):
         if not params:
             raise UserVisiableException('params are not given')
         _dict = {}
-        try:
-            conn=self.get_mysql_connection()
+        conn=self.get_mysql_connection()
+        if conn==None:
+            raise UserVisiableException("Can\'t connect to mysql server")
+        try:            
             for item in params:
                 getattr(self, 'retrieve_' + item)(conn, item, params[item], _dict)
             return _dict
-        
-        except MySQLdb.Error, e:
-            raise UserVisiableException("Can\'t connect to mysql server")
-
-        except AttributeError, e:
+        except AttributeError:
             raise UserVisiableException('%s param given is wrong!' % str(item))    
         finally:
             conn.close()
