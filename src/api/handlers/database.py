@@ -161,9 +161,40 @@ class Inner_DB_Check_CurConns(APIHandler):
             return
         
         self.finish("false")
+
+
+# when mcluster db instance's current connections exceed to 80 percent of max user connections,
+# we need to know this issue and notification.
+# eg. curl "http://localhost:8888/inner/db/check/cur_user_conns" 
+class Inner_DB_Check_User_CurConns(APIHandler):
+    dba_opers = DBAOpers()
+    
+    def get(self):
+        zkOper = self.retrieve_zkOper()
+        if not is_monitoring(get_localhost_ip(), zkOper):
+            self.finish("true")
+            return
+        conn = self.dba_opers.get_mysql_connection()
+
+        if conn is None:
+            self.finish("false")
+            return
         
+        clusterUUID = zkOper.getClusterUUID()
+        user_prop_dict = zkOper.retrieve_db_user_prop(clusterUUID, zkOper.retrieve_db_list()[0])
+        try:
+            for user_prop in user_prop_dict:
+                max_user_connections_rows = self.dba_opers.show_user_max_conn(conn, user_prop, user_prop_dict[user_prop])
+                current_user_connections_rows = self.dba_opers.show_user_current_conn(conn, user_prop, user_prop_dict[user_prop])
+                if int(current_user_connections_rows) > int(max_user_connections_rows) * 0.8:
+                    self.finish("false")
+                    return
+        finally:
+            conn.close()
         
+        self.finish("true")
         
+   
 # when mcluster db instance's wsrep status is not 'ON',
 # we need to know this issue and notification.
 # eg. curl "http://localhost:8888/inner/db/check/wsrep_status" 
@@ -427,7 +458,7 @@ class StatMysqlInfo(APIHandler):
     
     dba_opers = DBAOpers()
    
-    def get(self):
+    def post(self):
         params = self.get_all_arguments()
         result = self.dba_opers.retrieve_node_info_stat(params)
         self.finish(result)

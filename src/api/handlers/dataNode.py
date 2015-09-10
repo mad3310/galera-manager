@@ -15,7 +15,7 @@ from common.node_stat_opers import NodeStatOpers
 # add data node into mcluster
 # eg. curl --user root:root -d "dataNodeIp=192.168.0.20&dataNodeName=letv_mcluster_test_1_node_2" "http://localhost:8888/cluster/node"
 @require_basic_auth
-class AlterDataNodeToMCluster(APIHandler):
+class DataNodeToMCluster(APIHandler):
     
     confOpers = ConfigFileOpers()
 
