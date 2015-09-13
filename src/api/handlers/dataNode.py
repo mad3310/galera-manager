@@ -33,7 +33,7 @@ class DataNodeToMCluster(APIHandler):
             
         dataNodeProprs = self.confOpers.getValue(options.data_node_property)
         
-        zkOper = self.retrieve_zkOper()
+        zkOper = self.retrieve_watch_zkOper()
         clusterUUID = zkOper.getClusterUUID()
         zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
     
@@ -104,7 +104,7 @@ class DataNodeToMCluster(APIHandler):
         newMyConfText = self.confOpers.retrieveFullText(
             options.mysql_cnf_file_name)
 
-        zkOper = self.retrieve_zkOper()
+        zkOper = self.retrieve_watch_zkOper()
         clusterUUID = zkOper.getClusterUUID()
         zkOper.writeMysqlCnf(clusterUUID, newMyConfText)
         zkOper.remove_data_node_name(ip)

@@ -50,7 +50,7 @@ class CreateMCluster(APIHandler):
                                 log_message= "Cluster name is too long, please use name whoes length is less than 33 characters",\
                                 response =  "Cluster name is too long, please use name whoes length is less than 33 characters!")
             
-        clusterUUID = str(uuid.uuid1())
+        clusterUUID =zkOper.getclustername() + '/' + str(uuid.uuid1())
         requestParam.setdefault("clusterUUID",clusterUUID)
         
         if requestParam != {}:
