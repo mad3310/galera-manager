@@ -8,7 +8,7 @@ from common.utils.exceptions import HTTPAPIError, UserVisiableException
 from common.utils.mail import send_email
 from common.helper.version import __version__, __app__
 from common.helper import get_localhost_ip
-from common.zkOpers import Requests_ZkOpers
+from common.zkOpers import Requests_ZkOpers,Watch_ZkOpers
 import logging
 import traceback
 
@@ -41,6 +41,13 @@ class APIHandler(BaseHandler):
             self.zkOper = Requests_ZkOpers()
             
         return self.zkOper
+    
+    def retrieve_watch_zkOper(self):
+        if None == self.zkOper:
+            self.zkOper = Watch_ZkOpers()
+            
+        return self.zkOper
+        
     
     def finish(self, chunk=None, notification=None):
         if chunk is None:

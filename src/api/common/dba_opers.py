@@ -50,11 +50,11 @@ class DBAOpers(object):
         rows = cursor.fetchall()
         c = rows[0][0]
         if c:
-            sql = """drop user {username}@'{ip_address}'""".format(username=username,ip_address=ip_address)
+            sql = """drop user `{username}`@'{ip_address}'""".format(username=username,ip_address=ip_address)
             logging.info("drop user sql is:" + sql)
             cursor.execute(sql)
     
-    def check_create_table(self, conn, tb_name , db_name):
+    def check_create_table(self, conn, tb_name, db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
         try:
@@ -167,10 +167,10 @@ class DBAOpers(object):
             return
         
         if c:
-            cursor.execute("""grant usage on {dbName}.* to {username}@'{ip_address}' identified by '{passwd}'"""
+            cursor.execute("""grant usage on `{dbName}`.* to `{username}`@'{ip_address}' identified by '{passwd}'"""
                            .format(dbName=dbName,username=username,passwd=passwd,ip_address=ip_address))
         else:
-            cursor.execute("""CREATE USER {username}@'{ip_address}' IDENTIFIED BY '{passwd}'"""
+            cursor.execute("""CREATE USER `{username}`@'{ip_address}' IDENTIFIED BY '{passwd}'"""
                            .format(username=username,passwd=passwd,ip_address=ip_address))
             
             
@@ -180,7 +180,7 @@ class DBAOpers(object):
                                 max_connections_per_hour=0, 
                                 max_user_connections=200):
         sql = """grant select, insert, update, delete, index, create temporary tables, execute, show view 
-        on {database}.* to {username}@'{ipAddress}' identified 
+        on `{database}`.* to `{username}`@'{ipAddress}' identified 
         by '{passwd}' with 
         MAX_QUERIES_PER_HOUR {mqph} 
         MAX_UPDATES_PER_HOUR {muph} 
@@ -204,7 +204,7 @@ class DBAOpers(object):
         max_updates_per_hour = 1
         cursor = conn.cursor()
         cursor.execute("""grant
-        select, execute, show view on {database}.* to {username}@'{ipAddress}' identified 
+        select, execute, show view on `{database}`.* to `{username}`@'{ipAddress}' identified 
         by '{passwd}' with 
         MAX_QUERIES_PER_HOUR {mqph} 
         MAX_UPDATES_PER_HOUR {muph} 
@@ -225,7 +225,7 @@ class DBAOpers(object):
                                  max_user_connections=200):
         cursor = conn.cursor()
         cursor.execute("""grant
-        all privileges on {database}.* to {username}@'{ipAddress}' identified 
+        all privileges on `{database}`.* to `{username}`@'{ipAddress}' identified 
         by '{passwd}' with 
         MAX_QUERIES_PER_HOUR {mqph} 
         MAX_UPDATES_PER_HOUR {muph} 
@@ -247,7 +247,7 @@ class DBAOpers(object):
                                            max_connections_per_hour=None, 
                                            max_user_connections=None):
         resource_limit_sql = """grant
-                                usage on {database}.* to {username}@'{ip_address}' with 
+                                usage on `{database}`.* to `{username}`@'{ip_address}' with 
                                 MAX_QUERIES_PER_HOUR {mqph} 
                                 MAX_UPDATES_PER_HOUR {muph} 
                                 MAX_CONNECTIONS_PER_HOUR {mcph} 
@@ -272,11 +272,11 @@ class DBAOpers(object):
         
     def craete_database(self, conn, databaseName):
         cursor = conn.cursor()
-        cursor.execute("create database if not exists " + databaseName)
+        cursor.execute("create database if not exists `%s`" %databaseName)
         
     def drop_database(self, conn, databaseName):
         cursor = conn.cursor()
-        cursor.execute("drop database if exists " + databaseName)
+        cursor.execute("drop database if exists `%s`" %databaseName)
         
     def master_name(self):
         return "sa_%s"%(self.name)

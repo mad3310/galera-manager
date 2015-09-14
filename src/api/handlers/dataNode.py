@@ -15,7 +15,7 @@ from common.node_stat_opers import NodeStatOpers
 # add data node into mcluster
 # eg. curl --user root:root -d "dataNodeIp=192.168.0.20&dataNodeName=letv_mcluster_test_1_node_2" "http://localhost:8888/cluster/node"
 @require_basic_auth
-class AlterDataNodeToMCluster(APIHandler):
+class DataNodeToMCluster(APIHandler):
     
     confOpers = ConfigFileOpers()
 
@@ -33,7 +33,7 @@ class AlterDataNodeToMCluster(APIHandler):
             
         dataNodeProprs = self.confOpers.getValue(options.data_node_property)
         
-        zkOper = self.retrieve_zkOper()
+        zkOper = self.retrieve_watch_zkOper()
         clusterUUID = zkOper.getClusterUUID()
         zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
     
@@ -104,7 +104,7 @@ class AlterDataNodeToMCluster(APIHandler):
         newMyConfText = self.confOpers.retrieveFullText(
             options.mysql_cnf_file_name)
 
-        zkOper = self.retrieve_zkOper()
+        zkOper = self.retrieve_watch_zkOper()
         clusterUUID = zkOper.getClusterUUID()
         zkOper.writeMysqlCnf(clusterUUID, newMyConfText)
         zkOper.remove_data_node_name(ip)

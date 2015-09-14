@@ -444,6 +444,15 @@ class Scheduler_ZkOpers(ZkOpers):
         '''
         ZkOpers.__init__(self)
 
+@singleton
+class Watch_ZkOpers(ZkOpers):
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        ZkOpers.__init__(self)
+        self.watch()
 
 @singleton
 class Requests_ZkOpers(ZkOpers):
@@ -453,7 +462,7 @@ class Requests_ZkOpers(ZkOpers):
         Constructor
         '''
         ZkOpers.__init__(self)
-        self.watch()
+        
 
 
 @singleton

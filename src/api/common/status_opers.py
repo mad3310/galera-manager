@@ -419,6 +419,27 @@ class Check_DB_Cur_Conns(Check_Status_Base):
             return options.alarm_general
         else:
             return options.alarm_serious
+     
+class Check_DB_User_Cur_Conns(Check_Status_Base):
+    
+    def __init__(self):
+        super(Check_DB_User_Cur_Conns, self).__init__()
+    
+    @tornado.gen.engine
+    def check(self, data_node_info_list):
+        url_post = "/inner/db/check/cur_user_conns"
+        monitor_type = "db"
+        monitor_key = "cur_user_conns"
+        super(Check_DB_User_Cur_Conns, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
+        
+    def retrieve_alarm_level(self, total_count, success_count, failed_count):
+
+        if failed_count == 0:
+            return options.alarm_nothing
+        elif failed_count == 1:
+            return options.alarm_general
+        else:
+            return options.alarm_serious
         
 class Check_Node_Active(Check_Status_Base):
     
