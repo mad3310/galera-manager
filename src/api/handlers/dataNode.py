@@ -63,7 +63,7 @@ class DataNodeToMCluster(APIHandler):
         
         data_node_name = requestParam.get('dataNodeName')
 
-        mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
+        #mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
         #self.confOpers.writeFullText(options.mysql_cnf_file_name, mysql_cnf_full_text)
 
         keyValueMap = {}

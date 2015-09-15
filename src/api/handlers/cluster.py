@@ -85,7 +85,7 @@ class InitMCluster(APIHandler):
         
         try:
             zkOper = self.retrieve_zkOper()
-            existCluster = zkOper.existCluster()
+            #existCluster = zkOper.existCluster()
 
             isLock,lock = zkOper.lock_init_node_action()
         
