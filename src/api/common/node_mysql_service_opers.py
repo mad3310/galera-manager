@@ -134,8 +134,8 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
         
             finished_flag = self.__check_start_status(data_node_ip)
         
-        #if finished_flag:    
-        #    self._send_email(data_node_ip, " mysql service start operation finished")
+        if finished_flag:    
+            self._send_email(data_node_ip, " mysql service start operation finished")
             
    
     def __check_start_status(self, data_node_ip):
