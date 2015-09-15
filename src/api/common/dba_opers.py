@@ -58,17 +58,17 @@ class DBAOpers(object):
         conn.select_db(db_name)
         cursor = conn.cursor()
         try:
-            sql = "select * from %s" % (tb_name)
+            sql = "select * from `%s`" % (tb_name)
             cursor.execute(sql)
         except MySQLdb.Error, e:
-            sql = "CREATE TABLE if not exists %s ( `id` int(12) NOT NULL AUTO_INCREMENT ,`time` varchar(32) NOT NULL, `identifier` varchar(64) NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8" % (tb_name)
+            sql = "CREATE TABLE if not exists `%s` ( `id` int(12) NOT NULL AUTO_INCREMENT ,`time` varchar(32) NOT NULL, `identifier` varchar(64) NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8" % (tb_name)
             cursor.execute(sql)
         logging.info('create table ' + tb_name + ' success')
 
     def insert_record_time(self, conn, time_data, identifier, tb_name, db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
-        sql = "INSERT INTO %s (time, identifier ) VALUES('%s','%s')" % (tb_name, time_data, identifier)
+        sql = "INSERT INTO `%s` (time, identifier ) VALUES('%s','%s')" % (tb_name, time_data, identifier)
         try:
             cursor.execute(sql)
         
@@ -82,7 +82,7 @@ class DBAOpers(object):
         conn.select_db(db_name)
         cursor = conn.cursor()
         try:
-            sql = "SELECT count(*) from %s" % (tb_name)
+            sql = "SELECT count(*) from `%s`" % (tb_name)
             cursor.execute(sql)
         except Exception,e:
             logging.exception(e)
@@ -95,7 +95,7 @@ class DBAOpers(object):
         conn.select_db(db_name)
         cursor = conn.cursor()
         try:
-            sql = "truncate %s" % (tb_name)
+            sql = "truncate `%s`" % (tb_name)
             cursor.execute(sql)
         except Exception, e:
             logging.exception(e)
@@ -104,7 +104,7 @@ class DBAOpers(object):
         conn.select_db(db_name)
         cursor = conn.cursor()
         try:
-            sql = "select time from %s where identifier = '%s' order by id desc limit 1" %(tb_name, identifier)
+            sql = "select time from `%s` where identifier = '%s' order by id desc limit 1" %(tb_name, identifier)
             cursor.execute(sql)
 #             id = cursor.fetchall()
 #             
@@ -120,7 +120,7 @@ class DBAOpers(object):
         conn.select_db(db_name)
         cursor = conn.cursor()
         try :
-            sql = "select count(*) from %s" % (tb_name)
+            sql = "select count(*) from `%s`" % (tb_name)
             cursor.execute(sql)
             rows = cursor.fetchall()
             num = rows[0][0]
@@ -315,6 +315,18 @@ class DBAOpers(object):
         rows = cursor.fetchall()
         return rows
     
+    def show_user_max_conn(self, conn, username, host):
+        cursor = conn.cursor()
+        cursor.execute("select max_user_connections from mysql.user where user='{0}' and host='{1}';".format(username, host))
+        rows = cursor.fetchall()
+        return rows[0][0]
+    
+    def show_user_current_conn(self, conn, username, host):
+        cursor = conn.cursor()
+        cursor.execute("select count(*) from information_schema.processlist where user='{0}' and host='{1}';".format(username, host))
+        rows = cursor.fetchall()
+        return rows[0][0]
+
     def check_existed_myisam_table(self, conn):
         cursor = conn.cursor()
         cursor.execute("""select count(1) 
