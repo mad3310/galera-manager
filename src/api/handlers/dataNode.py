@@ -108,6 +108,7 @@ class DataNodeToMCluster(APIHandler):
         clusterUUID = zkOper.getClusterUUID()
         zkOper.writeMysqlCnf(clusterUUID, newMyConfText)
         zkOper.remove_data_node_name(ip)
+        zkOper.remove_started_node(ip)
 
         self.finish({"message": "remove data node from cluster successful!"})
         
