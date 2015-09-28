@@ -135,7 +135,7 @@ class ZkOpers(object):
     @timeout_handler
     def existCluster(self):
         self.DEFAULT_RETRY_POLICY(self.zk.ensure_path, self.rootPath)
-        path = self.rootPath + self.getclustername()
+        path = self.rootPath + '/' + self.getclustername()
         if self.zk.exists(path):
             return True
         return False
