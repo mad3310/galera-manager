@@ -179,20 +179,35 @@ class DBAOpers(object):
                                 max_updates_per_hour=0, 
                                 max_connections_per_hour=0, 
                                 max_user_connections=200):
-        sql = """grant select, insert, update, delete, index, create temporary tables, execute, show view 
-        on `{database}`.* to `{username}`@'{ipAddress}' identified 
-        by '{passwd}' with 
-        MAX_QUERIES_PER_HOUR {mqph} 
-        MAX_UPDATES_PER_HOUR {muph} 
-        MAX_CONNECTIONS_PER_HOUR {mcph} 
-        MAX_USER_CONNECTIONS {muc}""".format(database=database,
-                                             username=username,
-                                             ipAddress=ipAddress,
-                                             passwd=passwd,
-                                             mqph=max_queries_per_hour,
-                                             muph=max_updates_per_hour,
-                                             mcph=max_connections_per_hour,
-                                             muc=max_user_connections)
+        if passwd:
+            sql = """grant select, insert, update, delete, index, create temporary tables, execute, show view 
+            on `{database}`.* to `{username}`@'{ipAddress}' identified 
+            by '{passwd}' with 
+            MAX_QUERIES_PER_HOUR {mqph} 
+            MAX_UPDATES_PER_HOUR {muph} 
+            MAX_CONNECTIONS_PER_HOUR {mcph} 
+            MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                                 username=username,
+                                                 ipAddress=ipAddress,
+                                                 passwd=passwd,
+                                                 mqph=max_queries_per_hour,
+                                                 muph=max_updates_per_hour,
+                                                 mcph=max_connections_per_hour,
+                                                 muc=max_user_connections)
+        else:
+            sql = """grant select, insert, update, delete, index, create temporary tables, execute, show view 
+            on `{database}`.* to `{username}`@'{ipAddress}' with 
+            MAX_QUERIES_PER_HOUR {mqph} 
+            MAX_UPDATES_PER_HOUR {muph} 
+            MAX_CONNECTIONS_PER_HOUR {mcph}
+            MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                                 username=username,
+                                                 ipAddress=ipAddress,
+                                                 passwd=passwd,
+                                                 mqph=max_queries_per_hour,
+                                                 muph=max_updates_per_hour,
+                                                 mcph=max_connections_per_hour,
+                                                 muc=max_user_connections)
         logging.info('grant_wr_privileges:' + sql)
         cursor = conn.cursor()
         cursor.execute(sql)
@@ -203,20 +218,35 @@ class DBAOpers(object):
                                   max_user_connections=200):
         max_updates_per_hour = 1
         cursor = conn.cursor()
-        cursor.execute("""grant
-        select, execute, show view on `{database}`.* to `{username}`@'{ipAddress}' identified 
-        by '{passwd}' with 
-        MAX_QUERIES_PER_HOUR {mqph} 
-        MAX_UPDATES_PER_HOUR {muph} 
-        MAX_CONNECTIONS_PER_HOUR {mcph} 
-        MAX_USER_CONNECTIONS {muc}""".format(database=database,
-                                             username=username,
-                                             passwd=passwd,
-                                             ipAddress=ipAddress,
-                                             mqph=max_queries_per_hour,
-                                             muph=max_updates_per_hour,
-                                             mcph=max_connections_per_hour,
-                                             muc=max_user_connections))
+        if passwd:
+            cursor.execute("""grant 
+            select, execute, show view on `{database}`.* to `{username}`@'{ipAddress}' identified 
+            by '{passwd}' with 
+            MAX_QUERIES_PER_HOUR {mqph} 
+            MAX_UPDATES_PER_HOUR {muph} 
+            MAX_CONNECTIONS_PER_HOUR {mcph} 
+            MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                                 username=username,
+                                                 passwd=passwd,
+                                                 ipAddress=ipAddress,
+                                                 mqph=max_queries_per_hour,
+                                                 muph=max_updates_per_hour,
+                                                 mcph=max_connections_per_hour,
+                                                 muc=max_user_connections))
+        else:
+            cursor.execute("""grant 
+            select, execute, show view on `{database}`.* to `{username}`@'{ipAddress}' with 
+            MAX_QUERIES_PER_HOUR {mqph} 
+            MAX_UPDATES_PER_HOUR {muph} 
+            MAX_CONNECTIONS_PER_HOUR {mcph} 
+            MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                                 username=username,
+                                                 passwd=passwd,
+                                                 ipAddress=ipAddress,
+                                                 mqph=max_queries_per_hour,
+                                                 muph=max_updates_per_hour,
+                                                 mcph=max_connections_per_hour,
+                                                 muc=max_user_connections))
         
     def grant_manager_privileges(self, conn, username, passwd, database, ipAddress='%',
                                  max_queries_per_hour=0, 
@@ -224,22 +254,35 @@ class DBAOpers(object):
                                  max_connections_per_hour=0, 
                                  max_user_connections=200):
         cursor = conn.cursor()
-        cursor.execute("""grant
-        all privileges on `{database}`.* to `{username}`@'{ipAddress}' identified 
-        by '{passwd}' with 
-        MAX_QUERIES_PER_HOUR {mqph} 
-        MAX_UPDATES_PER_HOUR {muph} 
-        MAX_CONNECTIONS_PER_HOUR {mcph} 
-        MAX_USER_CONNECTIONS {muc}""".format(database=database,
-                                             username=username,
-                                             passwd=passwd,
-                                             ipAddress=ipAddress,
-                                             mqph=max_queries_per_hour,
-                                             muph=max_updates_per_hour,
-                                             mcph=max_connections_per_hour,
-                                             muc=max_user_connections
+        if passwd:
+            cursor.execute("""grant all privileges on `{database}`.* to `{username}`@'{ipAddress}' 
+            identified by '{passwd}' with 
+            MAX_QUERIES_PER_HOUR {mqph} 
+            MAX_UPDATES_PER_HOUR {muph} 
+            MAX_CONNECTIONS_PER_HOUR {mcph} 
+            MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                                 username=username,
+                                                 passwd=passwd,
+                                                 ipAddress=ipAddress,
+                                                 mqph=max_queries_per_hour,
+                                                 muph=max_updates_per_hour,
+                                                 mcph=max_connections_per_hour,
+                                                 muc=max_user_connections
                                              ))
-        
+        else:
+            cursor.execute("""grant all privileges on `{database}`.* to `{username}`@'{ipAddress}' 
+            with MAX_QUERIES_PER_HOUR {mqph} 
+            MAX_UPDATES_PER_HOUR {muph} 
+            MAX_CONNECTIONS_PER_HOUR {mcph} 
+            MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                                 username=username,
+                                                 passwd=passwd,
+                                                 ipAddress=ipAddress,
+                                                 mqph=max_queries_per_hour,
+                                                 muph=max_updates_per_hour,
+                                                 mcph=max_connections_per_hour,
+                                                 muc=max_user_connections
+                                             ))
         
     def grant_resource_limit(self, conn, username, database, ip_address, 
                                            max_queries_per_hour=None, 
@@ -350,11 +393,10 @@ class DBAOpers(object):
 
     def check_existed_stored_procedure(self, conn):
         cursor = conn.cursor()
-        cursor.execute("show procedure status")
+        cursor.execute("select count(1) from mysql.proc")
         rows = cursor.fetchall()
         logging.info(str(rows))
-        
-        c = len(rows)
+        c = rows[0][0]
         return c
     
     def check_existed_nopk(self, conn):
