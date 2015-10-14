@@ -12,6 +12,8 @@ from common.configFileOpers import ConfigFileOpers
 from common.abstract_stat_service import Abstract_Stat_Service
 from common.helper import retrieve_kv_from_db_rows
 from common.utils.exceptions import HTTPAPIError
+from common.utils.exceptions import UserVisiableException
+from common.invokeCommand import InvokeCommand
 
 
 class DBStatOpers(Abstract_Stat_Service):
@@ -144,7 +146,29 @@ class DBStatOpers(Abstract_Stat_Service):
         status_dict = self._stat_wsrep_status()
         value = status_dict.get('wsrep_local_send_queue_avg')
         return {'wsrep_local_send_queue_avg': value}
+    
+    def stat_binlog_eng_log_pos(self, params):
+        if not params:
+            raise UserVisiableException('params are not given')
+        result = {}
         
+        conn=self.dba_opers.get_mysql_connection()
+        if conn==None:
+            raise UserVisiableException("Can\'t connect to mysql server")
+
+        cursor = conn.cursor()
+        cursor.execute('show binary logs')
+        rows_1 = cursor.fetchall()
+        invokecommand = InvokeCommand()
+        ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep %s'''%(rows_1[-1][-2], params['xid']))
+        if ret_str == '':
+            ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep %s'''%(rows_1[-2][-2], params['xid']))
+        
+        result.setdefault('Master_Log_File', rows_1[-1][-2])
+        result.setdefault('End_Log_Pos', ret_str[0].strip('\n').split('\t')[-2]) 
+        conn.close()  
+        return result
+
     def _stat_rows_oper(self ):
         processor_existed = self._check_mysql_processor_exist()
         
@@ -157,8 +181,7 @@ class DBStatOpers(Abstract_Stat_Service):
         key_list = ['num_updates','num_reads','num_deletes','num_inserts']
         oper_total_dict = self._split_key_value(key_list, target_dict)
         key_list = ['num_reads_sec','num_updates_sec','num_deletes_sec','num_inserts_sec']
-        oper_per_second_dict = self._split_key_value(key_list, target_dict)
-        
+        oper_per_second_dict = self._split_key_value(key_list, target_dict)        
         result.setdefault("oper_total", oper_total_dict)
         result.setdefault("oper_per_second", oper_per_second_dict)
         

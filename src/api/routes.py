@@ -49,6 +49,7 @@ handlers = [
             (r"/db/all/stat/wsrepstatus/flow_control_paused", StatWsrepStatusFlowControlPaused),
             (r"/db/all/stat/wsrepstatus/slowest_node_param", StatWsrepStatusSlowestNodeParam),
             (r"/db/all/stat/wsrepstatus/slowest_network_param", StatWsrepStatusSlowestNetworkParam),
+            (r"/db/all/stat/binlog/end_log_pos", StatBinlogEndLogPos),     
             (r"/dbUser", DBUser),
             (r"/dbUser/([a-zA-Z\-\_0-9]+)/([a-zA-Z\-\_0-9]+)/([\.0-9\%]+|\%)", DBUser),
             (r"/mcluster/monitor", Mcluster_Monitor_Sync),

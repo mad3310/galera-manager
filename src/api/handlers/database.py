@@ -451,7 +451,15 @@ class StatWsrepStatusSlowestNetworkParam(APIHandler):
         return_dict = self.stat_opers.stat_wsrep_status_slowest_network_param()
         self.finish(return_dict)
         
-
+# retrieve the binlog logendlogpos of mcluster
+# eg. curl "http://localhost:8888/db/all/stat/binlog/end_log_pos?xid=16754"
+class StatBinlogEndLogPos(APIHandler):
+    stat_opers = DBStatOpers()
+    def post(self):
+        params = self.get_all_arguments()
+        return_result = self.stat_opers.stat_binlog_eng_log_pos(params)  
+        self.finish(return_result)
+        
 # retrieve the detailed status of mcluster
 # eg. curl "http://localhost:8888/node/stat/info?stat_connection_count_command=mysql"
 class StatMysqlInfo(APIHandler):
