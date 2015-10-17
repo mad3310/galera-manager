@@ -61,7 +61,7 @@ class ZkOpers(object):
     def getclustername(self):
         try:
             f = open('/etc/hostname','r')
-            res_str = f.readline().strip('d-mcl-')
+            res_str = f.readline().replace('d-mcl-','')
             return res_str[0:res_str.find('-n-')]
         except Exception, e:
             raise 'hostname is wrong! please check it %s' %f.readline()
