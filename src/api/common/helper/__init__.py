@@ -86,7 +86,7 @@ def getDictFromText(sourceText, keyList):
 def check_leader():
     invokeCommand = InvokeCommand()
     zk_address, zk_port = local_get_zk_address()
-    cmd = "echo stat |nc %s %s| grep Mode" %(zk_address, zk_port)
+    cmd = "echo srvr |nc %s %s| grep Mode" %(zk_address, zk_port)
     ret_str, _ = invokeCommand._runSysCmd(cmd)
     invokeCommand = None
     if ret_str.find('leader') == -1:
