@@ -645,6 +645,7 @@ class DBAOpers(object):
     
     def retrieve_stat_table_space_analyze_command(self, conn, key, value, _dict):
         cursor = conn.cursor()
+        cursor.execute("set names 'utf8'")
         cursor.execute('select table_name, table_comment, (data_length+index_length)/1024 as total_kb from information_schema.tables where table_schema="{0}"'.format(value))
         rows=cursor.fetchall()
         row_dict = {}
