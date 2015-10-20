@@ -277,7 +277,6 @@ class Check_DB_Anti_Item(Check_Status_Base):
         anti_item_count = 0
         failed_count = 0
         _path_value = {}
-        msg = ""
         
         _path_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
         
@@ -285,14 +284,15 @@ class Check_DB_Anti_Item(Check_Status_Base):
             failed_count = int(re.findall(r'failed count=(\d)', _path_value['message'])[0])
             
         if conn == None:
-            #failed_count += 1
-            #if failed_count > 4:
-            anti_item_count = 500
-            error_record.setdefault("msg", "no way to connect to db")
+            failed_count += 1
+            if failed_count > 4:
+                anti_item_count = 500
+                error_record.setdefault("msg", "no way to connect to db")
         else:
             try:
-                #failed_count = 0
-                #anti_item_count = 0              
+                failed_count = 0
+                anti_item_count = 0
+                msg = ""
                 anti_item_myisam_count = self.dba_opers.check_existed_myisam_table(conn)
                 anti_item_procedure_count = self.dba_opers.check_existed_stored_procedure(conn)
                 anti_item_trigger_count = self.dba_opers.check_triggers(conn)
@@ -324,12 +324,11 @@ class Check_DB_Anti_Item(Check_Status_Base):
             if anti_item_count > 0:
                 error_record.setdefault("msg", "mcluster existed on %s please check which db right now." % (msg) )
                 logging.info(error_record)
-                failed_count += 1
     
        
         alarm_level = self.retrieve_alarm_level(anti_item_count, 0, 0)
         logging.info("existed anti_item alarm_level :%s" %(alarm_level))
-        super(Check_DB_Anti_Item, self).write_status(len(data_node_info_list), len(data_node_info_list)-failed_count, \
+        super(Check_DB_Anti_Item, self).write_status(anti_item_count, 0, \
                                                     failed_count, \
                                                     alarm_level, error_record, monitor_type, \
                                                     monitor_key)

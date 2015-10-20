@@ -20,7 +20,8 @@ import socket
 import datetime
 import time
 import logging
-
+from tornado.web import asynchronous
+from tornado.gen import engine
 
 # create database in mcluster
 # eg. curl --user root:root -d "dbName=managerTest&userName=zbz" "http://localhost:8888/db"
@@ -455,9 +456,11 @@ class StatWsrepStatusSlowestNetworkParam(APIHandler):
 # eg. curl "http://localhost:8888/db/all/stat/binlog/end_log_pos?xid=16754"
 class StatBinlogEndLogPos(APIHandler):
     stat_opers = DBStatOpers()
+    @asynchronous
+    @engine
     def post(self):
         params = self.get_all_arguments()
-        return_result = self.stat_opers.stat_binlog_eng_log_pos(params)  
+        return_result = yield self.stat_opers.stat_binlog_eng_log_pos(params)  
         self.finish(return_result)
         
 # retrieve the detailed status of mcluster

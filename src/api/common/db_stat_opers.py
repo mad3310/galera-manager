@@ -15,6 +15,10 @@ from common.utils.exceptions import HTTPAPIError
 from common.utils.exceptions import UserVisiableException
 from common.invokeCommand import InvokeCommand
 
+from concurrent.futures import ThreadPoolExecutor
+from common.utils.asyc_utils import run_on_executor, run_callback
+executor = ThreadPoolExecutor(2)
+
 
 class DBStatOpers(Abstract_Stat_Service):
     
@@ -147,6 +151,8 @@ class DBStatOpers(Abstract_Stat_Service):
         value = status_dict.get('wsrep_local_send_queue_avg')
         return {'wsrep_local_send_queue_avg': value}
     
+    @run_on_executor(executor=executor)
+    @run_callback
     def stat_binlog_eng_log_pos(self, params):
         if not params:
             raise UserVisiableException('params are not given')
@@ -155,18 +161,27 @@ class DBStatOpers(Abstract_Stat_Service):
         conn=self.dba_opers.get_mysql_connection()
         if conn==None:
             raise UserVisiableException("Can\'t connect to mysql server")
+        try:
+            cursor = conn.cursor()
+            cursor.execute('show binary logs')
+            rows_bin_logs = cursor.fetchall()
+            current_bin_logs = rows_bin_logs[-1][-2]
+            invokecommand = InvokeCommand()
+            ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep %s'''%(current_bin_logs, params['xid']))
+            if ret_str == '':
+                for i in range(len(rows_bin_logs)-1):
+                    current_bin_logs = rows_bin_logs[-i-2][-2]
+                    ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep %s'''%(current_bin_logs, params['xid']))
+                    if ret_str:
+                        break
+            assert ret_str
+            end_log_pos = ret_str[0].strip('\n').split('\t')[-2]
+            result.setdefault('Master_Log_File', current_bin_logs)
+            result.setdefault('End_Log_Pos', end_log_pos)
+             
+        finally:
+            conn.close()
 
-        cursor = conn.cursor()
-        cursor.execute('show binary logs')
-        rows_1 = cursor.fetchall()
-        invokecommand = InvokeCommand()
-        ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep %s'''%(rows_1[-1][-2], params['xid']))
-        if ret_str == '':
-            ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep %s'''%(rows_1[-2][-2], params['xid']))
-        
-        result.setdefault('Master_Log_File', rows_1[-1][-2])
-        result.setdefault('End_Log_Pos', ret_str[0].strip('\n').split('\t')[-2]) 
-        conn.close()  
         return result
 
     def _stat_rows_oper(self ):

@@ -179,21 +179,31 @@ class DBAOpers(object):
                                 max_updates_per_hour=0, 
                                 max_connections_per_hour=0, 
                                 max_user_connections=200):
-        if passwd:
-            sql = """grant select, insert, update, delete, index, create temporary tables, execute, show view 
-            on `{database}`.* to `{username}`@'{ipAddress}' identified 
-            by '{passwd}' with 
+        cursor = conn.cursor()
+        cursor.execute('select password from mysql.user where user="{user}"'.format(user=username))
+        rows = cursor.fetchall()
+        logging.info(rows)
+        if rows:
+            cursor.execute("""GRANT USAGE ON *.* TO `{username}`@'{ipAddress}' 
+            identified by password '{passwd}' with 
             MAX_QUERIES_PER_HOUR {mqph} 
             MAX_UPDATES_PER_HOUR {muph} 
             MAX_CONNECTIONS_PER_HOUR {mcph} 
             MAX_USER_CONNECTIONS {muc}""".format(database=database,
                                                  username=username,
+                                                 passwd=rows[0][0],
                                                  ipAddress=ipAddress,
-                                                 passwd=passwd,
                                                  mqph=max_queries_per_hour,
                                                  muph=max_updates_per_hour,
                                                  mcph=max_connections_per_hour,
-                                                 muc=max_user_connections)
+                                                 muc=max_user_connections
+                                             ))
+            cursor.execute("""GRANT SELECT, INSERT, UPDATE, DELETE, INDEX, 
+            CREATE TEMPORARY TABLES, EXECUTE, SHOW VIEW ON `{database}`.* 
+            TO `{username}`@'{ipAddress}'""".format(database=database,
+                                                    username=username,
+                                                    ipAddress=ipAddress,
+                                             ))
         else:
             sql = """grant select, insert, update, delete, index, create temporary tables, execute, show view 
             on `{database}`.* to `{username}`@'{ipAddress}' with 
@@ -208,9 +218,8 @@ class DBAOpers(object):
                                                  muph=max_updates_per_hour,
                                                  mcph=max_connections_per_hour,
                                                  muc=max_user_connections)
-        logging.info('grant_wr_privileges:' + sql)
-        cursor = conn.cursor()
-        cursor.execute(sql)
+            logging.info('grant_wr_privileges:' + sql)
+            cursor.execute(sql)
         
     def grant_readonly_privileges(self, conn, username, passwd, database, ipAddress='%',
                                   max_queries_per_hour=0,
@@ -218,21 +227,29 @@ class DBAOpers(object):
                                   max_user_connections=200):
         max_updates_per_hour = 1
         cursor = conn.cursor()
-        if passwd:
-            cursor.execute("""grant 
-            select, execute, show view on `{database}`.* to `{username}`@'{ipAddress}' identified 
-            by '{passwd}' with 
+        cursor.execute('select password from mysql.user where user="{user}"'.format(user=username))
+        rows = cursor.fetchall()
+        logging.info(rows)
+        if rows:
+            cursor.execute("""GRANT USAGE ON *.* TO `{username}`@'{ipAddress}' 
+            identified by password '{passwd}' with 
             MAX_QUERIES_PER_HOUR {mqph} 
             MAX_UPDATES_PER_HOUR {muph} 
             MAX_CONNECTIONS_PER_HOUR {mcph} 
             MAX_USER_CONNECTIONS {muc}""".format(database=database,
                                                  username=username,
-                                                 passwd=passwd,
+                                                 passwd=rows[0][0],
                                                  ipAddress=ipAddress,
                                                  mqph=max_queries_per_hour,
                                                  muph=max_updates_per_hour,
                                                  mcph=max_connections_per_hour,
-                                                 muc=max_user_connections))
+                                                 muc=max_user_connections
+                                             ))
+            cursor.execute("""GRANT select, execute, show view ON `{database}`.* 
+            TO `{username}`@'{ipAddress}'""".format(database=database,
+                                                    username=username,
+                                                    ipAddress=ipAddress,
+                                             ))
         else:
             cursor.execute("""grant 
             select, execute, show view on `{database}`.* to `{username}`@'{ipAddress}' with 
@@ -254,24 +271,42 @@ class DBAOpers(object):
                                  max_connections_per_hour=0, 
                                  max_user_connections=200):
         cursor = conn.cursor()
-        if passwd:
-            cursor.execute("""grant all privileges on `{database}`.* to `{username}`@'{ipAddress}' 
-            identified by '{passwd}' with 
+        cursor.execute('select password from mysql.user where user="{user}"'.format(user=username))
+        rows = cursor.fetchall()
+        logging.info(rows)
+        if rows:
+            cursor.execute("""GRANT USAGE ON *.* TO `{username}`@'{ipAddress}' 
+            identified by password '{passwd}' with 
             MAX_QUERIES_PER_HOUR {mqph} 
             MAX_UPDATES_PER_HOUR {muph} 
             MAX_CONNECTIONS_PER_HOUR {mcph} 
             MAX_USER_CONNECTIONS {muc}""".format(database=database,
                                                  username=username,
-                                                 passwd=passwd,
+                                                 passwd=rows[0][0],
                                                  ipAddress=ipAddress,
                                                  mqph=max_queries_per_hour,
                                                  muph=max_updates_per_hour,
                                                  mcph=max_connections_per_hour,
                                                  muc=max_user_connections
                                              ))
+            cursor.execute("""GRANT all privileges ON `{database}`.* 
+            TO `{username}`@'{ipAddress}' with 
+            MAX_QUERIES_PER_HOUR {mqph} 
+            MAX_UPDATES_PER_HOUR {muph} 
+            MAX_CONNECTIONS_PER_HOUR {mcph} 
+            MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                                    username=username,
+                                                    ipAddress=ipAddress,
+                                                    mqph=max_queries_per_hour,
+                                                    muph=max_updates_per_hour,
+                                                    mcph=max_connections_per_hour,
+                                                    muc=max_user_connections
+                                             ))
         else:
-            cursor.execute("""grant all privileges on `{database}`.* to `{username}`@'{ipAddress}' 
-            with MAX_QUERIES_PER_HOUR {mqph} 
+            cursor.execute("""grant 
+            all privileges on {database}.* to {username}@'{ipAddress}' identified 
+            by '{passwd}' with 
+            MAX_QUERIES_PER_HOUR {mqph} 
             MAX_UPDATES_PER_HOUR {muph} 
             MAX_CONNECTIONS_PER_HOUR {mcph} 
             MAX_USER_CONNECTIONS {muc}""".format(database=database,
@@ -645,7 +680,6 @@ class DBAOpers(object):
     
     def retrieve_stat_table_space_analyze_command(self, conn, key, value, _dict):
         cursor = conn.cursor()
-        cursor.execute("set names 'utf8'")
         cursor.execute('select table_name, table_comment, (data_length+index_length)/1024 as total_kb from information_schema.tables where table_schema="{0}"'.format(value))
         rows=cursor.fetchall()
         row_dict = {}

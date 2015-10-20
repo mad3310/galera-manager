@@ -10,7 +10,7 @@ from common.utils import local_get_zk_address
 from common.configFileOpers import ConfigFileOpers
 
 confOpers = ConfigFileOpers()
-
+leader_status=None
     
 def retrieve_kv_from_db_rows(rows, key_list=None):
     key_value = {}
@@ -86,12 +86,17 @@ def getDictFromText(sourceText, keyList):
 def check_leader():
     invokeCommand = InvokeCommand()
     zk_address, zk_port = local_get_zk_address()
-    cmd = "echo stat |nc %s %s| grep Mode" %(zk_address, zk_port)
+    cmd = "echo srvr |nc %s %s| grep Mode" %(zk_address, zk_port)
     ret_str, _ = invokeCommand._runSysCmd(cmd)
     invokeCommand = None
     if ret_str.find('leader') == -1:
         return False
     return True
+    #if self.zk.command("srvr").find('leader') == -1:
+        #return False
+    #leader_status = True
+    #return True
+        
 
 def is_monitoring(host_ip=None, zkOper=None):
     try:

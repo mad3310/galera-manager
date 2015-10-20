@@ -118,7 +118,7 @@ class DBUser(APIHandler):
                 
             else:
                 #use try catch to close the conn
-                conn.close()
+                #conn.close()
                 
                 raise HTTPAPIError(status_code=417, error_detail="when create db's user, the role type is un-valid, the error type is " + role,\
                                     notification = "direct", \
