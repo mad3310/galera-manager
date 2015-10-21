@@ -83,19 +83,10 @@ def getDictFromText(sourceText, keyList):
             
     return resultValue
 
-def check_leader():
-    invokeCommand = InvokeCommand()
-    zk_address, zk_port = local_get_zk_address()
-    cmd = "echo srvr |nc %s %s| grep Mode" %(zk_address, zk_port)
-    ret_str, _ = invokeCommand._runSysCmd(cmd)
-    invokeCommand = None
-    if ret_str.find('leader') == -1:
+def check_leader(zk):
+    if zk.command("srvr").find('leader') == -1:
         return False
     return True
-    #if self.zk.command("srvr").find('leader') == -1:
-        #return False
-    #leader_status = True
-    #return True
         
 
 def is_monitoring(host_ip=None, zkOper=None):

@@ -68,6 +68,9 @@ class ZkOpers(object):
         finally:
             f.close()
 
+    def command(self, cmd):
+        return self.zk.command(cmd)
+
     def watch(self):
         clusterUUID = self.getClusterUUID()
         myConfPath = self.rootPath + "/" + clusterUUID + "/mycnf"

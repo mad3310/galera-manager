@@ -35,12 +35,11 @@ class Check_Status_Base(object):
     
     @tornado.gen.engine
     def check_status(self, data_node_info_list, url_post, monitor_type, monitor_key):
-        leader_flag = check_leader()
-        if leader_flag == False:
-            return
-        
         zk_data_node_count = len(data_node_info_list)
         zkOper = Scheduler_ZkOpers()
+        leader_flag = check_leader(zkOper)
+        if leader_flag == False:
+            return
         pre_stat = zkOper.retrieveClusterStatus()
         ''' The following logic expression means 
             1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.
