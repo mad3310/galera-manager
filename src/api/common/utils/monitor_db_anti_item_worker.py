@@ -15,13 +15,7 @@ class Monitor_Db_Anti_Item(threading.Thread):
     def __init__(self):
         super(Monitor_Db_Anti_Item,self).__init__()
         
-    def run(self):
-        
-        leader_flag = check_leader()
-        if leader_flag == False:
-            logging.info("This node is not the leader of zookeeper, give up this chance")
-            return
-        
+    def run(self):    
         '''
             if no logic below, singleton Scheduler_ZkOpers may have no self.zk object.
         '''
@@ -31,6 +25,11 @@ class Monitor_Db_Anti_Item(threading.Thread):
             return
         
         zkOper = Scheduler_ZkOpers()
+        leader_flag = check_leader(zkOper)
+        if leader_flag == False:
+            logging.info("This node is not the leader of zookeeper, give up this chance")
+            return
+        
         if not is_monitoring(get_localhost_ip(), zkOper):
             return
         logging.info('do db anti item monitor~' )

@@ -12,6 +12,12 @@ from common.configFileOpers import ConfigFileOpers
 from common.abstract_stat_service import Abstract_Stat_Service
 from common.helper import retrieve_kv_from_db_rows
 from common.utils.exceptions import HTTPAPIError
+from common.utils.exceptions import UserVisiableException
+from common.invokeCommand import InvokeCommand
+
+from concurrent.futures import ThreadPoolExecutor
+from common.utils.asyc_utils import run_on_executor, run_callback
+executor = ThreadPoolExecutor(2)
 
 
 class DBStatOpers(Abstract_Stat_Service):
@@ -144,7 +150,37 @@ class DBStatOpers(Abstract_Stat_Service):
         status_dict = self._stat_wsrep_status()
         value = status_dict.get('wsrep_local_send_queue_avg')
         return {'wsrep_local_send_queue_avg': value}
+    
+    @run_on_executor(executor=executor)
+    @run_callback
+    def stat_binlog_eng_log_pos(self, params):
+        if not params:
+            raise UserVisiableException('params are not given')
+     
+        conn=self.dba_opers.get_mysql_connection()
+        if None==conn:
+            raise UserVisiableException("Can\'t connect to mysql server")
         
+        try:
+            cursor = conn.cursor()
+            cursor.execute('show binary logs')
+            rows_bin_logs = cursor.fetchall()
+            invokecommand = InvokeCommand()
+            for i in range(len(rows_bin_logs)):
+                current_bin_logs = rows_bin_logs[-i-1][-2]
+                ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep %s'''%(current_bin_logs, params['xid']))
+                if ret_str:
+                    break
+            assert ret_str
+            end_log_pos = ret_str[0].strip('\n').split('\t')[-2]
+        finally:
+            conn.close()
+            
+        result = {}
+        result.setdefault('Master_Log_File', current_bin_logs)
+        result.setdefault('End_Log_Pos', end_log_pos)
+        return result
+
     def _stat_rows_oper(self ):
         processor_existed = self._check_mysql_processor_exist()
         
@@ -157,8 +193,7 @@ class DBStatOpers(Abstract_Stat_Service):
         key_list = ['num_updates','num_reads','num_deletes','num_inserts']
         oper_total_dict = self._split_key_value(key_list, target_dict)
         key_list = ['num_reads_sec','num_updates_sec','num_deletes_sec','num_inserts_sec']
-        oper_per_second_dict = self._split_key_value(key_list, target_dict)
-        
+        oper_per_second_dict = self._split_key_value(key_list, target_dict)        
         result.setdefault("oper_total", oper_total_dict)
         result.setdefault("oper_per_second", oper_per_second_dict)
         
