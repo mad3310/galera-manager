@@ -41,7 +41,7 @@ class Replication(Connsync):
         return True
 
     def __get_another_master_binlogpos(self):
-        master_ip = self.select_other_master()
+        master_ip = self.__select_other_master()
         print master_ip
         self.current_master = master_ip
         params = {"xid":self.data['xid']}
@@ -92,7 +92,7 @@ class Replication(Connsync):
             rows = self.exc_mysql_sql(conn,'show slave status')
             print self.data['Relay_Log_Pos']
 
-    def select_other_master(self):
+    def __select_other_master(self):
         return [ip for ip in MASTER_HOST if self.current_master!=ip][0]
 
     #return current master
@@ -118,16 +118,17 @@ def main():
     rep = Replication(status=True)
     while rep.status:
         print "---------"
-        conn = rep.get_mysql_connection(host ='127.0.0.1', user=MASTER_ROOT_USER, passwd=MASTER_ROOT_USER_PASSWORD)
-        if conn is None:
-            print "connect local mysql is wrong"
+        try:
+            conn = rep.get_mysql_connection(host ='127.0.0.1', user=MASTER_ROOT_USER, passwd=MASTER_ROOT_USER_PASSWORD)
+            if conn is None:
+                print "connect local mysql is wrong"
 
-        if rep.check_slave_status(conn) is False:
-            rep._send_email(rep.current_master,'mysql master-slave connect is wrong; pelase check it!')
-            rep.epoch(conn)
-
+            if rep.check_slave_status(conn) is False:
+                rep._send_email(rep.current_master,'mysql master-slave connect is wrong; pelase check it!')
+                rep.epoch(conn)
+        finally:
+            conn.close()
         print "---------"
-        conn.close()
         time.sleep(3)
 
 if __name__=='__main__':
