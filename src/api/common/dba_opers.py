@@ -174,7 +174,7 @@ class DBAOpers(object):
                            .format(username=username,passwd=passwd,ip_address=ip_address))
     
     #use 'grant usage on ...' means creating user do not grant any privilege 
-    def exec_sql(self, cursor, username, passwd, database, ipAddress, 
+    def exec_base_grant_sql(self, cursor, username, passwd, database, ipAddress, 
                                 max_queries_per_hour=0, 
                                 max_updates_per_hour=0, 
                                 max_connections_per_hour=0, 
@@ -204,15 +204,16 @@ class DBAOpers(object):
         cursor = conn.cursor()
         cursor.execute('select password from mysql.user where user="{user}"'.format(user=username))
         rows = cursor.fetchall()
-        logging.info(rows)
         if rows:
-            self.exec_sql(cursor, username, rows[0][0], database, ipAddress, max_queries_per_hour, max_updates_per_hour, max_connections_per_hour, max_user_connections)
-            cursor.execute("""GRANT SELECT, INSERT, UPDATE, DELETE, INDEX, 
+            password = rows[0][0]
+            self.exec_base_grant_sql(cursor, username, password, database, ipAddress, max_queries_per_hour, max_updates_per_hour, max_connections_per_hour, max_user_connections)
+            sql = """GRANT SELECT, INSERT, UPDATE, DELETE, INDEX, 
             CREATE TEMPORARY TABLES, EXECUTE, SHOW VIEW ON `{database}`.* 
             TO `{username}`@'{ipAddress}'""".format(database=database,
                                                     username=username,
                                                     ipAddress=ipAddress,
-                                             ))
+                                             )
+
         else:
             sql = """grant select, insert, update, delete, index, create temporary tables, execute, show view 
             on `{database}`.* to `{username}`@'{ipAddress}' with 
@@ -227,8 +228,8 @@ class DBAOpers(object):
                                                  muph=max_updates_per_hour,
                                                  mcph=max_connections_per_hour,
                                                  muc=max_user_connections)
-            logging.info('grant_wr_privileges:' + sql)
-            cursor.execute(sql)
+
+        cursor.execute(sql)
         
     def grant_readonly_privileges(self, conn, username, passwd, database, ipAddress='%',
                                   max_queries_per_hour=0,
@@ -238,14 +239,14 @@ class DBAOpers(object):
         cursor = conn.cursor()
         cursor.execute('select password from mysql.user where user="{user}"'.format(user=username))
         rows = cursor.fetchall()
-        logging.info(rows)
         if rows:
-            self.exec_sql(cursor, username, rows[0][0], database, ipAddress, max_queries_per_hour, max_updates_per_hour, max_connections_per_hour, max_user_connections)
-            cursor.execute("""GRANT select, execute, show view ON `{database}`.* 
+            password = rows[0][0]
+            self.exec_base_grant_sql(cursor, username, password, database, ipAddress, max_queries_per_hour, max_updates_per_hour, max_connections_per_hour, max_user_connections)
+            sql = """GRANT select, execute, show view ON `{database}`.* 
             TO `{username}`@'{ipAddress}'""".format(database=database,
                                                     username=username,
                                                     ipAddress=ipAddress,
-                                             ))
+                                             )
         else:
             sql = """grant 
             select, execute, show view on `{database}`.* to `{username}`@'{ipAddress}' with 
@@ -261,7 +262,7 @@ class DBAOpers(object):
                                                  mcph=max_connections_per_hour,
                                                  muc=max_user_connections)
             
-            cursor.execute(sql)
+        cursor.execute(sql)
         
     def grant_manager_privileges(self, conn, username, passwd, database, ipAddress='%',
                                  max_queries_per_hour=0, 
@@ -271,10 +272,10 @@ class DBAOpers(object):
         cursor = conn.cursor()
         cursor.execute('select password from mysql.user where user="{user}"'.format(user=username))
         rows = cursor.fetchall()
-        logging.info(rows)
         if rows:
-            self.exec_sql(cursor, username, rows[0][0], database, ipAddress, max_queries_per_hour, max_updates_per_hour, max_connections_per_hour, max_user_connections)
-            cursor.execute("""GRANT all privileges ON `{database}`.* 
+            password = rows[0][0]
+            self.exec_base_grant_sql(cursor, username, password, database, ipAddress, max_queries_per_hour, max_updates_per_hour, max_connections_per_hour, max_user_connections)
+            sql = """GRANT all privileges ON `{database}`.* 
             TO `{username}`@'{ipAddress}' with 
             MAX_QUERIES_PER_HOUR {mqph} 
             MAX_UPDATES_PER_HOUR {muph} 
@@ -286,7 +287,7 @@ class DBAOpers(object):
                                                     muph=max_updates_per_hour,
                                                     mcph=max_connections_per_hour,
                                                     muc=max_user_connections
-                                             ))
+                                             )
         else:
             sql = """grant 
             all privileges on {database}.* to {username}@'{ipAddress}' identified 
@@ -303,7 +304,7 @@ class DBAOpers(object):
                                                  mcph=max_connections_per_hour,
                                                  muc=max_user_connections)
             
-            cursor.execute(sql)
+        cursor.execute(sql)
         
     def grant_resource_limit(self, conn, username, database, ip_address, 
                                            max_queries_per_hour=None, 

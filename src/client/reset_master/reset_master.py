@@ -6,15 +6,18 @@ import json
 from connsync import Connsync
 from mail import send_email
 
+#user config 
 LOCAL_SLAVE_IP ='10.154.238.62'
-
 MASTER_HOST = ('10.154.238.133','10.154.238.134')
-PATH = '/db/all/stat/binlog/end_log_pos'
-
 MASTER_USER = 'rep'
 MASTER_PASSWORD = 'gq123'
+MASTER_ROOT_USER = 'root'
+MASTER_ROOT_USER_PASSWORD = 'Mcluster'
 
+
+# Immutable string
 ADMIN_MAIL = ("xuyanwei <xuyanwei@letv.com>",)
+PATH = '/db/all/stat/binlog/end_log_pos'
 
 class Replication(Connsync):
 
@@ -27,7 +30,7 @@ class Replication(Connsync):
         sql_show_slave = 'show slave status'
         rows_show_slave = self.exc_mysql_sql(conn, sql_show_slave)
         print rows_show_slave[0][10], rows_show_slave[0][11]
-        if rows_show_slave[0][10] !='Yes' or rows_show_slave[0][11]!='Yes':
+        if 'Yes' != rows_show_slave[0][10] or 'Yes' !=rows_show_slave[0][11]:
             self.current_master = rows_show_slave[0][1]
             print self.current_master
             self.data['Relay_Log_Pos'] = rows_show_slave[0][8]
@@ -37,7 +40,7 @@ class Replication(Connsync):
             return False
         return True
 
-    def get_another_master_binlogpos(self):
+    def __get_another_master_binlogpos(self):
         master_ip = self.select_other_master()
         print master_ip
         self.current_master = master_ip
@@ -63,7 +66,7 @@ class Replication(Connsync):
         conn.close()
         return response.status, data
 
-    def reset_mysql_master(self, conn):
+    def __reset_mysql_master(self, conn):
         sqlstr = '''CHANGE MASTER TO MASTER_HOST="{0}",
                         MASTER_PORT=3306,
                         MASTER_USER="{1}",
@@ -89,20 +92,10 @@ class Replication(Connsync):
             rows = self.exc_mysql_sql(conn,'show slave status')
             print self.data['Relay_Log_Pos']
 
-    def http_conn(self):
-        while master_ips:
-            conn = MySQLdb.Connect(master_ip, user='root', passwd='***', port=3306, connect_timeout=2)
-            time.sleep(1)
-            if conn is None:
-                self.count += 1
-                if self.count == 3:
-                    thread.start_new_thread(getxid_data)
-                    self._send_email(master_ip, 'current master ip is not connect')
-
-
     def select_other_master(self):
         return [ip for ip in MASTER_HOST if self.current_master!=ip][0]
 
+    #return current master
     @property
     def master_binlog(self, conn):
         rows = self.get_mysql_data(conn, 'show master status')
@@ -117,15 +110,15 @@ class Replication(Connsync):
             raise e
 
     def epoch(self,conn):
-        self.get_another_master_binlogpos()
-        self.reset_mysql_master(conn)
+        self.__get_another_master_binlogpos()
+        self.__reset_mysql_master(conn)
 
 
 def main():
     rep = Replication(status=True)
     while rep.status:
         print "---------"
-        conn = rep.get_mysql_connection()
+        conn = rep.get_mysql_connection(host ='127.0.0.1', user=MASTER_ROOT_USER, passwd=MASTER_ROOT_USER_PASSWORD)
         if conn is None:
             print "connect local mysql is wrong"
 
