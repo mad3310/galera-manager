@@ -14,10 +14,7 @@ from common.helper import retrieve_kv_from_db_rows
 from common.utils.exceptions import HTTPAPIError
 from common.utils.exceptions import UserVisiableException
 from common.invokeCommand import InvokeCommand
-
-from concurrent.futures import ThreadPoolExecutor
 from common.utils.asyc_utils import run_on_executor, run_callback
-executor = ThreadPoolExecutor(2)
 
 
 class DBStatOpers(Abstract_Stat_Service):
@@ -151,7 +148,7 @@ class DBStatOpers(Abstract_Stat_Service):
         value = status_dict.get('wsrep_local_send_queue_avg')
         return {'wsrep_local_send_queue_avg': value}
     
-    @run_on_executor(executor=executor)
+    @run_on_executor()
     @run_callback
     def stat_binlog_eng_log_pos(self, params):
         if not params:

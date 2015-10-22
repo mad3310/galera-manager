@@ -5,9 +5,12 @@ import functools
 from tornado.gen import Task
 from tornado.ioloop import IOLoop
 from tornado import stack_context
+from concurrent.futures import ThreadPoolExecutor
+
+default_executor = ThreadPoolExecutor(10)
 
 
-def run_on_executor(executor):
+def run_on_executor(executor=default_executor):
     def run_on_executor_decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
