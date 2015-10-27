@@ -10,6 +10,7 @@ from tornado.options import options
 from common.helper import retrieve_kv_from_db_rows
 from common.utils.exceptions import CommonException
 from common.utils.exceptions import UserVisiableException
+from common.utils.asyc_utils import run_on_executor, run_callback
 
 class DBAOpers(object):
     '''
@@ -384,7 +385,9 @@ class DBAOpers(object):
         cursor = conn.cursor()
         cursor.execute("select max_user_connections from mysql.user where user='{0}' and host='{1}';".format(username, host))
         rows = cursor.fetchall()
-        return rows[0][0]
+        if rows:
+            return rows[0][0]
+        return 200
     
     def show_user_current_conn(self, conn, username, host):
         cursor = conn.cursor()
@@ -667,6 +670,7 @@ class DBAOpers(object):
     
     def retrieve_stat_table_space_analyze_command(self, conn, key, value, _dict):
         cursor = conn.cursor()
+        cursor.execute("set names 'utf8'")
         cursor.execute('select table_name, table_comment, (data_length+index_length)/1024 as total_kb from information_schema.tables where table_schema="{0}"'.format(value))
         rows=cursor.fetchall()
         row_dict = {}
@@ -733,6 +737,8 @@ class DBAOpers(object):
         rows=cursor.fetchall()
         _dict.setdefault(key, rows[0][0])
     
+    @run_on_executor() 
+    @run_callback
     def retrieve_node_info_stat(self, params):
         if not params:
             raise UserVisiableException('params are not given')

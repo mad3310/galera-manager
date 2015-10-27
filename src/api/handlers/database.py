@@ -468,9 +468,11 @@ class BinlogPos(APIHandler):
 class StatMysqlInfo(APIHandler):
     
     dba_opers = DBAOpers()
-   
+    
+    @asynchronous
+    @engine
     def post(self):
         params = self.get_all_arguments()
-        result = self.dba_opers.retrieve_node_info_stat(params)
+        result = yield self.dba_opers.retrieve_node_info_stat(params)
         self.finish(result)
 
