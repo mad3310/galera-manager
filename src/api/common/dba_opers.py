@@ -386,7 +386,7 @@ class DBAOpers(object):
         cursor.execute("select max_user_connections from mysql.user where user='{0}' and host='{1}';".format(username, host))
         rows = cursor.fetchall()
         if not rows:
-            raise UserVisiableException('this user&host is not exists')
+            raise UserVisiableException('the %s user and %s host_ip is not exists' %(username, host))
         return rows[0][0]
     
     def show_user_current_conn(self, conn, username, host):
