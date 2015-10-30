@@ -21,7 +21,7 @@ from common.utils.decorators import singleton, timeout_handler
 from common.utils import local_get_zk_address
 from common.configFileOpers import ConfigFileOpers
 from common.helper import getDictFromText
-from common.invokeCommand import InvokeCommand
+from common.utils.asyc_utils import run_on_executor, run_callback
 
 log_obj = debug_log('zkOpers')
 logger = log_obj.get_logger_object()
@@ -343,19 +343,25 @@ class ZkOpers(object):
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/" + monitor_type +"/"+ monitor_key
         self.zk.ensure_path(path)
         self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(monitor_value))#version need to write
-        
+    
+    @run_on_executor()
+    @run_callback  
     def retrieve_monitor_status_list(self, monitor_type):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/" + monitor_type
         monitor_status_type_list = self._return_children_to_list(path)
         return monitor_status_type_list
     
+    @run_on_executor()
+    @run_callback
     def retrieve_monitor_status_value(self, monitor_type, monitor_key):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status/" + monitor_type + "/" + monitor_key
         resultValue = self._retrieveSpecialPathProp(path)
         return resultValue
     
+    @run_on_executor()
+    @run_callback
     def retrieve_monitor_type(self):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/monitor_status"

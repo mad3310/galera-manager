@@ -35,6 +35,7 @@ class Monitor_Backend_Handle_Worker(object):
         logging.info("This node is leader of zookeeper.")
             
         try:
+            isLock, lock = None, None
             isLock, lock = zkOper.lock_async_monitor_action()
             if not isLock:
                 raise CommonException('a thread is running the monitor async, give up this oper on this machine!')
