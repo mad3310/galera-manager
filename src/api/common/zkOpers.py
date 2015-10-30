@@ -100,7 +100,6 @@ class ZkOpers(object):
             
         elif state == KazooState.SUSPENDED:
             logging.info("zk connect suspended, stop this connection and then start new one!")
-            self.re_connect()
         else:
             pass
             
