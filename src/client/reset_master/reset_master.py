@@ -7,55 +7,82 @@ from connsync import Connsync
 from mail import send_email
 import logging
 import logging.config
-#user config 
-LOCAL_SLAVE_IP ='10.154.238.62'
-MASTER_HOST = ('10.154.238.133','10.154.238.134')
+#user config
+
 MASTER_USER = 'rep'
 MASTER_PASSWORD = 'gq123'
-MASTER_ROOT_USER = 'root'
-MASTER_ROOT_USER_PASSWORD = ''
 
+MASTER_ROOT_USER = 'root'
+MASTER_ROOT_USER_PASSWORD = 'Mcluster'
 
 # Immutable string
 ADMIN_MAIL = ("xuyanwei <xuyanwei@letv.com>","zhoubingzheng <zhoubingzheng@letv.com>", "gaoqiang3 <gaoqiang3@letv.com>")
-PATH = '/db/binlog/pos'
+BIN_LOG_PATH = "/db/binlog/pos"
+NODE_STAT_PATH = "/db/binlog/node/stat"
 
 class Replication(Connsync):
+    __slots__ = ('data', 'status', 'current_master', 'started_nodes', 'masters')
 
     def __init__(self, status):
         self.data = {}
         self.status = status
         self.current_master = ''
+        self.started_nodes =[]
+        self.masters = []
 
     def check_slave_status(self, conn):
         sql_show_slave = 'show slave status'
         rows_show_slave = self.exc_mysql_sql(conn, sql_show_slave)
-        logging.info("status: %s" %rows_show_slave[0][11])
+        self.current_master = rows_show_slave[0][1]
         
-        if 'Yes' != rows_show_slave[0][10] or 'Yes' !=rows_show_slave[0][11]:
-            self.current_master = rows_show_slave[0][1]         
+        self.__get_started_nodes()
+        self.__get_master_nodes()
+        
+        logging.info("status: %s" % rows_show_slave[0][11])
+        
+        if 'Yes' != rows_show_slave[0][10] or 'Yes' != rows_show_slave[0][11]:         
             self.data['Relay_Log_Pos'] = rows_show_slave[0][8]
             rows_xid = self.exc_mysql_sql(conn, "SHOW RELAYLOG EVENTS IN '%s'" %rows_show_slave[0][7])
             self.data['xid'] = long(rows_xid[-1][-1].strip('COMMIT /* xid='))
-            
             logging.info(self.data)
             return False
         return True
+    
+    def __get_master_nodes(self):
+        if not self.masters:
+            self.masters.append(self.current_master)
+            for started_node in self.started_nodes:
+                code, response_data = self.http_request(started_node, NODE_STAT_PATH)
+                while 200 != code:
+                    time.sleep(3)
+                    code, response_data = self.http_request(started_node, NODE_STAT_PATH)
+                if 'ON' == json.loads(response_data)['response']['stat_log_bin']:
+                    self.masters.append(started_node)
+            logging.info(self.masters) 
+    
+    def __get_started_nodes(self):
+        if not self.started_nodes:
+            code, response_data = self.http_request(self.current_master, NODE_STAT_PATH)
+            while 200 != code:
+                time.sleep(3)
+                code, response_data = self.http_request(self.current_master, NODE_STAT_PATH)
+            logging.info(json.loads(response_data))
+            self.started_nodes = json.loads(response_data)['response']['node_list']
+
 
     def __get_another_master_binlogpos(self):
-        master_ip = self.__select_other_master()
-        self.current_master = master_ip
+        self.current_master = self.__select_other_master()
         logging.info("change master to %s" %self.current_master)
         params = {"xid":self.data['xid']}
-        code, response_data = self.http_request(master_ip, PATH, params)
-        while code !=200:
+        
+        code, response_data = self.http_request(self.current_master, BIN_LOG_PATH, params)
+        while 200 != code:
             time.sleep(3)
-            code, response_data = self.http_request(master_ip, PATH, params)
+            code, response_data = self.http_request(self.current_master, BIN_LOG_PATH, params)
 
         logging.info(json.loads(response_data))
-        self.data['End_log_pos'] = json.loads(response_data)['response']['End_Log_Pos']
+        self.data['End_log_pos'] = long(json.loads(response_data)['response']['End_Log_Pos'])
         self.data['Master_Log_File'] = json.loads(response_data)['response']['Master_Log_File']
-        assert self.data
 
     def http_request(self, host='127.0.0.1', path='/', params={}):
         params = urllib.urlencode(params)
@@ -95,7 +122,10 @@ class Replication(Connsync):
             #print self.data['Relay_Log_Pos']
 
     def __select_other_master(self):
-        return [ip for ip in MASTER_HOST if self.current_master!=ip][0]
+        if len(self.masters) < 2:
+            logging.info('other node not open bin-log!')
+            raise 'other node not open bin-log!'
+        return [ip for ip in self.masters if self.current_master != ip][0]
 
     def _send_email(self, data_node_ip, text):
         try:
@@ -127,7 +157,7 @@ def main():
                 rep._send_email(rep.current_master,'mysql master-slave connect is wrong; pelase check it!')
                 rep.epoch(conn)
         except Exception,e:
-            logging.info()
+            logging.info(e)
         finally:
             conn.close()
         time.sleep(3)

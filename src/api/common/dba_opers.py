@@ -180,6 +180,8 @@ class DBAOpers(object):
                                 max_updates_per_hour=0, 
                                 max_connections_per_hour=0, 
                                 max_user_connections=200):
+        sql_grant_revoke = "revoke all on {database}.* from `{username}`@'{ipAddress}'".format(database=database,username=username,ipAddress=ipAddress)
+        
         sql_grant_usage = """GRANT USAGE ON *.* TO `{username}`@'{ipAddress}' 
         identified by password '{passwd}' with 
         MAX_QUERIES_PER_HOUR {mqph} 
@@ -194,6 +196,7 @@ class DBAOpers(object):
                                              mcph=max_connections_per_hour,
                                              muc=max_user_connections
                                              )
+        cursor.execute(sql_grant_revoke)
         cursor.execute(sql_grant_usage)
                    
             

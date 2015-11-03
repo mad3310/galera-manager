@@ -29,7 +29,7 @@ class AdminConf(APIHandler):
        
         if requestParam != {}:
             self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
-            
+
         self.adminOpers.sync_info_from_zk(requestParam['zkAddress'][0])
             
         result = {}

@@ -22,7 +22,7 @@ class AdminOpers(object):
                 clusterUUID = zkOper.getClusterUUID() 
                 data,_ = zkOper.retrieveClusterProp(clusterUUID)
                 
-                #node_ip_addr = get_localhost_ip()
+                node_ip_addr = get_localhost_ip()
                 assert node_ip_addr
                 return_result = zkOper.retrieve_data_node_info(node_ip_addr)
                 
