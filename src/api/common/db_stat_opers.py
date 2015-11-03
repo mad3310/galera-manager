@@ -15,7 +15,7 @@ from common.utils.exceptions import HTTPAPIError
 from common.utils.exceptions import UserVisiableException
 from common.invokeCommand import InvokeCommand
 from common.utils.asyc_utils import run_on_executor, run_callback
-
+from common.helper import get_localhost_ip
 
 class DBStatOpers(Abstract_Stat_Service):
     
@@ -176,6 +176,31 @@ class DBStatOpers(Abstract_Stat_Service):
         result = {}
         result.setdefault('Master_Log_File', current_bin_logs)
         result.setdefault('End_Log_Pos', end_log_pos)
+        return result
+    
+    @run_on_executor()
+    @run_callback
+    def bin_log_node_stat(self):
+        conn = self.dba_opers.get_mysql_connection()
+        if None == conn:
+            raise UserVisiableException("Can\'t connect to mysql server")        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("show variables like 'log_bin'")
+            rows_stat_log_bin = cursor.fetchall()
+            stat_log_bin = rows_stat_log_bin[0][1]
+        finally:
+            conn.close()
+        
+        zkOper = self.retrieve_zkOper()
+        started_node_list = zkOper.retrieve_started_nodes()
+        local_ip = get_localhost_ip()
+        if local_ip in started_node_list:
+            started_node_list.remove(local_ip)
+
+        result = {}
+        result.setdefault('node_list', started_node_list)
+        result.setdefault('stat_log_bin', stat_log_bin)
         return result
 
     def _stat_rows_oper(self ):

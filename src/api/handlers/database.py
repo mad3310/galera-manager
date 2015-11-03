@@ -462,6 +462,16 @@ class BinlogPos(APIHandler):
         params = self.get_all_arguments()
         return_result = yield self.stat_opers.stat_binlog_eng_log_pos(params)  
         self.finish(return_result)
+
+#retrieve opened binlog node list of mcluster
+class BinLogNodestat(APIHandler):
+    stat_opers = DBStatOpers()
+    @asynchronous
+    @engine
+    def post(self):
+        #params = self.get_all_arguments()
+        return_result = yield self.stat_opers.bin_log_node_stat()  
+        self.finish(return_result)
         
 # retrieve the detailed status of mcluster
 # eg. curl "http://localhost:8888/node/stat/info?stat_connection_count_command=mysql"
