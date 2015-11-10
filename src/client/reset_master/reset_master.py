@@ -141,6 +141,8 @@ class Replication(Connsync):
 
 
 def main():
+    MASTER_USER = sys.argv[1]
+    MASTER_PASSWORD = sys.argv[2]
     if os.path.exists(r'/var/log/reset-master/') is False:
         os.mkdir(r'/var/log/reset-master/')
         with open(r'/var/log/reset-master/root.log','a'):
