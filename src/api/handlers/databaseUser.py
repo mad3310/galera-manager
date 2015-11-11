@@ -52,7 +52,9 @@ class DBUser(APIHandler):
         max_user_connections = self.get_argument("max_user_connections", 200)
         dict = {}
         dict = self.request.arguments
+        tmp_passwd = ''
         if dict.has_key("user_password"):
+            tmp_passwd = dict["user_password"]
             del dict["user_password"]
         logging.info(str(dict))
         
@@ -80,8 +82,8 @@ class DBUser(APIHandler):
                                 log_message= "when create db's user, no specify the ip address",\
                                 response =  "please specify the ip address.")
         
-        if user_password is None:
-            user_password = get_random_password()
+        #if user_password is None:
+            #user_password = get_random_password()
         
         existed_flag =  "true"
         
