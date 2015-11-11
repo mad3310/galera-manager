@@ -66,7 +66,7 @@ full_backup(){
    fi
    if [ `ss -tlnp|grep 3306|grep mysqld|wc -l` -eq  1  -a  -f `grep "pid-file" /opt/letv/mcluster/root/etc/my.cnf |awk -F [=] '{print $2}'`   ];then
       if [ $MCLUSTER_DISK_FREE -ge $MCLUSTER_USAGE -a $DATA_DISK_FREE -ge $MCLUSTER_USAGE ];then
-         $INNOBACKUPEX --user=$BACKUP_USER --password=$BACKUP_PASSWD --defaults-file=$MY_CNF_PATH --no-timestamp $BACKUP_RS_PATH/full_backup-$date_suffix  >>$LOG_FILE_PATH/${date_suffix}_backup.log 2>&1
+         $INNOBACKUPEX --user=$BACKUP_USER --password=$BACKUP_PASSWD --defaults-file=$MY_CNF_PATH --no-timestamp --no-lock $BACKUP_RS_PATH/full_backup-$date_suffix  >>$LOG_FILE_PATH/${date_suffix}_backup.log 2>&1
          if [ $? -eq 0 ];then
             log "== Backup All Data end =="
          else

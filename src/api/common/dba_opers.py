@@ -173,17 +173,61 @@ class DBAOpers(object):
         else:
             cursor.execute("""CREATE USER `{username}`@'{ip_address}' IDENTIFIED BY '{passwd}'"""
                            .format(username=username,passwd=passwd,ip_address=ip_address))
-    
-    #use 'grant usage on ...' means creating user do not grant any privilege 
-    def exec_base_grant_sql(self, cursor, username, passwd, database, ipAddress, 
+
+                   
+    def grant_wr_privileges(self, conn, username, passwd, database, ipAddress='%', 
                                 max_queries_per_hour=0, 
                                 max_updates_per_hour=0, 
                                 max_connections_per_hour=0, 
                                 max_user_connections=200):
-        sql_grant_revoke = "revoke all on {database}.* from `{username}`@'{ipAddress}'".format(database=database,username=username,ipAddress=ipAddress)
+        sql = """grant select, insert, update, delete, index, create temporary tables, execute, show view 
+        on {database}.* to {username}@'{ipAddress}' identified 
+        by '{passwd}' with 
+        MAX_QUERIES_PER_HOUR {mqph} 
+        MAX_UPDATES_PER_HOUR {muph} 
+        MAX_CONNECTIONS_PER_HOUR {mcph} 
+        MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                             username=username,
+                                             ipAddress=ipAddress,
+                                             passwd=passwd,
+                                             mqph=max_queries_per_hour,
+                                             muph=max_updates_per_hour,
+                                             mcph=max_connections_per_hour,
+                                             muc=max_user_connections)
+        logging.info('grant_wr_privileges:' + sql)
+        cursor = conn.cursor()
+        cursor.execute(sql)
         
-        sql_grant_usage = """GRANT USAGE ON *.* TO `{username}`@'{ipAddress}' 
-        identified by password '{passwd}' with 
+    def grant_readonly_privileges(self, conn, username, passwd, database, ipAddress='%',
+                                  max_queries_per_hour=0,
+                                  max_connections_per_hour=0, 
+                                  max_user_connections=200):
+        max_updates_per_hour = 1
+        cursor = conn.cursor()
+        cursor.execute("""grant
+        select, execute, show view on {database}.* to {username}@'{ipAddress}' identified 
+        by '{passwd}' with 
+        MAX_QUERIES_PER_HOUR {mqph} 
+        MAX_UPDATES_PER_HOUR {muph} 
+        MAX_CONNECTIONS_PER_HOUR {mcph} 
+        MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                             username=username,
+                                             passwd=passwd,
+                                             ipAddress=ipAddress,
+                                             mqph=max_queries_per_hour,
+                                             muph=max_updates_per_hour,
+                                             mcph=max_connections_per_hour,
+                                             muc=max_user_connections))
+        
+    def grant_manager_privileges(self, conn, username, passwd, database, ipAddress='%',
+                                 max_queries_per_hour=0, 
+                                 max_updates_per_hour=0, 
+                                 max_connections_per_hour=0, 
+                                 max_user_connections=200):
+        cursor = conn.cursor()
+        cursor.execute("""grant
+        all privileges on {database}.* to {username}@'{ipAddress}' identified 
+        by '{passwd}' with 
         MAX_QUERIES_PER_HOUR {mqph} 
         MAX_UPDATES_PER_HOUR {muph} 
         MAX_CONNECTIONS_PER_HOUR {mcph} 
@@ -195,120 +239,7 @@ class DBAOpers(object):
                                              muph=max_updates_per_hour,
                                              mcph=max_connections_per_hour,
                                              muc=max_user_connections
-                                             )
-        cursor.execute(sql_grant_revoke)
-        cursor.execute(sql_grant_usage)
-                   
-            
-    def grant_wr_privileges(self, conn, username, passwd, database, ipAddress='%', 
-                                max_queries_per_hour=0, 
-                                max_updates_per_hour=0, 
-                                max_connections_per_hour=0, 
-                                max_user_connections=200):
-        cursor = conn.cursor()
-        cursor.execute('select password from mysql.user where user="{user}"'.format(user=username))
-        rows = cursor.fetchall()
-        if rows:
-            password = rows[0][0]
-            self.exec_base_grant_sql(cursor, username, password, database, ipAddress, max_queries_per_hour, max_updates_per_hour, max_connections_per_hour, max_user_connections)
-            sql = """GRANT SELECT, INSERT, UPDATE, DELETE, INDEX, 
-            CREATE TEMPORARY TABLES, EXECUTE, SHOW VIEW ON `{database}`.* 
-            TO `{username}`@'{ipAddress}'""".format(database=database,
-                                                    username=username,
-                                                    ipAddress=ipAddress,
-                                             )
-
-        else:
-            sql = """grant select, insert, update, delete, index, create temporary tables, execute, show view 
-            on `{database}`.* to `{username}`@'{ipAddress}' with 
-            MAX_QUERIES_PER_HOUR {mqph} 
-            MAX_UPDATES_PER_HOUR {muph} 
-            MAX_CONNECTIONS_PER_HOUR {mcph}
-            MAX_USER_CONNECTIONS {muc}""".format(database=database,
-                                                 username=username,
-                                                 ipAddress=ipAddress,
-                                                 passwd=passwd,
-                                                 mqph=max_queries_per_hour,
-                                                 muph=max_updates_per_hour,
-                                                 mcph=max_connections_per_hour,
-                                                 muc=max_user_connections)
-
-        cursor.execute(sql)
-        
-    def grant_readonly_privileges(self, conn, username, passwd, database, ipAddress='%',
-                                  max_queries_per_hour=0,
-                                  max_connections_per_hour=0, 
-                                  max_user_connections=200):
-        max_updates_per_hour = 1
-        cursor = conn.cursor()
-        cursor.execute('select password from mysql.user where user="{user}"'.format(user=username))
-        rows = cursor.fetchall()
-        if rows:
-            password = rows[0][0]
-            self.exec_base_grant_sql(cursor, username, password, database, ipAddress, max_queries_per_hour, max_updates_per_hour, max_connections_per_hour, max_user_connections)
-            sql = """GRANT select, execute, show view ON `{database}`.* 
-            TO `{username}`@'{ipAddress}'""".format(database=database,
-                                                    username=username,
-                                                    ipAddress=ipAddress,
-                                             )
-        else:
-            sql = """grant 
-            select, execute, show view on `{database}`.* to `{username}`@'{ipAddress}' with 
-            MAX_QUERIES_PER_HOUR {mqph} 
-            MAX_UPDATES_PER_HOUR {muph} 
-            MAX_CONNECTIONS_PER_HOUR {mcph} 
-            MAX_USER_CONNECTIONS {muc}""".format(database=database,
-                                                 username=username,
-                                                 passwd=passwd,
-                                                 ipAddress=ipAddress,
-                                                 mqph=max_queries_per_hour,
-                                                 muph=max_updates_per_hour,
-                                                 mcph=max_connections_per_hour,
-                                                 muc=max_user_connections)
-            
-        cursor.execute(sql)
-        
-    def grant_manager_privileges(self, conn, username, passwd, database, ipAddress='%',
-                                 max_queries_per_hour=0, 
-                                 max_updates_per_hour=0, 
-                                 max_connections_per_hour=0, 
-                                 max_user_connections=200):
-        cursor = conn.cursor()
-        cursor.execute('select password from mysql.user where user="{user}"'.format(user=username))
-        rows = cursor.fetchall()
-        if rows:
-            password = rows[0][0]
-            self.exec_base_grant_sql(cursor, username, password, database, ipAddress, max_queries_per_hour, max_updates_per_hour, max_connections_per_hour, max_user_connections)
-            sql = """GRANT all privileges ON `{database}`.* 
-            TO `{username}`@'{ipAddress}' with 
-            MAX_QUERIES_PER_HOUR {mqph} 
-            MAX_UPDATES_PER_HOUR {muph} 
-            MAX_CONNECTIONS_PER_HOUR {mcph} 
-            MAX_USER_CONNECTIONS {muc}""".format(database=database,
-                                                    username=username,
-                                                    ipAddress=ipAddress,
-                                                    mqph=max_queries_per_hour,
-                                                    muph=max_updates_per_hour,
-                                                    mcph=max_connections_per_hour,
-                                                    muc=max_user_connections
-                                             )
-        else:
-            sql = """grant 
-            all privileges on {database}.* to {username}@'{ipAddress}' identified 
-            by '{passwd}' with 
-            MAX_QUERIES_PER_HOUR {mqph} 
-            MAX_UPDATES_PER_HOUR {muph} 
-            MAX_CONNECTIONS_PER_HOUR {mcph} 
-            MAX_USER_CONNECTIONS {muc}""".format(database=database,
-                                                 username=username,
-                                                 passwd=passwd,
-                                                 ipAddress=ipAddress,
-                                                 mqph=max_queries_per_hour,
-                                                 muph=max_updates_per_hour,
-                                                 mcph=max_connections_per_hour,
-                                                 muc=max_user_connections)
-            
-        cursor.execute(sql)
+                                             ))
         
     def grant_resource_limit(self, conn, username, database, ip_address, 
                                            max_queries_per_hour=None, 

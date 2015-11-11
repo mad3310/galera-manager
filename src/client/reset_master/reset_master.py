@@ -38,7 +38,7 @@ class Replication(Connsync):
         self.__get_started_nodes()
         self.__get_master_nodes()
         
-        logging.info("status: %s" % rows_show_slave[0][11])
+        logging.info("status: %s" % rows_show_slave[0][10])
         
         if 'Yes' != rows_show_slave[0][10] or 'Yes' != rows_show_slave[0][11]:         
             self.data['Relay_Log_Pos'] = rows_show_slave[0][8]
@@ -124,7 +124,7 @@ class Replication(Connsync):
     def __select_other_master(self):
         if len(self.masters) < 2:
             logging.info('other node not open bin-log!')
-            raise 'other node not open bin-log!'
+            raise  ValueError('other node not open bin-log!')
         return [ip for ip in self.masters if self.current_master != ip][0]
 
     def _send_email(self, data_node_ip, text):
@@ -141,6 +141,8 @@ class Replication(Connsync):
 
 
 def main():
+    MASTER_USER = sys.argv[1]
+    MASTER_PASSWORD = sys.argv[2]
     if os.path.exists(r'/var/log/reset-master/') is False:
         os.mkdir(r'/var/log/reset-master/')
         with open(r'/var/log/reset-master/root.log','a'):
