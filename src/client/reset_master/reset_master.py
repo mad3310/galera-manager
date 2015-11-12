@@ -7,16 +7,9 @@ from connsync import Connsync
 from mail import send_email
 import logging
 import logging.config
-#user config
-
-MASTER_USER = 'rep'
-MASTER_PASSWORD = 'gq123'
-
-MASTER_ROOT_USER = 'root'
-MASTER_ROOT_USER_PASSWORD = 'Mcluster'
+from reset_master_config import MASTER_USER, MASTER_PASSWORD, MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD, ADMIN_MAIL
 
 # Immutable string
-ADMIN_MAIL = ("xuyanwei <xuyanwei@letv.com>","zhoubingzheng <zhoubingzheng@letv.com>", "gaoqiang3 <gaoqiang3@letv.com>")
 BIN_LOG_PATH = "/db/binlog/pos"
 NODE_STAT_PATH = "/db/binlog/node/stat"
 
@@ -141,8 +134,6 @@ class Replication(Connsync):
 
 
 def main():
-    MASTER_USER = sys.argv[1]
-    MASTER_PASSWORD = sys.argv[2]
     if os.path.exists(r'/var/log/reset-master/') is False:
         os.mkdir(r'/var/log/reset-master/')
         with open(r'/var/log/reset-master/root.log','a'):
