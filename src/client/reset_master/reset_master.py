@@ -7,7 +7,16 @@ from connsync import Connsync
 from mail import send_email
 import logging
 import logging.config
-from reset_master_config import MASTER_USER, MASTER_PASSWORD, MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD, ADMIN_MAIL
+import ConfigParser
+
+#config string
+MASTER_USER = ''
+MASTER_PASSWORD = ''
+
+MASTER_ROOT_USER = ''
+MASTER_ROOT_USER_PASSWORD = ''
+
+ADMIN_MAIL = ()
 
 # Immutable string
 BIN_LOG_PATH = "/db/binlog/pos"
@@ -133,13 +142,27 @@ class Replication(Connsync):
         self.__reset_mysql_master(conn)
 
 
+def assign_params(conf):
+    global MASTER_USER, MASTER_PASSWORD, MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD, ADMIN_MAIL
+    MASTER_USER = conf.get('reset_master', 'MASTER_USER')
+    MASTER_PASSWORD = conf.get('reset_master', 'MASTER_PASSWORD')
+    MASTER_ROOT_USER = conf.get('reset_master', 'MASTER_ROOT_USER')
+    MASTER_ROOT_USER_PASSWORD = conf.get('reset_master', 'MASTER_ROOT_USER_PASSWORD')
+    ADMIN_MAIL = conf.get('reset_master', 'ADMIN_MAIL')
+    ADMIN_MAIL = tuple(ADMIN_MAIL.split(','))
+
 def main():
     if os.path.exists(r'/var/log/reset-master/') is False:
         os.mkdir(r'/var/log/reset-master/')
         with open(r'/var/log/reset-master/root.log','a'):
             pass
-
+    
     logging.config.fileConfig('logging.conf')
+
+    conf = ConfigParser.ConfigParser()
+    conf.read("reset_master.cfg")
+    assign_params(conf)
+
     rep = Replication(status=True)
     while rep.status:
         conn = rep.get_mysql_connection('127.0.0.1', MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD)
@@ -147,7 +170,7 @@ def main():
             logging.info("connect local mysql is wrong")
         try:
             if rep.check_slave_status(conn) is False:
-                rep._send_email(rep.current_master,'mysql master-slave connect is wrong; pelase check it!')
+                rep._send_email(rep.current_master, 'mysql master-slave connect is wrong; pelase check it!')
                 rep.epoch(conn)
         except Exception,e:
             logging.info(e)
