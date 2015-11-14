@@ -7,21 +7,23 @@ from connsync import Connsync
 from mail import send_email
 import logging
 import logging.config
-#user config
+import ConfigParser
 
-MASTER_USER = 'rep'
-MASTER_PASSWORD = 'gq123'
+#config string
+MASTER_USER = ''
+MASTER_PASSWORD = ''
 
-MASTER_ROOT_USER = 'root'
-MASTER_ROOT_USER_PASSWORD = 'Mcluster'
+MASTER_ROOT_USER = ''
+MASTER_ROOT_USER_PASSWORD = ''
+
+ADMIN_MAIL = ()
 
 # Immutable string
-ADMIN_MAIL = ("xuyanwei <xuyanwei@letv.com>","zhoubingzheng <zhoubingzheng@letv.com>", "gaoqiang3 <gaoqiang3@letv.com>")
 BIN_LOG_PATH = "/db/binlog/pos"
 NODE_STAT_PATH = "/db/binlog/node/stat"
 
 class Replication(Connsync):
-    __slots__ = ('data', 'status', 'current_master', 'started_nodes', 'masters')
+    __slots__ = ('data', 'status', 'current_master', 'started_nodes', 'masters', 'start_time', 'finish_time')
 
     def __init__(self, status):
         self.data = {}
@@ -29,6 +31,11 @@ class Replication(Connsync):
         self.current_master = ''
         self.started_nodes =[]
         self.masters = []
+        self.__init_time()
+
+    def __init_time(self):
+        self.start_time = ''
+        self.finish_time = ''
 
     def check_slave_status(self, conn):
         sql_show_slave = 'show slave status'
@@ -40,10 +47,13 @@ class Replication(Connsync):
         
         logging.info("status: %s" % rows_show_slave[0][10])
         
-        if 'Yes' != rows_show_slave[0][10] or 'Yes' != rows_show_slave[0][11]:         
+        if 'Yes' != rows_show_slave[0][10]: 
+            if not self.start_time:
+                  self.start_time = time.time()                        
             self.data['Relay_Log_Pos'] = rows_show_slave[0][8]
             rows_xid = self.exc_mysql_sql(conn, "SHOW RELAYLOG EVENTS IN '%s'" %rows_show_slave[0][7])
             self.data['xid'] = long(rows_xid[-1][-1].strip('COMMIT /* xid='))
+            self.finish_time = time.time()
             logging.info(self.data)
             return False
         return True
@@ -74,7 +84,7 @@ class Replication(Connsync):
         self.current_master = self.__select_other_master()
         logging.info("change master to %s" %self.current_master)
         params = {"xid":self.data['xid']}
-        
+        self.__init_time()
         code, response_data = self.http_request(self.current_master, BIN_LOG_PATH, params)
         while 200 != code:
             time.sleep(3)
@@ -138,17 +148,30 @@ class Replication(Connsync):
     def epoch(self,conn):
         self.__get_another_master_binlogpos()
         self.__reset_mysql_master(conn)
+        
 
+
+def assign_params(conf):
+    global MASTER_USER, MASTER_PASSWORD, MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD, ADMIN_MAIL
+    MASTER_USER = conf.get('reset_master', 'MASTER_USER')
+    MASTER_PASSWORD = conf.get('reset_master', 'MASTER_PASSWORD')
+    MASTER_ROOT_USER = conf.get('reset_master', 'MASTER_ROOT_USER')
+    MASTER_ROOT_USER_PASSWORD = conf.get('reset_master', 'MASTER_ROOT_USER_PASSWORD')
+    ADMIN_MAIL = conf.get('reset_master', 'ADMIN_MAIL')
+    ADMIN_MAIL = tuple(ADMIN_MAIL.split(','))
 
 def main():
-    MASTER_USER = sys.argv[1]
-    MASTER_PASSWORD = sys.argv[2]
     if os.path.exists(r'/var/log/reset-master/') is False:
         os.mkdir(r'/var/log/reset-master/')
         with open(r'/var/log/reset-master/root.log','a'):
             pass
-
+    
     logging.config.fileConfig('logging.conf')
+
+    conf = ConfigParser.ConfigParser()
+    conf.read("reset_master.cfg")
+    assign_params(conf)
+
     rep = Replication(status=True)
     while rep.status:
         conn = rep.get_mysql_connection('127.0.0.1', MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD)
@@ -156,8 +179,9 @@ def main():
             logging.info("connect local mysql is wrong")
         try:
             if rep.check_slave_status(conn) is False:
-                rep._send_email(rep.current_master,'mysql master-slave connect is wrong; pelase check it!')
-                rep.epoch(conn)
+                if rep.finish_time - rep.start_time > 120:
+                    rep._send_email(rep.current_master, 'mysql master-slave connect is wrong; pelase check it!')
+                    rep.epoch(conn)
         except Exception,e:
             logging.info(e)
         finally:
