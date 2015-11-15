@@ -17,6 +17,7 @@ MASTER_ROOT_USER = ''
 MASTER_ROOT_USER_PASSWORD = ''
 
 ADMIN_MAIL = ()
+SPAN_TIME = 12
 
 # Immutable string
 BIN_LOG_PATH = "/db/binlog/pos"
@@ -148,8 +149,6 @@ class Replication(Connsync):
     def epoch(self,conn):
         self.__get_another_master_binlogpos()
         self.__reset_mysql_master(conn)
-        
-
 
 def assign_params(conf):
     global MASTER_USER, MASTER_PASSWORD, MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD, ADMIN_MAIL
@@ -159,6 +158,7 @@ def assign_params(conf):
     MASTER_ROOT_USER_PASSWORD = conf.get('reset_master', 'MASTER_ROOT_USER_PASSWORD')
     ADMIN_MAIL = conf.get('reset_master', 'ADMIN_MAIL')
     ADMIN_MAIL = tuple(ADMIN_MAIL.split(','))
+    SPAN_TIME = int(conf.get('reset_master','SPAN_TIME'))
 
 def main():
     if os.path.exists(r'/var/log/reset-master/') is False:
@@ -179,7 +179,7 @@ def main():
             logging.info("connect local mysql is wrong")
         try:
             if rep.check_slave_status(conn) is False:
-                if rep.finish_time - rep.start_time > 120:
+                if rep.finish_time - rep.start_time > SPAN_TIME:
                     rep._send_email(rep.current_master, 'mysql master-slave connect is wrong; pelase check it!')
                     rep.epoch(conn)
         except Exception,e:
