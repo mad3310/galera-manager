@@ -82,10 +82,11 @@ class Replication(Connsync):
 
 
     def __get_another_master_binlogpos(self):
+        self.__init_time()
         self.current_master = self.__select_other_master()
         logging.info("change master to %s" %self.current_master)
         params = {"xid":self.data['xid']}
-        self.__init_time()
+        
         code, response_data = self.http_request(self.current_master, BIN_LOG_PATH, params)
         while 200 != code:
             time.sleep(3)
@@ -151,7 +152,7 @@ class Replication(Connsync):
         self.__reset_mysql_master(conn)
 
 def assign_params(conf):
-    global MASTER_USER, MASTER_PASSWORD, MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD, ADMIN_MAIL
+    global MASTER_USER, MASTER_PASSWORD, MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD, ADMIN_MAIL, SPAN_TIME
     MASTER_USER = conf.get('reset_master', 'MASTER_USER')
     MASTER_PASSWORD = conf.get('reset_master', 'MASTER_PASSWORD')
     MASTER_ROOT_USER = conf.get('reset_master', 'MASTER_ROOT_USER')
