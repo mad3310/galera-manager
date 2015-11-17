@@ -167,10 +167,10 @@ def main():
         with open(r'/var/log/reset-master/root.log','a'):
             pass
     
-    logging.config.fileConfig('logging.conf')
+    logging.config.fileConfig('/opt/letv/mcluster-manager/client/reset_master/logging.conf')
 
     conf = ConfigParser.ConfigParser()
-    conf.read("reset_master.cfg")
+    conf.read("/opt/letv/mcluster-manager/client/reset_master/reset_master.cfg")
     assign_params(conf)
 
     rep = Replication(status=True)
