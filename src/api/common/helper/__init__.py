@@ -10,7 +10,7 @@ from common.utils import local_get_zk_address
 from common.configFileOpers import ConfigFileOpers
 
 confOpers = ConfigFileOpers()
-leader_status=None
+global_zk_leader = None
     
 def retrieve_kv_from_db_rows(rows, key_list=None):
     key_value = {}
@@ -84,9 +84,24 @@ def getDictFromText(sourceText, keyList):
     return resultValue
 
 def check_leader(zk):
+    if not global_zk_leader:
+        return global_zk_leader
+    
+    ret_dict = self.confOpers.getValue(options.mcluster_manager_cnf, ['zkLeader'])
+    zkLeader = ret_dict.get('zkLeader')
+    if not zkLeader:
+        global_zk_leader = zkLeader
+        return zkLeader
+    
+    request_param = {"zkLeader" : "True"}
     if zk.command("srvr").find('leader') == -1:
-        return False
-    return True
+        requestParam.setdefault("zkLeader", "False")
+        
+    self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
+    
+    zkLeader = request_param.get("zkLeader")
+    global_zk_leader = zkLeader
+    return zkLeader
         
 
 def is_monitoring(host_ip=None, zkOper=None):
