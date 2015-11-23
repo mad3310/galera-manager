@@ -62,7 +62,7 @@ class ZkOpers(object):
             f = open('/etc/hostname','r')
             res_str = f.readline().replace('d-mcl-','')
             return res_str[0:res_str.find('-n-')]
-        except Exception, e:
+        except Exception:
             raise 'hostname is wrong! please check it %s' %f.readline()
         finally:
             f.close()
