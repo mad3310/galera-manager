@@ -84,12 +84,13 @@ def getDictFromText(sourceText, keyList):
     return resultValue
 
 def check_leader(zk):
-    if not global_zk_leader:
+    global global_zk_leader
+    if None != global_zk_leader:
         return global_zk_leader
     
-    ret_dict = self.confOpers.getValue(options.mcluster_manager_cnf, ['zkLeader'])
+    ret_dict = confOpers.getValue(options.mcluster_manager_cnf, ['zkLeader'])
     zkLeader = ret_dict.get('zkLeader')
-    if not zkLeader:
+    if None != zkLeader:
         global_zk_leader = zkLeader
         return zkLeader
     
@@ -97,7 +98,7 @@ def check_leader(zk):
     if zk.command("srvr").find('leader') == -1:
         requestParam.setdefault("zkLeader", "False")
         
-    self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
+    confOpers.setValue(options.mcluster_manager_cnf, requestParam)
     
     zkLeader = request_param.get("zkLeader")
     global_zk_leader = zkLeader
