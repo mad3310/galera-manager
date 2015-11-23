@@ -7,7 +7,6 @@ join = os.path.join
 dirname = os.path.dirname
 
 base_dir = os.path.abspath(dirname(dirname(dirname(__file__))))
-define('check_zk_leader', default = 'echo stat |nc localhost 2181 |grep Mode', help = 'check zookeeper leader')
 
 define('port', default = 8888, type = int, help = 'app listen port')
 define('debug', default = False, type = bool, help = 'is debuging?')
