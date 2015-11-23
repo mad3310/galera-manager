@@ -7,13 +7,13 @@ function get_docker_ip(){
 	docker_ip=`docker inspect ${docker_name} | grep "IPAddress" | awk '{printf $(2)}' | sed -n -e 's/"//gp' | sed -n -e 's/,//gp'`
 }
 
-get_docker_ip 'mcluster-manager-test-3'
+get_docker_ip 'd-mcl-mcluster-manager-test-n-3'
 mclustermanager3=${docker_ip}
 
-get_docker_ip 'mcluster-manager-test-2'
+get_docker_ip 'd-mcl-mcluster-manager-test-n-2'
 mclustermanager2=${docker_ip}
 
-get_docker_ip 'mcluster-manager-test-1'
+get_docker_ip 'd-mcl-mcluster-manager-test-n-1'
 mclustermanager1=${docker_ip}
 
 get_docker_ip 'manager-zk-3'
