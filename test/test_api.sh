@@ -56,3 +56,39 @@ curl "http://${mclustermanager3}:8888/cluster/sync"
 curl --user root:root -d "dataNodeIp=${mclustermanager3}&dataNodeName=letv_mcluster_test_1_node_3" "http://${mclustermanager3}:8888/cluster/node"
 
 curl --user root:root -d "cluster_flag=new" "http://${mclustermanager1}:8888/cluster/start"
+
+curl "http://${mclustermanager1}:8888/all/stat"
+
+curl "http://${mclustermanager1}:8888/db/all/stat/rowsoper/total"        
+
+curl "http://${mclustermanager1}:8888/db/all/stat/rowsoper/ps"        
+
+curl "http://${mclustermanager1}:8888/db/all/stat/innobuffer/memallco"        
+
+curl "http://${mclustermanager1}:8888/db/all/stat/innobuffer/page"        
+
+curl "http://${mclustermanager1}:8888/db/all/stat/innobuffer/pool"        
+
+curl "http://${mclustermanager1}:8888/db/all/stat/variablestatus/ps"        
+
+curl "http://${mclustermanager1}:8888/db/all/stat/variablestatus/used"        
+
+curl "http://${mclustermanager1}:8888/db/all/stat/variablestatus/ration"      
+
+curl "http://${mclustermanager1}:8888/db/all/stat/wsrepstatus/flow_control_paused"        
+
+curl "http://${mclustermanager1}:8888/db/all/stat/wsrepstatus/slowest_node_param"        
+
+curl "http://${mclustermanager1}:8888/db/all/stat/wsrepstatus/slowest_network_param"        
+
+curl "http://${mclustermanager1}:8888/inner/node/check/log/error"
+
+curl "http://${mclustermanager1}:8888/inner/node/check/log/warning"
+
+curl "http://${mclustermanager1}:8888/inner/node/check/log/health"
+
+curl "http://${mclustermanager1}:8888/node/stat"
+
+curl "http://${mclustermanager1}:8888/node/stat/datadir/size"       
+
+

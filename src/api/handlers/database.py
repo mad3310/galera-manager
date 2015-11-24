@@ -22,6 +22,7 @@ import time
 import logging
 from tornado.web import asynchronous
 from tornado.gen import engine
+from common.utils.asyc_utils import run_on_executor, run_callback
 
 # create database in mcluster
 # eg. curl --user root:root -d "dbName=managerTest&userName=zbz" "http://localhost:8888/db"
@@ -334,34 +335,57 @@ class DBStat(APIHandler):
     
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
         args = self.request.arguments
+        result = yield self.do(args)
+        self.finish(result)
+    
+    @run_on_executor()
+    @run_callback
+    def do(self, args):
         if len(args) == 0:
             return_dict = self.stat_opers.stat()
         else:
             if args['inner'][0] == "true":
                 return_dict = self.stat_opers.stat("inner")
-        self.finish(return_dict)
+                
+        return return_dict
 
 # retrieve the database stat with innotop
 # eg. curl "http://localhost:8888/db/all/stat/rowsoper/total"        
 class StatRowsOperTotal(APIHandler):
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
+        result = yield self.do()
+        self.finish(result)
+    
+    @run_on_executor()
+    @run_callback
+    def do(self):
         return_dict = self.stat_opers.stat_rows_oper_total()
-        self.finish(return_dict)
-        
+        return return_dict   
         
 # retrieve the database stat with innotop
 # eg. curl "http://localhost:8888/db/all/stat/rowsoper/ps"        
 class StatRowsOperPS(APIHandler):
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
-        return_dict = self.stat_opers.stat_rows_oper_per_second()
-        self.finish(return_dict)
+        result = yield self.do()
+        self.finish(result)
         
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_rows_oper_per_second()
+        return return_dict  
         
         
 # retrieve the database stat with innotop
@@ -369,28 +393,51 @@ class StatRowsOperPS(APIHandler):
 class StatInnoBufferMemAlloc(APIHandler):
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
+        result = yield self.do()
+        self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
         return_dict = self.stat_opers.stat_innodb_buffer_mem_alloc()
-        self.finish(return_dict)
+        return return_dict  
         
 # retrieve the database stat with innotop
 # eg. curl "http://localhost:8888/db/all/stat/innobuffer/page"        
 class StatInnoBufferPage(APIHandler):
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
+        result = yield self.do()
+        self.finish(result)
+    
+    @run_on_executor()
+    @run_callback
+    def do(self):
         return_dict = self.stat_opers.stat_innodb_buffer_page()
-        self.finish(return_dict)
-        
+        return return_dict  
         
 # retrieve the database stat with innotop
 # eg. curl "http://localhost:8888/db/all/stat/innobuffer/pool"        
 class StatInnoBufferPool(APIHandler):
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
+        result = yield self.do()
+        self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
         return_dict = self.stat_opers.stat_innodb_buffer_buffer_pool()
-        self.finish(return_dict)
+        return return_dict  
         
         
 # retrieve the database stat with innotop
@@ -398,9 +445,17 @@ class StatInnoBufferPool(APIHandler):
 class StatVariableStatusPS(APIHandler):
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
+        result = yield self.do()
+        self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
         return_dict = self.stat_opers.stat_variable_status_ps()
-        self.finish(return_dict)
+        return return_dict  
         
         
 # retrieve the database stat with innotop
@@ -408,9 +463,17 @@ class StatVariableStatusPS(APIHandler):
 class StatVariableStatusUsed(APIHandler):
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
+        result = yield self.do()
+        self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
         return_dict = self.stat_opers.stat_variable_status_used()
-        self.finish(return_dict)
+        return return_dict  
         
         
 # retrieve the database stat with innotop
@@ -418,19 +481,34 @@ class StatVariableStatusUsed(APIHandler):
 class StatVariableStatusRation(APIHandler):
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
-        return_dict = self.stat_opers.stat_variable_status_ration()
-        self.finish(return_dict)
+        result = yield self.do()
+        self.finish(result)
         
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_variable_status_ration()
+        return return_dict  
         
 # retrieve the wsrep status with show status way
 # eg. curl "http://localhost:8888/db/all/stat/wsrepstatus/flow_control_paused"        
 class StatWsrepStatusFlowControlPaused(APIHandler):
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
+        result = yield self.do()
+        self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
         return_dict = self.stat_opers.stat_wsrep_status_flow_control_paused()
-        self.finish(return_dict)
+        return return_dict  
         
         
 # retrieve the wsrep status with show status way
@@ -438,9 +516,17 @@ class StatWsrepStatusFlowControlPaused(APIHandler):
 class StatWsrepStatusSlowestNodeParam(APIHandler):
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
+        result = yield self.do()
+        self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
         return_dict = self.stat_opers.stat_wsrep_status_slowest_node_param()
-        self.finish(return_dict)
+        return return_dict  
         
         
 # retrieve the wsrep status with show status way
@@ -448,9 +534,17 @@ class StatWsrepStatusSlowestNodeParam(APIHandler):
 class StatWsrepStatusSlowestNetworkParam(APIHandler):
     stat_opers = DBStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
+        result = yield self.do()
+        self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
         return_dict = self.stat_opers.stat_wsrep_status_slowest_network_param()
-        self.finish(return_dict)
+        return return_dict  
         
 # retrieve the binlog logendlogpos of mcluster
 # eg. curl "http://localhost:8888/db/binlog/pos?xid=16754"

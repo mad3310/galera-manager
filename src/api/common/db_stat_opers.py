@@ -11,8 +11,7 @@ from tornado.options import options
 from common.configFileOpers import ConfigFileOpers
 from common.abstract_stat_service import Abstract_Stat_Service
 from common.helper import retrieve_kv_from_db_rows
-from common.utils.exceptions import HTTPAPIError
-from common.utils.exceptions import UserVisiableException
+from common.utils.exceptions import UserVisiableException, CommonException
 from common.invokeCommand import InvokeCommand
 from common.utils.asyc_utils import run_on_executor, run_callback
 from common.helper import get_localhost_ip
@@ -29,7 +28,9 @@ class DBStatOpers(Abstract_Stat_Service):
         '''
         Constructor
         '''
-        
+    '''
+    @todo: why use str_flag?
+    '''    
     def stat(self, str_flag = ""):
         # if str_flag = "", then the request must come from the webport, not peer.
         if str_flag == "":
@@ -60,7 +61,6 @@ class DBStatOpers(Abstract_Stat_Service):
         result.setdefault('rows_oper',rows_oper_dict)
         result.setdefault('innodb_buffer',innodb_buffer_dict)
         result.setdefault('variable_status',variable_status_dict)
-        logging.info("dict:" + str(result))
         return result
     
     def get_peer_wsrep_status(self):
@@ -87,19 +87,14 @@ class DBStatOpers(Abstract_Stat_Service):
             result_dict = json.loads(result)
             return result_dict["response"]
         else:
-            raise HTTPAPIError(status_code = 417, error_detail="no way to retrieve the db connection",
-                        notification = "direct", 
-                        log_message= "no way to retrieve the db connection",
-                        response =  "no way to retrieve the db connection")
+            raise CommonException("Can\'t connect to mysql server")
     
     
     def _stat_wsrep_status(self):
         conn = self.dba_opers.get_mysql_connection()
         if conn is None :
-            raise HTTPAPIError(status_code = 417, error_detail="no way to retrieve the db connection",
-                            notification = "direct", 
-                            log_message= "no way to retrieve the db connection",
-                            response =  "no way to retrieve the db connection")
+            raise CommonException("Can\'t connect to mysql server")   
+         
         try:
             rows = self.dba_opers.show_status(conn)
         finally:
@@ -249,7 +244,6 @@ class DBStatOpers(Abstract_Stat_Service):
         buffer_pool_dict = self._split_key_value(key_list, target_dict)
         
         value = buffer_pool_dict.get('buf_pool_hit_rate')
-#        value = '1000 / 1000'
         if value == '--' or value == '' or value == 0:
             value = 0
         else:

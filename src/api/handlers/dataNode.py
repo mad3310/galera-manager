@@ -1,6 +1,5 @@
 #-*- coding: utf-8 -*-
 
-import tornado.httpclient
 import logging
 
 from common.configFileOpers import ConfigFileOpers
@@ -11,6 +10,9 @@ from common.invokeCommand import InvokeCommand
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.utils.exceptions import HTTPAPIError
 from common.node_stat_opers import NodeStatOpers
+from tornado.web import asynchronous
+from tornado.gen import engine
+from common.utils.asyc_utils import run_on_executor, run_callback
 
 # add data node into mcluster
 # eg. curl --user root:root -d "dataNodeIp=192.168.0.20&dataNodeName=letv_mcluster_test_1_node_2" "http://localhost:8888/cluster/node"
@@ -143,9 +145,17 @@ class DataNodeMonitorLogError(APIHandler):
     
     node_mysql_service_oper = Node_Mysql_Service_Opers()
     
+    @asynchronous
+    @engine
     def get(self):
-        result = self.node_mysql_service_oper.retrieve_log_for_error()
+        result = yield self.do()
         self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.node_mysql_service_oper.retrieve_log_for_error()
+        return return_dict  
         
 # check data node if there are some warnings in log
 # eg. curl "http://localhost:8888/inner/node/check/log/warning"
@@ -153,7 +163,15 @@ class DataNodeMonitorLogWarning(APIHandler):
     
     node_mysql_service_oper = Node_Mysql_Service_Opers()
     
+    @asynchronous
+    @engine
     def get(self):
+        result = yield self.do()
+        self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
         '''
         @todo: need to check if these comment code can be used
         '''
@@ -166,14 +184,14 @@ class DataNodeMonitorLogWarning(APIHandler):
 #             count = invokeCommand._runSysCmd(cmd) 
 #             if count == 1:
 #                 self.finish("true")
-# 		    else:
+#             else:
 #                 self.finish("false")
 #              return 
 #         reuslt = self.invokeCommand.run_chek_shell(options.check_arbitrator_warning)
 #            self.finish(result)
         
-        result = self.node_mysql_service_oper.retrieve_log_for_warning()
-        self.finish(result)
+        return_dict = self.node_mysql_service_oper.retrieve_log_for_warning()
+        return return_dict  
         
         
 # check data node if there are some information of shutting down in log
@@ -182,7 +200,15 @@ class DataNodeMonitorLogHealth(APIHandler):
     
     invokeCommand = InvokeCommand()
     
+    @asynchronous
+    @engine
     def get(self):
+        result = yield self.do()
+        self.finish(result)
+    
+    @run_on_executor()
+    @run_callback
+    def do(self):
         '''
         @todo: need to check if these comment code can be used
         '''
@@ -195,12 +221,12 @@ class DataNodeMonitorLogHealth(APIHandler):
 #             count = invokeCommand._runSysCmd(cmd) 
 #             if count == 1:
 #                 self.finish("true")
-# 		    else:
+#             else:
 #                 self.finish("false")
 #              return 
 
-        result = self.invokeCommand.run_check_shell(options.check_datanode_health)
-        self.finish(result)
+        return_dict = self.invokeCommand.run_check_shell(options.check_datanode_health)
+        return return_dict  
         
 # start mysqld service on data node
 # eg. curl --user root:root "http://localhost:8888/node/start"   start one node which has configed the all node ip list on my.cnf
@@ -210,7 +236,7 @@ class DataNodeStart(APIHandler):
     
     mysql_service_opers = Node_Mysql_Service_Opers()
     
-    @tornado.web.asynchronous
+    @asynchronous
     def post(self):
         isNewCluster = False
     
@@ -233,7 +259,7 @@ class DataNodeStop(APIHandler):
     
     mysql_service_opers = Node_Mysql_Service_Opers()
     
-    @tornado.web.asynchronous
+    @asynchronous
     def get(self):
         self.mysql_service_opers.stop()
         
@@ -244,14 +270,22 @@ class DataNodeStop(APIHandler):
         self.finish(result)
         
 # retrieve node stat 
-# eg. curl "http://localhost:8888/node/stat"       
+# eg. curl "http://localhost:8888/node/stat"
 class DataNodeStat(APIHandler):
     
     stat_opers = NodeStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
-        result = self.stat_opers.stat()
+        result = yield self.do()
         self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat()
+        return return_dict  
         
         
 # retrieve the node stat for data dir size
@@ -259,18 +293,34 @@ class DataNodeStat(APIHandler):
 class StatDataDirSize(APIHandler):
     stat_opers = NodeStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
-        result = self.stat_opers.stat_data_dir_size()
+        result = yield self.do()
         self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_data_dir_size()
+        return return_dict  
         
 # retrieve the node stat for mysql cpu partion
 # eg. curl "http://localhost:8888/node/stat/mysqlcpu/partion"        
 class StatMysqlCpuPartion(APIHandler):
     stat_opers = NodeStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
-        result = self.stat_opers.stat_mysql_cpu()
+        result = yield self.do()
         self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_mysql_cpu()
+        return return_dict  
         
         
 # retrieve the node stat for mysql memory partion
@@ -278,9 +328,17 @@ class StatMysqlCpuPartion(APIHandler):
 class StatMysqlMemoryPartion(APIHandler):
     stat_opers = NodeStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
-        result = self.stat_opers.stat_mysql_memory()
+        result = yield self.do()
         self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_mysql_memory()
+        return return_dict  
         
         
 # retrieve the node stat for memory size
@@ -288,45 +346,19 @@ class StatMysqlMemoryPartion(APIHandler):
 class StatNodeMemorySize(APIHandler):
     stat_opers = NodeStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
-        result = self.stat_opers.stat_node_memory()
+        result = yield self.do()
         self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_node_memory()
+        return return_dict  
         
 
-# no used
-class CopyConfigFileInfoHandler(APIHandler):
-    def get(self):
-        ip = self.get_argument("ip", None)
-        
-        #access to the target ip machine to retrieve the dict,then modify the config
-        http_client = tornado.httpclient.AsyncHTTPClient()
-        
-        try:
-            requesturi = "http://"+ip+":"+str(options.port)+"/retrieveConfigInfo"
-            http_client.fetch(requesturi,self.handleResponse)
-        except tornado.httpclient.HTTPError as e:
-            print "Error:", e
-            
-        http_client.close()
-        
-        result = {}
-        result.setdefault("message", "change config file info is ok!")
-        self.finish(result)
-            
-        
-    def handleResponse(self,response):
-        resultValue = {}
-        if response.error:
-            print "Error:", response.error
-        else:
-            resultValue = response.body
-            print resultValue
-            if resultValue == {}:
-                print "change config file error!"
-            else:
-                s = ConfigFileOpers()
-                s.setValue(options.mysql_cnf_file_name, eval(resultValue))
-  
 # retrieve the port of the  node.
 # eg. curl "http://localhost:8888/inner/node_port/check"
 class PortCheck(APIHandler):

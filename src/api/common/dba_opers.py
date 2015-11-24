@@ -61,7 +61,7 @@ class DBAOpers(object):
         try:
             sql = "select * from `%s`" % (tb_name)
             cursor.execute(sql)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error:
             sql = "CREATE TABLE if not exists `%s` ( `id` int(12) NOT NULL AUTO_INCREMENT ,`time` varchar(32) NOT NULL, `identifier` varchar(64) NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8" % (tb_name)
             cursor.execute(sql)
         logging.info('create table ' + tb_name + ' success')
