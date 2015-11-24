@@ -154,26 +154,32 @@ class Check_Status_Base(object):
 class Check_Cluster_Available(Check_Status_Base):
     
     invokeCommand = InvokeCommand()
-    
+    dba_opers = DBAOpers()
+
     def check(self, data_node_info_list):
-        shell_result = self.invokeCommand.run_check_shell(options.check_mcluster_health)
+        confOpers = ConfigFileOpers()
+        
+        false_nodes, value, _password = [], {}, ''
+        value = confOpers.getValue(options.mysql_cnf_file_name)["wsrep_sst_auth"]
+        _password = value.split(":")[1][:-1]
+        
+        for data_node_ip in data_node_info_list:
+            conn = self.dba_opers.get_mysql_connection(data_node_ip, user="monitor", passwd=_password)
+            if conn == None:
+                false_nodes.append(data_node_ip)
+            conn.close()
         
         message = "no avaliable data node on VIP"
+        if len(false_nodes) != 3:
+            message = 'ok'
         
-        if shell_result:
-            message = "ok"
-            
-        failed_count = 0
-        if shell_result == None or shell_result == False or shell_result == "false":
-            failed_count = 3
-        else:
-            message = "ok"
-            
-        alarm_result = self.retrieve_alarm_level(0,0,failed_count)
-            
+        alarm_result = self.retrieve_alarm_level(0, 0, len(false_nodes))
+        
+        #shell_result = self.invokeCommand.run_check_shell(options.check_mcluster_health)
+
         cluster_available_dict = {}
-        cluster_available_dict.setdefault("message",message)
-        cluster_available_dict.setdefault("alarm",alarm_result)
+        cluster_available_dict.setdefault("message", message)
+        cluster_available_dict.setdefault("alarm", alarm_result)
         
         return cluster_available_dict
     
@@ -205,7 +211,8 @@ class Check_Node_Size(Check_Status_Base):
                     conn.close()
                 key_value = retrieve_kv_from_db_rows(rows,['wsrep_incoming_addresses','wsrep_cluster_size'])
                 node_size_dict = self._check_wsrep_incoming_addresses(key_value, data_node_info_list)
-                return node_size_dict                
+                return node_size_dict
+                        
         if(len(false_nodes)==3):
             exception_dict = {}
             exception_dict.setdefault("message", "no way to connect to db")
