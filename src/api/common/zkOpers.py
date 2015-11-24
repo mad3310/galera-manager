@@ -118,11 +118,11 @@ class ZkOpers(object):
             try:
                 return self.re_connect()
             
-            except SessionExpiredError, e:
+            except SessionExpiredError:
                 logging.info("zk client retry time: %s, for zookeeper service may stop" % (count))
                 return self.reset_zk_client(count + 1)
             
-            except TimeoutError, e:
+            except TimeoutError:
                 logging.info("zk client retry time: %s, for connect timeout" % (count))
                 return self.reset_zk_client(count + 1)
         
