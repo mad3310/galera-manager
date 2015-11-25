@@ -176,14 +176,26 @@ class Inner_DB_Check_User_CurConns(APIHandler):
         if not is_monitoring(get_localhost_ip(), zkOper):
             self.finish("true")
             return
+        
         conn = self.dba_opers.get_mysql_connection()
-
         if conn is None:
             self.finish("false")
             return
         
+        '''
+        @todo: dbs[0] need to refactor
+        '''
         clusterUUID = zkOper.getClusterUUID()
-        user_prop_dict = zkOper.retrieve_db_user_prop(clusterUUID, zkOper.retrieve_db_list()[0])
+        
+        db_name = None
+        dbs = zkOper.retrieve_db_list()
+        if [] != dbs:
+            db_name = dbs[0]
+            
+        user_prop_dict = {}
+        if None is not db_name:
+            user_prop_dict = zkOper.retrieve_db_user_prop(clusterUUID, db_name)
+            
         try:
             for user_prop in user_prop_dict:
                 max_user_connections_rows = self.dba_opers.show_user_max_conn(conn, user_prop, user_prop_dict[user_prop])
