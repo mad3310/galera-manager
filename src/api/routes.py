@@ -14,7 +14,6 @@ from handlers.backup import *
 from handlers.arbitrator import *
 handlers = [
             (r"/generateConfigFile", GenerateConfigFileHandler),
-            (r"/copyConfigFileInfo", CopyConfigFileInfoHandler),
             (r"/admin/conf", AdminConf),
             (r"/admin/user", AdminUser),
             (r"/cluster", CreateMCluster),
