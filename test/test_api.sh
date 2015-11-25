@@ -69,7 +69,7 @@ function test_create_cluster(){
 	
 	curl --user root:root -d "cluster_flag=new" "http://${ip1}:8888/cluster/start"
 	
-	sleep 60
+	sleep 120
 }
 
 
