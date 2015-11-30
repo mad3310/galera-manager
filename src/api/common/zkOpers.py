@@ -62,7 +62,7 @@ class ZkOpers(object):
             f = open('/etc/hostname','r')
             res_str = f.readline().replace('d-mcl-','')
             return res_str[0:res_str.find('-n-')]
-        except Exception, e:
+        except Exception:
             raise 'hostname is wrong! please check it %s' %f.readline()
         finally:
             f.close()
@@ -118,11 +118,11 @@ class ZkOpers(object):
             try:
                 return self.re_connect()
             
-            except SessionExpiredError, e:
+            except SessionExpiredError:
                 logging.info("zk client retry time: %s, for zookeeper service may stop" % (count))
                 return self.reset_zk_client(count + 1)
             
-            except TimeoutError, e:
+            except TimeoutError:
                 logging.info("zk client retry time: %s, for connect timeout" % (count))
                 return self.reset_zk_client(count + 1)
         

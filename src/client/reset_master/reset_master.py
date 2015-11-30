@@ -13,8 +13,10 @@ import ConfigParser
 MASTER_USER = ''
 MASTER_PASSWORD = ''
 
-MASTER_ROOT_USER = ''
-MASTER_ROOT_USER_PASSWORD = ''
+SLAVE_ROOT_USER = ''
+SLAVE_ROOT_USER_PASSWORD = ''
+
+PORT=''
 
 ADMIN_MAIL = ()
 SPAN_TIME = 12
@@ -33,6 +35,7 @@ class Replication(Connsync):
         self.started_nodes =[]
         self.masters = []
         self.__init_time()
+        
 
     def __init_time(self):
         self.start_time = ''
@@ -152,11 +155,12 @@ class Replication(Connsync):
         self.__reset_mysql_master(conn)
 
 def assign_params(conf):
-    global MASTER_USER, MASTER_PASSWORD, MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD, ADMIN_MAIL, SPAN_TIME
+    global MASTER_USER, MASTER_PASSWORD, MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD, ADMIN_MAIL, SPAN_TIME, PORT
     MASTER_USER = conf.get('reset_master', 'MASTER_USER')
     MASTER_PASSWORD = conf.get('reset_master', 'MASTER_PASSWORD')
-    MASTER_ROOT_USER = conf.get('reset_master', 'MASTER_ROOT_USER')
-    MASTER_ROOT_USER_PASSWORD = conf.get('reset_master', 'MASTER_ROOT_USER_PASSWORD')
+    SLAVE_ROOT_USER = conf.get('reset_master', 'SLAVE_ROOT_USER')
+    SLAVE_ROOT_USER_PASSWORD = conf.get('reset_master', 'SLAVE_ROOT_USER_PASSWORD')
+    PORT = conf.get('reset_master', 'PORT')
     ADMIN_MAIL = conf.get('reset_master', 'ADMIN_MAIL')
     ADMIN_MAIL = tuple(ADMIN_MAIL.split(','))
     SPAN_TIME = int(conf.get('reset_master','SPAN_TIME'))
@@ -175,7 +179,7 @@ def main():
 
     rep = Replication(status=True)
     while rep.status:
-        conn = rep.get_mysql_connection('127.0.0.1', MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD)
+        conn = rep.get_mysql_connection('127.0.0.1', SLAVE_ROOT_USER, SLAVE_ROOT_USER_PASSWORD, PORT)
         if conn is None:
             logging.info("connect local mysql is wrong")
         try:

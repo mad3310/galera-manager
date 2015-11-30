@@ -1,10 +1,10 @@
 import MySQLdb
 
 class Connsync(object):
-    def get_mysql_connection(self, host, user, passwd):
+    def get_mysql_connection(self, host, user, passwd, port):
         conn = None
         try:
-            conn = MySQLdb.Connect(host, user, passwd)
+            conn = MySQLdb.Connect(host, user, passwd, port)
         except Exception,e:
             raise e
         return conn

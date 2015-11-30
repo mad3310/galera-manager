@@ -358,23 +358,21 @@ class Check_DB_Anti_Item(Check_Status_Base):
         
         if options.send_email_switch:
             send_email(options.admins, subject, body)
-        
-    
-class Check_DB_WR_Avalialbe(Check_Status_Base):
+
+            
+class Check_DB_WR_Available(Check_Status_Base):
     
     def __init__(self):
-        super(Check_DB_WR_Avalialbe, self).__init__()
+        super(Check_DB_WR_Available, self).__init__()
         
     @tornado.gen.engine
     def check(self, data_node_info_list):
         url_post = "/inner/db/check/wr"
         monitor_type = "db"
         monitor_key = "write_read_avaliable"
-        super(Check_DB_WR_Avalialbe, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
+        super(Check_DB_WR_Available, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
         
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
-#         message = "processing method: Check_DB_WR_Avalialbe,the total count:%s,the succes count:%s,the failed count:%s"
-#         logging.info(message%(total_count, success_count, failed_count))
         if failed_count == 0:
             return options.alarm_nothing
         elif failed_count == 1:

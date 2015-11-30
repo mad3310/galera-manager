@@ -9,7 +9,7 @@ import logging
 import tornado
 
 from base import APIHandler
-from common.status_opers import Check_Cluster_Available, Check_Node_Size, Check_Node_Log_Health, Check_Node_Log_Error, Check_Node_Log_Warning, Check_Node_Active, Check_DB_WR_Avalialbe,\
+from common.status_opers import Check_Cluster_Available, Check_Node_Size, Check_Node_Log_Health, Check_Node_Log_Error, Check_Node_Log_Warning, Check_Node_Active, Check_DB_WR_Available,\
 Check_DB_Wsrep_Status, Check_DB_Cur_Conns, Check_DB_Anti_Item, Check_Backup_Status, Check_Database_User, Check_DB_User_Cur_Conns
 
 class Cluster_Info_Sync_Handler(object):
@@ -81,7 +81,7 @@ class DB_Info_Sync_Handler(object):
 
 class DB_Info_Async_Handler(object):    
     
-    check_db_wr_available = Check_DB_WR_Avalialbe()
+    #check_db_wr_available = Check_DB_WR_Avalialbe()
     
     check_db_wsrep_status = Check_DB_Wsrep_Status()
     
@@ -93,11 +93,12 @@ class DB_Info_Async_Handler(object):
         self._action(data_node_info_list)
         
     def _action(self, data_node_info_list):
-        self.check_db_wr_available.check(data_node_info_list)
+        #self.check_db_wr_available.check(data_node_info_list)
         self.check_db_wsrep_status.check(data_node_info_list)
         self.check_db_cur_conns.check(data_node_info_list)
         self.check_db_user_cur_conns.check(data_node_info_list)
         
+    
     
 # retrieve the status of mcluster
 # eg. curl "http://localhost:8888/mcluster/monitor"

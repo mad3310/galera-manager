@@ -6,6 +6,7 @@ from common.utils.threading_exception_handle_worker import Thread_Exception_Hand
 from common.utils.monitor_backend_handle_worker import Monitor_Backend_Handle_Worker
 from common.utils.monitor_db_anti_item_worker import Monitor_Db_Anti_Item
 from common.utils.threading_exception_queue import Threading_Exception_Queue
+from common.utils.monitor_inner_db_wr_worker import Monitor_Db_Wr_Available
 
 '''
 Created on 2013-7-21
@@ -26,7 +27,7 @@ class Scheduler_Opers(object):
         self.thread_exception_hanlder(5)
         self.sced_monitor_handler(55)
         self.check_db_anti_item(200)
-        
+        self.check_db_wr_available(300)       
         
     def sced_monitor_handler(self, action_timeout = 30):
         # Create a periodic callback that tries to access async monitor interface
@@ -51,6 +52,19 @@ class Scheduler_Opers(object):
         try:
             db_anti_hanlder_worker = Monitor_Db_Anti_Item()
             db_anti_hanlder_worker.start()
+        except Exception:
+            self.threading_exception_queue.put(sys.exc_info())
+            
+    def check_db_wr_available(self, action_timeout):
+        if action_timeout > 0:
+            _monitor_async_t = PeriodicCallback(self.__check_inner_db_wr_available,
+            action_timeout * 1000)
+        _monitor_async_t.start()
+        
+    def __check_inner_db_wr_available(self):
+        try:
+            db_wr_hanlder_worker = Monitor_Db_Wr_Available()
+            db_wr_hanlder_worker.start()
         except Exception:
             self.threading_exception_queue.put(sys.exc_info())
             
