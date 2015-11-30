@@ -155,12 +155,12 @@ class Replication(Connsync):
         self.__reset_mysql_master(conn)
 
 def assign_params(conf):
-    global MASTER_USER, MASTER_PASSWORD, MASTER_ROOT_USER, MASTER_ROOT_USER_PASSWORD, ADMIN_MAIL, SPAN_TIME, PORT
+    global MASTER_USER, MASTER_PASSWORD, SLAVE_ROOT_USER, SLAVE_ROOT_USER_PASSWORD, ADMIN_MAIL, SPAN_TIME, PORT
     MASTER_USER = conf.get('reset_master', 'MASTER_USER')
     MASTER_PASSWORD = conf.get('reset_master', 'MASTER_PASSWORD')
     SLAVE_ROOT_USER = conf.get('reset_master', 'SLAVE_ROOT_USER')
     SLAVE_ROOT_USER_PASSWORD = conf.get('reset_master', 'SLAVE_ROOT_USER_PASSWORD')
-    PORT = conf.get('reset_master', 'PORT')
+    PORT = int(conf.get('reset_master', 'PORT'))
     ADMIN_MAIL = conf.get('reset_master', 'ADMIN_MAIL')
     ADMIN_MAIL = tuple(ADMIN_MAIL.split(','))
     SPAN_TIME = int(conf.get('reset_master','SPAN_TIME'))
