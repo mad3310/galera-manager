@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IMAGE="letv/zookeeper-test:0.0.2"
+IMAGE="letv/zookeeper-test:0.0.3"
 
 function create_zk_docker_container(){
 	local docker_name=$1

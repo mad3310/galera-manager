@@ -7,7 +7,7 @@ RUN yum install vim -y
 RUN yum update bash -y
 RUN yum install java-1.7.0-openjdk-devel -y
 
-EXPOSE 4567 4568 4569 2181 2888 3888
+EXPOSE 2181 2888 3888
 USER root
 
 RUN mkdir -p /usr/local/zookeeper/

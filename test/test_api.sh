@@ -55,17 +55,19 @@ function test_create_cluster(){
 	local ip2=$2
 	local ip3=$3
 	
-	curl --user root:root -d "clusterName=letv_mcluster_test_1&dataNodeIp=${ip1}&dataNodeName=letv_mcluster_test_1_node_1" "http://${ip1}:8888/cluster"
+	curl --user root:root -d "clusterName=mcluster-manager-test&dataNodeIp=${ip1}&dataNodeName=d-mcl-mcluster-manager-test-n-1" "http://${ip1}:8888/cluster"
 
 	curl --user root:root "http://${ip1}:8888/cluster/init?forceInit=false"
 	
+	curl --user root:root -d "dbName=mcluster-manager&userName=mcluster-manager" "http://localhost:8888/db" 
+	
 	curl "http://${ip2}:8888/cluster/sync"
 	
-	curl --user root:root -d "dataNodeIp=${ip2}&dataNodeName=letv_mcluster_test_1_node_2" "http://${ip2}:8888/cluster/node"
+	curl --user root:root -d "dataNodeIp=${ip2}&dataNodeName=d-mcl-mcluster-manager-test-n-2" "http://${ip2}:8888/cluster/node"
 	
 	curl "http://${ip3}:8888/cluster/sync"
 	
-	curl --user root:root -d "dataNodeIp=${ip3}&dataNodeName=letv_mcluster_test_1_node_3" "http://${ip3}:8888/cluster/node"
+	curl --user root:root -d "dataNodeIp=${ip3}&dataNodeName=d-mcl-mcluster-manager-test-n-3" "http://${ip3}:8888/cluster/node"
 	
 	curl --user root:root -d "cluster_flag=new" "http://${ip1}:8888/cluster/start"
 	
