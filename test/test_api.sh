@@ -59,7 +59,7 @@ function test_create_cluster(){
 
 	curl --user root:root "http://${ip1}:8888/cluster/init?forceInit=false"
 	
-	curl --user root:root -d "dbName=mcluster-manager&userName=mcluster-manager" "http://localhost:8888/db" 
+	curl --user root:root -d "dbName=mcluster-manager&userName=mcluster-manager" "http://${ip1}:8888/db" 
 	
 	curl "http://${ip2}:8888/cluster/sync"
 	
