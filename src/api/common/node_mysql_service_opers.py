@@ -39,7 +39,7 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         result.setdefault("uuid", uuid)
         result.setdefault("seqno", seqno)
         
-        return dict
+        return result
     
     def __find_special_value(self, result, key, value_length):
         key_start_pos = result.find(key)
