@@ -10,7 +10,7 @@ from common.utils import local_get_zk_address
 from common.configFileOpers import ConfigFileOpers
 
 confOpers = ConfigFileOpers()
-global_zk_leader = None
+
     
 def retrieve_kv_from_db_rows(rows, key_list=None):
     key_value = {}
