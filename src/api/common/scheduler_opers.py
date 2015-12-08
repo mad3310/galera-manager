@@ -26,8 +26,8 @@ class Scheduler_Opers(object):
         '''
         self.thread_exception_hanlder(5)
         self.sced_monitor_handler(55)
-        self.check_db_anti_item(200)
-        self.check_db_wr_available(300)       
+        self.check_db_anti_item(195)
+        self.check_db_wr_available(295)       
         
     def sced_monitor_handler(self, action_timeout = 30):
         # Create a periodic callback that tries to access async monitor interface

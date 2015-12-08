@@ -39,7 +39,6 @@ define("glb_json_file_name",default="/etc/gbalancer/%sconfiguration.json", help=
 define("check_datanode_health",default=join(base_dir,"shell","check_datanode_health.sh"), help="check datanode health")
 define("check_datanode_error",default=join(base_dir,"shell","check_datanode_error.sh"), help="check datanode error")
 define("check_datanode_warning",default=join(base_dir,"shell","check_datanode_warning.sh"), help="check datanode warning")
-define("check_mcluster_health",default=join(base_dir,"shell","check_mcluster_health.sh"), help="check mcluster health")
 define("kill_innotop",default=join(base_dir,"shell","kill_innotop.sh"), help="kill innotop")
 
 

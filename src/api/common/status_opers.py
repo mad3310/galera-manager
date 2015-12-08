@@ -155,25 +155,26 @@ class Check_Cluster_Available(Check_Status_Base):
     
     invokeCommand = InvokeCommand()
     dba_opers = DBAOpers()
+    confOpers = ConfigFileOpers()
 
     def check(self, data_node_info_list):
-        confOpers = ConfigFileOpers()
-        
-        false_nodes, value, _password = [], {}, ''
-        value = confOpers.getValue(options.mysql_cnf_file_name)["wsrep_sst_auth"]
+        success_nodes, value, _password = [], {}, ''
+        value = self.confOpers.getValue(options.mysql_cnf_file_name)["wsrep_sst_auth"]
         _password = value.split(":")[1][:-1]
         
         for data_node_ip in data_node_info_list:
-            conn = self.dba_opers.get_mysql_connection(data_node_ip, user="monitor", passwd=_password)
-            if conn == None:
-                false_nodes.append(data_node_ip)
-            conn.close()
+            try:
+                conn = self.dba_opers.get_mysql_connection(data_node_ip, user="monitor", passwd=_password)
+                if conn is not None:
+                    success_nodes.append(data_node_ip)
+            finally:
+                conn.close()
         
-        message = "no avaliable data node on VIP"
-        if len(false_nodes) != 3:
+        message = "no avaliable data node"
+        if len(success_nodes) >= 1:
             message = 'ok'
         
-        alarm_result = self.retrieve_alarm_level(0, 0, len(false_nodes))
+        alarm_result = self.retrieve_alarm_level(0, 0, len(success_nodes))
         
         #shell_result = self.invokeCommand.run_check_shell(options.check_mcluster_health)
 

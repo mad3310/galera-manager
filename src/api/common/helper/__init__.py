@@ -84,26 +84,26 @@ def getDictFromText(sourceText, keyList):
     return resultValue
 
 def check_leader(zk):
-    global global_zk_leader
-    if None != global_zk_leader:
-        return global_zk_leader
-    
-    ret_dict = confOpers.getValue(options.mcluster_manager_cnf, ['zkLeader'])
-    zkLeader = ret_dict.get('zkLeader')
-    if None != zkLeader:
-        global_zk_leader = zkLeader
-        return zkLeader
-    
     request_param = {"zkLeader" : "True"}
-    if zk.command("srvr").find('leader') == -1:
-        requestParam.setdefault("zkLeader", "False")
-        
-    confOpers.setValue(options.mcluster_manager_cnf, requestParam)
+    ret_dict = confOpers.getValue(options.mcluster_manager_cnf, request_param)
+    zkLeader = ret_dict.get('zkLeader')
+    if zkLeader:
+        if zkLeader=='True':
+            return True
+        else:
+            return False
     
+    if zk.command("srvr").find('leader') == -1:
+        request_param["zkLeader"] = "False"
+
+    with open(options.mcluster_manager_cnf,'a') as f:
+        f.writelines('zkLeader=' + request_param['zkLeader'])
+
     zkLeader = request_param.get("zkLeader")
-    global_zk_leader = zkLeader
-    return zkLeader
-        
+    if zkLeader == 'True':
+        return True
+    else:
+        return False
 
 def is_monitoring(host_ip=None, zkOper=None):
     try:

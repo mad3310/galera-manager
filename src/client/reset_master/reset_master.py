@@ -55,7 +55,8 @@ class Replication(Connsync):
             if not self.start_time:
                   self.start_time = time.time()                        
             self.data['Relay_Log_Pos'] = rows_show_slave[0][8]
-            rows_xid = self.exc_mysql_sql(conn, "SHOW RELAYLOG EVENTS IN '%s' from %s" %(rows_show_slave[0][7], rows_show_slave[0][8]))
+            relay_log_file = rows_show_slave[0][7]
+            rows_xid = self.exc_mysql_sql(conn, "SHOW RELAYLOG EVENTS IN '%s' from %s" %(relay_log_file, self.data['Relay_Log_Pos']))
             self.data['xid'] = long(rows_xid[-1][-1].strip('COMMIT /* xid='))
             self.finish_time = time.time()
             logging.info(self.data)
