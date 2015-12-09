@@ -173,8 +173,11 @@ class Check_Cluster_Available(Check_Status_Base):
         message = "no avaliable data node"
         if len(success_nodes) >= 1:
             message = 'ok'
-        
-        alarm_result = self.retrieve_alarm_level(len(data_node_info_list), len(success_nodes), len(data_node_info_list)-len(success_nodes))
+            
+        total_count = len(data_node_info_list)
+        success_count = len(success_nodes)
+        failed_count = total_count - success_count
+        alarm_result = self.retrieve_alarm_level(total_count, success_count, failed_count)
 
         cluster_available_dict = {}  
         cluster_available_dict.setdefault("message", message)
@@ -183,7 +186,7 @@ class Check_Cluster_Available(Check_Status_Base):
         return cluster_available_dict
     
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
-        if failed_count == 3:
+        if success_count == 0:
             return options.alarm_serious
         
         return options.alarm_nothing
