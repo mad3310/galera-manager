@@ -152,8 +152,7 @@ class Check_Status_Base(object):
         zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
 
 class Check_Cluster_Available(Check_Status_Base):
-    
-    invokeCommand = InvokeCommand()
+
     dba_opers = DBAOpers()
     confOpers = ConfigFileOpers()
 
@@ -168,20 +167,19 @@ class Check_Cluster_Available(Check_Status_Base):
                 if conn is not None:
                     success_nodes.append(data_node_ip)
             finally:
-                conn.close()
+                if conn is not None:
+                    conn.close()
         
         message = "no avaliable data node"
         if len(success_nodes) >= 1:
             message = 'ok'
         
-        alarm_result = self.retrieve_alarm_level(0, 0, len(success_nodes))
-        
-        #shell_result = self.invokeCommand.run_check_shell(options.check_mcluster_health)
+        alarm_result = self.retrieve_alarm_level(len(data_node_info_list), len(success_nodes), len(data_node_info_list)-len(success_nodes))
 
-        cluster_available_dict = {}
+        cluster_available_dict = {}  
         cluster_available_dict.setdefault("message", message)
         cluster_available_dict.setdefault("alarm", alarm_result)
-        
+
         return cluster_available_dict
     
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
