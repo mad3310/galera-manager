@@ -163,25 +163,22 @@ class Check_Cluster_Available(Check_Status_Base):
         _password = value.split(":")[1][:-1]
         
         for data_node_ip in data_node_info_list:
-            try:
-                conn = self.dba_opers.get_mysql_connection(data_node_ip, user="monitor", passwd=_password)
-                if conn is not None:
-                    success_nodes.append(data_node_ip)
-            finally:
+            conn = self.dba_opers.get_mysql_connection(data_node_ip, user="monitor", passwd=_password)
+            if conn is not None:
+                success_nodes.append(data_node_ip)
                 conn.close()
         
         message = "no avaliable data node"
         if len(success_nodes) >= 1:
             message = 'ok'
-        
-        alarm_result = self.retrieve_alarm_level(0, 0, len(success_nodes))
-        
-        #shell_result = self.invokeCommand.run_check_shell(options.check_mcluster_health)
+            alarm_result = self.retrieve_alarm_level(0, 0, 1)
+        else:
+            alarm_result = self.retrieve_alarm_level(0, 0, 3)
 
-        cluster_available_dict = {}
+        cluster_available_dict = {}  
         cluster_available_dict.setdefault("message", message)
         cluster_available_dict.setdefault("alarm", alarm_result)
-        
+
         return cluster_available_dict
     
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
