@@ -52,7 +52,7 @@ class Scheduler_Opers(object):
     def __check_db_anti(self):
         try:
             db_anti_hanlder_worker = Monitor_Db_Anti_Item()
-            db_anti_hanlder_worker.start()
+            db_anti_hanlder_worker.run()
         except Exception:
             self.threading_exception_queue.put(sys.exc_info())
             
@@ -65,7 +65,7 @@ class Scheduler_Opers(object):
     def __check_inner_db_wr_available(self):
         try:
             db_wr_hanlder_worker = Monitor_Db_Wr_Available()
-            db_wr_hanlder_worker.start()
+            db_wr_hanlder_worker.run()
         except Exception:
             self.threading_exception_queue.put(sys.exc_info())
             

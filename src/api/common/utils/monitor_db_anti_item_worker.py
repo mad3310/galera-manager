@@ -1,5 +1,4 @@
 import logging
-import threading
 
 from common.helper import is_monitoring,get_localhost_ip
 from common.zkOpers import Scheduler_ZkOpers
@@ -8,7 +7,7 @@ from common.utils import local_get_zk_address
 from common.status_opers import Check_DB_Anti_Item
 
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-class Monitor_Db_Anti_Item(threading.Thread):
+class Monitor_Db_Anti_Item(object):
     
     check_db_anti_itmes = Check_DB_Anti_Item()
 

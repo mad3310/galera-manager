@@ -1,5 +1,4 @@
 import logging
-import threading
 
 from common.helper import is_monitoring,get_localhost_ip
 from common.zkOpers import Scheduler_ZkOpers
@@ -8,14 +7,14 @@ from common.utils import local_get_zk_address
 from common.status_opers import Check_DB_WR_Available
 
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-class Monitor_Db_Wr_Available(threading.Thread):
+class Monitor_Db_Wr_Available(object):
     
     check_db_wr_available = Check_DB_WR_Available()
 
     def __init__(self):
         super(Monitor_Db_Wr_Available, self).__init__()
         
-    def run(self):    
+    def run(self):
         '''
             if no logic below, singleton Scheduler_ZkOpers may have no self.zk object.
         '''
