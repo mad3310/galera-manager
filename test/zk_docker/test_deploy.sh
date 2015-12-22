@@ -42,6 +42,13 @@ function replace_zk_ip(){
 	echo "server.3=$3:2888:3888" >> /srv/docker/devicemapper/mnt/$4/rootfs/etc/zookeeper/conf/zoo.cfg
 }
 
+function write_container_ip_to_local(){
+    cat > /srv/docker/devicemapper/mnt/$1/rootfs/tmp/zkip <<EOF
+zkip=$2
+EOF
+}
+
+
 remove_docker_container 'manager-zk-1'
 remove_docker_container 'manager-zk-2'
 remove_docker_container 'manager-zk-3'
@@ -77,6 +84,10 @@ echo ${docker_id_3}
 replace_zk_ip ${docker_ip_1} ${docker_ip_2} ${docker_ip_3} ${docker_id_1}
 replace_zk_ip ${docker_ip_1} ${docker_ip_2} ${docker_ip_3} ${docker_id_2}
 replace_zk_ip ${docker_ip_1} ${docker_ip_2} ${docker_ip_3} ${docker_id_3}
+
+write_container_ip_to_local ${docker_id_1} ${docker_ip_1}
+write_container_ip_to_local ${docker_id_2} ${docker_ip_2}
+write_container_ip_to_local ${docker_id_3} ${docker_ip_3}
 
 
 

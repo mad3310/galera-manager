@@ -5,6 +5,8 @@ import urllib
 import httplib
 import base64
 import json
+from multiprocessing.pool import ThreadPool
+import threading
 
 MATRIX_IP = '10.130.85.173'
 MATRIX_USER = 'python_monitor'
@@ -15,11 +17,15 @@ PORT = 3306
 DES_STORE_IP = '127.0.0.1'
 DES_STORE_USER = 'root'
 DES_STORE_PASSWORD = 'xuyanwei'
-DES_STORE_DATABASE = 'iops'
+DES_STORE_DATABASE = 'iops_hp'
 DES_STORE_DATABASE_TABLE = 'iops_table'
 
-HCLUSTER_NAME = ['Hp_Mcluster']
 DEL_CONTAINER_NAME = []
+TIMEOUT = 60
+TIME_SLEEP = 20
+
+HCLUSTER_NAME=['Hp_Mcluster']
+
 
 class Iops(object):
     def __init__(self):
@@ -27,6 +33,7 @@ class Iops(object):
         self.hcluster_names = []
         self.hosts = {}
         self.hosts_container = {}
+        self.lock = threading.Lock()
         self._real_init()
 
     def _real_init(self):
@@ -66,31 +73,46 @@ class Iops(object):
         assert self.hosts_container
         self.status = True
 
-    def http_response(self, user=(), port=8888, method='GET', host='127.0.0.1', path='/', params={}):
+    def http_respond(self, httpconn, user=(), path='/', params={}):
         params = urllib.urlencode(params)
         headers = {"Content-type": "application/x-www-form-urlencoded"
-                    , "Accept": "text/plain"}
+                    , "Accept": "text/plain"
+                    , "Authorization" : base64.encodestring("Basic %s:%s" % (user[0], user[1])) }
+        method = 'GET'
+        try:
+            httpconn.request(method, path, params, headers)
+            response = httpconn.getresponse()
+            data = response.read()
+        except Exception, e:
+            return 404, '"%s" is not return' %path
 
-        if user:
-            encode_user = base64.encodestring("%s:%s" % (user[0], user[1]))[:-1]
-            auth = "Basic %s" % encode_user
-            headers.update({"Authorization": auth})
-
-        conn = httplib.HTTPConnection(host, port, timeout=5)
-        conn.request(method, path, params, headers)
-        response = conn.getresponse()
-        data = response.read()
-        conn.close()
         return response.status, data
 
-    def request(self, user, host, path):
+    def request(self, hostip, path, hostname, conn):
+        code, res, res_data = 200, '', []
+        httpconn = httplib.HTTPConnection(host=hostip, port=6666, timeout=TIMEOUT)
+        if None == httpconn:
+            print 'do not connecting container!'
         try:
-            print path
-            code, response_data = self.http_response(user=user, port=6666, host=host, path=path)
-            if code == 200:
-                return response_data
-        except Exception, e:
-            return {}
+            for _path in path:
+                code, res = self.http_respond(httpconn, user=('root','root'), path=_path)
+                print threading.current_thread().name
+                print hostname+':'+hostip
+                print res
+                if code == 200:
+                    res_data.append(res)
+        finally:
+            httpconn.close()
+        if res_data:
+            self._insert_data(hostname=hostname, hostip=hostip, conn=conn, res=res_data)
+
+    def _insert_data(self, hostname='', hostip='127.0.0.1', conn=None, res=[]):
+        self.lock.acquire(2)
+        for _res in res:
+            obj = json.loads(_res)['response']
+            model = Model(obj['containerName'], hostname, hostip, obj['diskiops']['read'], obj['diskiops']['write'], obj['time'])
+            self._store_data(conn, model)
+        self.lock.release()
 
     def _store_data(self, conn, dataclass):
         try:
@@ -114,6 +136,22 @@ class Iops(object):
                                 `read` int NOT NULL, `write` int NOT NULL, `request_time` varchar(32) NOT NULL, PRIMARY KEY (id)) \
                                 ENGINE=InnoDB DEFAULT CHARSET=utf8" % (DES_STORE_DATABASE + '.' + DES_STORE_DATABASE_TABLE)
                 cursor.execute(sql_create_table)
+
+    def linq_to_dict(self):
+        with open('%s.log'%DES_STORE_DATABASE,'w') as f:
+            [f.writelines(_dict_key+': '+str(self.hosts_container[_dict_key])+'\n') for _dict_key in self.hosts_container]
+        _dict={}
+        for k,v in self.hosts_container.items():
+            for i in v:
+                __dict={}
+                if i in _dict:
+                    _dict[i][v[i]].append(k)
+                    __dict[v[i]]=_dict[i][v[i]]
+                else:
+                    __dict[v[i]]=[k]
+                _dict[i]=__dict
+        self.req_data=_dict
+
 
     @staticmethod
     def get_mysql_connection(host, user, passwd, port):
@@ -166,29 +204,31 @@ def main():
         for _del_str in DEL_CONTAINER_NAME:
             del iops.hosts_container[_del_str]
     print iops.hosts_container
-    with open('tmp.log','w') as f:
-        [f.writelines(_dict_key+': '+str(iops.hosts_container[_dict_key])+'\n') for _dict_key in iops.hosts_container]
-
+    iops.linq_to_dict()
+    print "-------------------"
+    #pool = ThreadPool(processes=len(iops.req_data))
     while iops.status:
-        container_ip = ''
-        host_name = ''
-        path = ''
+        begin_time = time.time()
         conn = iops.get_mysql_connection(DES_STORE_IP, DES_STORE_USER, DES_STORE_PASSWORD, PORT)
         if conn == None:
             raise 'src_store_addr is not connect!'
-
-        for _host_dict in iops.hosts_container:
-            path ='/container/stat/{0}/diskiops'.format(_host_dict).encode("utf-8")
-            container_info = [(iops.hosts_container[_host_dict][__host], __host) for __host in  iops.hosts_container[_host_dict]]
-            response_data = iops.request(('root','root'), container_info[0][0], path)
-            if response_data:
-                obj = json.loads(response_data)['response']
-                model = Model(obj['containerName'], container_info[0][1], container_info[0][0], obj['diskiops']['read'], obj['diskiops']['write'], obj['time'])
-                iops._store_data(conn, model)
+        pool = ThreadPool(processes=len(iops.req_data))
+        for _info in iops.req_data:
+            _path = []
+            for _req_info in iops.req_data[_info]:
+                _path = ['/container/stat/{0}/diskiops'.format(i).encode("utf-8") for i in iops.req_data[_info][_req_info]]
+            print _path
+            pool.apply_async(iops.request, (_req_info, _path, _info, conn))
+        pool.close()
+        pool.join()
 
         if conn is not None:
             conn.close()
-        #time.sleep(1)
+        end_time = time.time()
+
+        time_span = round((end_time-begin_time), 3)
+        print time_span
+        time.sleep(abs(TIME_SLEEP-time_span))
 
 
 if __name__ == '__main__':

@@ -20,9 +20,6 @@ syncLimit=5
 dataDir=/var/lib/zookeeper
 clientPort=2181
 maxClientCnxns=100
-server.1=
-server.2=
-server.3=
 EOF
 
 echo $ZKID > /etc/zookeeper/conf/myid

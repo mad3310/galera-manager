@@ -13,6 +13,7 @@ RUN yum install kazoo -y
 RUN yum install zope.interface -y
 RUN yum install MySQL-python -y
 RUN yum install python-futures -y
+RUN yum install mcluster-manager -y
 
 EXPOSE 3306 8888 2888 3888
 USER root
@@ -23,6 +24,9 @@ RUN mkdir -p /var/log/mcluster-manager
 
 ADD ./init/test_docker_init.sh /usr/local/mcluster/init/test_docker_init.sh
 
+WORKDIR /opt/letv/mcluster-manager
+
 RUN chmod 775 /usr/local/mcluster/init/test_docker_init.sh
+RUN yum remove mcluster-manager -y
 
 ENTRYPOINT /usr/local/mcluster/init/test_docker_init.sh && /bin/bash

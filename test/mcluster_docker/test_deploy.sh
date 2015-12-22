@@ -30,7 +30,15 @@ function create_docker_container(){
 function copy_src_to_container(){
 	local docker_id=$1
 	
-	cp -r /root/git/mcluster-manager/src/api /srv/docker/devicemapper/mnt/$1/rootfs/opt/letv/mcluster-manager/
+	cp -r /opt/letv/mcluster-manager/api /srv/docker/devicemapper/mnt/$1/rootfs/opt/letv/mcluster-manager/
+}
+
+function write_container_ip_to_local(){
+	local docker_id=$1
+	local docker_ip=$2
+    cat > /srv/docker/devicemapper/mnt/${docker_id}/rootfs/tmp/zkip <<EOF
+zkip=${docker_ip}
+EOF
 }
 
 
@@ -70,4 +78,6 @@ get_docker_ip 'd-mcl-mcluster-manager-test-n-1'
 docker_ip_1=${docker_ip}
 echo ${docker_ip_1}
 
-
+write_container_ip_to_local ${docker_id_3} ${docker_ip_3}
+write_container_ip_to_local ${docker_id_2} ${docker_ip_2}
+write_container_ip_to_local ${docker_id_1} ${docker_ip_1}
