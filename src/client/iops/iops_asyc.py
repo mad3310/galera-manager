@@ -16,8 +16,8 @@ PORT = 3306
 
 DES_STORE_IP = '127.0.0.1'
 DES_STORE_USER = 'root'
-DES_STORE_PASSWORD = 'xuyanwei'
-DES_STORE_DATABASE = 'iops_yz02'
+DES_STORE_PASSWORD = 'Mcluster'
+DES_STORE_DATABASE = 'iops_hp'
 DES_STORE_DATABASE_TABLE = 'iops_table'
 
 DEL_CONTAINER_NAME = []
@@ -25,7 +25,7 @@ DEL_CONTAINER_NAME = []
 TIMEOUT = 30
 TIME_SLEEP = 10
 
-HCLUSTER_NAME=['YZ_02_Mcluster']
+HCLUSTER_NAME=['Hp_Mcluster']
 
 
 class Iops(object):
@@ -51,7 +51,7 @@ class Iops(object):
 
     def __new__(cls, status):
         cls.status = status
-        return object.__new__(cls, status)
+        return object.__new__(cls)
 
     def __get_cluster_hosts_info(self, conn):
         hcluster_list = [hcluster for hcluster in HCLUSTER_NAME if hcluster in self.hcluster_names]
@@ -61,7 +61,7 @@ class Iops(object):
                 paascloud_test.WEBPORTAL_HCLUSTER where paascloud_test.WEBPORTAL_HOST.HCLUSTER_ID=paascloud_test.WEBPORTAL_HCLUSTER.ID \
                 and paascloud_test.WEBPORTAL_HCLUSTER.HCLUSTER_NAME='{0}'".format(hcluster))
                 if hosts_list:
-                    [ self.hosts.setdefault(_host[0],_host[1]) for _host in hosts_list ]
+                    [ self.hosts.setdefault(_host[0], _host[1]) for _host in hosts_list ]
 
     def __get_container_name(self, conn):
         if self.hosts:
@@ -77,8 +77,10 @@ class Iops(object):
         assert self.hosts
         assert self.hosts_container
         self.status = True
-
-    def http_respond(self, httpconn, user=('root','root'), path=[], params={}):
+    
+    ''' http request '''
+    @staticmethod
+    def http_respond(httpconn, user=('root','root'), path=[], params={}):
         params = urllib.urlencode(params)
         headers = {"Content-type": "application/x-www-form-urlencoded"
                     , "Accept": "text/plain"
@@ -90,15 +92,19 @@ class Iops(object):
                 httpconn.request(method, _path, params, headers)
                 res = httpconn.getresponse()
                 yield res.status, res.read()
-
+    
+    ''' Thread methed; not thread safety'''
     def request(self, hostip, path, hostname, conn):
+        hostip = hostip
+        path = path 
+        hostname = hostname
         while Iops.status:
             _begin_time = time.time()
             res_data = []
             print hostname + ': ' + hostip
             try:
                 httpconn = httplib.HTTPConnection(host=hostip, port=6666, timeout=TIMEOUT)
-                [res_data.append(json.loads(res[1])['response']) for res in self.http_respond(httpconn, user=('root','root'), path=path) if res[0]==200]
+                [res_data.append(json.loads(_res_response[1])['response']) for _res_response in Iops.http_respond(httpconn, user=('root','root'), path=path) if _res_response[0] == 200]
             except Exception, e:
                 print e
             finally:
@@ -106,22 +112,26 @@ class Iops(object):
             print "res_data count: " + str(len(res_data)) 
             if res_data:
                 self._insert_data(hostname=hostname, hostip=hostip, conn=conn, res=res_data)
+
             _end_time = time.time()
             time_span = round((_end_time-_begin_time), 3)
             print time_span
+            
+            if time_span < TIME_SLEEP:
+                time.sleep(TIME_SLEEP - time_span)
 
-            time.sleep(TIME_SLEEP)
 
+    ''' store data into mysql'''
     def _insert_data(self, hostname='', hostip='127.0.0.1', conn=None, res=[]):
-        #self.lock.acquire(2)
+        print threading.current_thread().name
+        self.lock.acquire(2)
         for _res in res:
-            print threading.current_thread().name
             print _res
-            if _res['containerName']:
+            if _res['diskiops']:
                 model = Model(_res['containerName'], hostname, hostip, _res['diskiops']['read'], _res['diskiops']['write'], _res['time'])
                 model.save(conn)
-                del model
-        #self.lock.release()
+                #del model
+        self.lock.release()
 
     def linq_to_dict(self):
         _dict = {}
@@ -155,7 +165,7 @@ class Iops(object):
         rows = cursor.fetchall()
         return rows
 
-
+''' model class'''
 class Model(object):
     __slots__ = ('container_name', 'host_name', 'host_ip', 'read', 'write', 'request_time')
 
@@ -168,7 +178,7 @@ class Model(object):
         self.request_time = request_time
 
     def __new__(cls, *args):
-        return object.__new__(cls, *args)
+        return object.__new__(cls)
 
     def __unicode__(self):
         return u"%s"%(self.container_name)

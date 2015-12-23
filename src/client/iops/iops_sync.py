@@ -228,7 +228,9 @@ def main():
 
         time_span = round((end_time-begin_time), 3)
         print time_span
-        time.sleep(abs(TIME_SLEEP-time_span))
+        
+        if time_span < TIME_SLEEP:
+            time.sleep(TIME_SLEEP-time_span)
 
 
 if __name__ == '__main__':

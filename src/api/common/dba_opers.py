@@ -241,27 +241,81 @@ class DBAOpers(object):
                                              muc=max_user_connections
                                              ))
         
-    def grant_resource_limit(self, conn, username, database, ip_address, 
+    def grant_resource_limit(self, conn, username, database, ip_address, role, 
                                            max_queries_per_hour=None, 
                                            max_updates_per_hour=None, 
                                            max_connections_per_hour=None, 
                                            max_user_connections=None):
-        resource_limit_sql = """grant
-                                usage on `{database}`.* to `{username}`@'{ip_address}' with 
-                                MAX_QUERIES_PER_HOUR {mqph} 
-                                MAX_UPDATES_PER_HOUR {muph} 
-                                MAX_CONNECTIONS_PER_HOUR {mcph} 
-                                MAX_USER_CONNECTIONS {muc}""".format(database=database,
-                                                                     username=username,
-                                                                     ip_address=ip_address,
-                                                                     mqph=max_queries_per_hour,
-                                                                     muph=max_updates_per_hour,
-                                                                     mcph=max_connections_per_hour,
-                                                                     muc=max_user_connections
-                                                                     )
+        resource_password_sql = 'select password, host from mysql.user where user="{user}"'.format(user=username)
         cursor = conn.cursor()
-        logging.info('the resource limit sql is:' + resource_limit_sql)
-        cursor.execute(resource_limit_sql)
+        cursor.execute(resource_password_sql)
+        rows = cursor.fetchall()
+        passwd = rows[0][0]
+        resource_limit_sql = """grant 
+        usage on `{database}`.* to 
+        `{username}`@'{ip_address}' identified 
+        by password '{passwd}' with 
+        MAX_QUERIES_PER_HOUR {mqph} 
+        MAX_UPDATES_PER_HOUR {muph} 
+        MAX_CONNECTIONS_PER_HOUR {mcph} 
+        MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                            username=username,
+                                            ip_address=ip_address,
+                                            passwd=passwd,
+                                            mqph=max_queries_per_hour,
+                                            muph=max_updates_per_hour,
+                                            mcph=max_connections_per_hour,
+                                            muc=max_user_connections
+                                            )
+
+        if 'manager' ==  role:
+            grant_sql = """grant 
+            all privileges on {database}.* 
+            to {username}@'{ipAddress}' with 
+            MAX_QUERIES_PER_HOUR {mqph} 
+            MAX_UPDATES_PER_HOUR {muph} 
+            MAX_CONNECTIONS_PER_HOUR {mcph} 
+            MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                             username=username,
+                                             ipAddress=ip_address,
+                                             mqph=max_queries_per_hour,
+                                             muph=max_updates_per_hour,
+                                             mcph=max_connections_per_hour,
+                                             muc=max_user_connections
+                                             )
+
+        elif 'wr' == role:
+            grant_sql = """grant 
+            select, insert, update, delete, index, 
+            create temporary tables, execute, 
+            show view on {database}.* to {username}@'{ipAddress}' 
+            with MAX_QUERIES_PER_HOUR {mqph} 
+            MAX_UPDATES_PER_HOUR {muph} 
+            MAX_CONNECTIONS_PER_HOUR {mcph} 
+            MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                             username=username,
+                                             ipAddress=ip_address,
+                                             mqph=max_queries_per_hour,
+                                             muph=max_updates_per_hour,
+                                             mcph=max_connections_per_hour,
+                                             muc=max_user_connections)
+                
+        elif 'ro' == role:
+            grant_sql = """grant select, execute, show view on 
+            {database}.* to {username}@'{ipAddress}' with 
+            MAX_QUERIES_PER_HOUR {mqph} 
+            MAX_UPDATES_PER_HOUR {muph} 
+            MAX_CONNECTIONS_PER_HOUR {mcph} 
+            MAX_USER_CONNECTIONS {muc}""".format(database=database,
+                                             username=username,
+                                             ipAddress=ip_address,
+                                             mqph=max_queries_per_hour,
+                                             muph=max_updates_per_hour,
+                                             mcph=max_connections_per_hour,
+                                             muc=max_user_connections)
+        
+        cursor.execute(resource_limit_sql)    
+        cursor.execute(grant_sql)
         
     def flush_privileges(self, conn):
         cursor = conn.cursor()         
