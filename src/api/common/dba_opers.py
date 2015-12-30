@@ -251,33 +251,24 @@ class DBAOpers(object):
         cursor.execute(resource_password_sql)
         rows = cursor.fetchall()
         passwd = rows[0][0]
-        resource_limit_sql = """grant 
-        usage on `{database}`.* to 
-        `{username}`@'{ip_address}' identified 
-        by password '{passwd}' with 
-        MAX_QUERIES_PER_HOUR {mqph} 
-        MAX_UPDATES_PER_HOUR {muph} 
-        MAX_CONNECTIONS_PER_HOUR {mcph} 
-        MAX_USER_CONNECTIONS {muc}""".format(database=database,
+        resource_limit_sql = """REVOKE all ON 
+        `{database}`.* from `{username}`@'{ip_address}'""".format(database=database,
                                             username=username,
-                                            ip_address=ip_address,
-                                            passwd=passwd,
-                                            mqph=max_queries_per_hour,
-                                            muph=max_updates_per_hour,
-                                            mcph=max_connections_per_hour,
-                                            muc=max_user_connections
+                                            ip_address=ip_address
                                             )
 
         if 'manager' ==  role:
             grant_sql = """grant 
             all privileges on {database}.* 
-            to {username}@'{ipAddress}' with 
-            MAX_QUERIES_PER_HOUR {mqph} 
+            to {username}@'{ipAddress}'
+            IDENTIFIED BY PASSWORD '{passwd}'
+            with MAX_QUERIES_PER_HOUR {mqph} 
             MAX_UPDATES_PER_HOUR {muph} 
             MAX_CONNECTIONS_PER_HOUR {mcph} 
             MAX_USER_CONNECTIONS {muc}""".format(database=database,
                                              username=username,
                                              ipAddress=ip_address,
+                                             passwd=passwd,
                                              mqph=max_queries_per_hour,
                                              muph=max_updates_per_hour,
                                              mcph=max_connections_per_hour,
@@ -289,12 +280,14 @@ class DBAOpers(object):
             select, insert, update, delete, index, 
             create temporary tables, execute, 
             show view on {database}.* to {username}@'{ipAddress}' 
+            IDENTIFIED BY PASSWORD '{passwd}'
             with MAX_QUERIES_PER_HOUR {mqph} 
             MAX_UPDATES_PER_HOUR {muph} 
             MAX_CONNECTIONS_PER_HOUR {mcph} 
             MAX_USER_CONNECTIONS {muc}""".format(database=database,
                                              username=username,
                                              ipAddress=ip_address,
+                                             passwd=passwd,
                                              mqph=max_queries_per_hour,
                                              muph=max_updates_per_hour,
                                              mcph=max_connections_per_hour,
@@ -302,13 +295,15 @@ class DBAOpers(object):
                 
         elif 'ro' == role:
             grant_sql = """grant select, execute, show view on 
-            {database}.* to {username}@'{ipAddress}' with 
-            MAX_QUERIES_PER_HOUR {mqph} 
+            {database}.* to {username}@'{ipAddress}'
+            IDENTIFIED BY PASSWORD '{passwd}'
+            with MAX_QUERIES_PER_HOUR {mqph} 
             MAX_UPDATES_PER_HOUR {muph} 
             MAX_CONNECTIONS_PER_HOUR {mcph} 
             MAX_USER_CONNECTIONS {muc}""".format(database=database,
                                              username=username,
                                              ipAddress=ip_address,
+                                             passwd=passwd,
                                              mqph=max_queries_per_hour,
                                              muph=max_updates_per_hour,
                                              mcph=max_connections_per_hour,
