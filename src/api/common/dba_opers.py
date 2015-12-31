@@ -251,11 +251,14 @@ class DBAOpers(object):
         cursor.execute(resource_password_sql)
         rows = cursor.fetchall()
         passwd = rows[0][0]
-        resource_limit_sql = """REVOKE all ON 
-        `{database}`.* from `{username}`@'{ip_address}'""".format(database=database,
+        try:
+            resource_limit_sql = """REVOKE all ON `{database}`.* 
+            from `{username}`@'{ip_address}'""".format(database=database,
                                             username=username,
-                                            ip_address=ip_address
-                                            )
+                                            ip_address=ip_address)
+            cursor.execute(resource_limit_sql)
+        except Exception, e:
+            pass
 
         if 'manager' ==  role:
             grant_sql = """grant 
@@ -308,8 +311,7 @@ class DBAOpers(object):
                                              muph=max_updates_per_hour,
                                              mcph=max_connections_per_hour,
                                              muc=max_user_connections)
-        
-        cursor.execute(resource_limit_sql)    
+            
         cursor.execute(grant_sql)
         
     def flush_privileges(self, conn):
