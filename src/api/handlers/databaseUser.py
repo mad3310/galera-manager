@@ -157,7 +157,8 @@ class DBUser(APIHandler):
         max_updates_per_hour = self.get_argument("max_updates_per_hour", None)
         max_connections_per_hour = self.get_argument("max_connections_per_hour", None)
         max_user_connections = self.get_argument("max_user_connections", None)
-        
+        role = self.get_argument("role", None)
+
         if dbName is None:
             raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no specify the database name",\
                                 notification = "direct", \
@@ -181,18 +182,25 @@ class DBUser(APIHandler):
                                 notification = "direct", \
                                 log_message= "when modify db's user, no specify any modified parameter",\
                                 response =  "please specify any one or all of following parameter:[max_queries_per_hour,max_updates_per_hour,max_connections_per_hour,max_user_connections]")
+        
+        if role is None:
+            raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no specify the role",\
+                                notification = "direct", \
+                                log_message= "when modify db's user, no specify the role",\
+                                response =  "please specify the role.")
+
         conn = self.dba_opers.get_mysql_connection()
         try:
             zkOper = self.retrieve_zkOper()
             clusterUUID = zkOper.getClusterUUID()
-        
-            user_limit_map = zkOper.retrieve_user_limit_props(clusterUUID, dbName, userName, ip_address)
-            
-            if user_limit_map == {}:
-                raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no found specified user!",\
-                                notification = "direct", \
-                                log_message = "when modify db's user, no found specified user!",\
-                                response =  "please check the valid of the specified user, because the system no found the user!")
+            user_limit_map = {}
+            if not max_queries_per_hour or not max_updates_per_hour or not max_connections_per_hour or not max_user_connections:
+                user_limit_map = zkOper.retrieve_user_limit_props(clusterUUID, dbName, userName, ip_address)
+                if not user_limit_map:
+                    raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no found specified user!",\
+                                       notification = "direct", \
+                                       log_message = "when modify db's user, no found specified user!",\
+                                       response =  "please check the valid of the specified user, because the system no found the user!")
             
             if max_queries_per_hour is None:
                 max_queries_per_hour = user_limit_map.get('max_queries_per_hour')
@@ -206,7 +214,7 @@ class DBUser(APIHandler):
             if max_user_connections is None:
                 max_user_connections = user_limit_map.get('max_user_connections')
             
-            self.dba_opers.grant_resource_limit(conn, userName, dbName, ip_address, 
+            self.dba_opers.grant_resource_limit(conn, userName, dbName, ip_address, role,
                                                max_queries_per_hour, 
                                                max_updates_per_hour, 
                                                max_connections_per_hour, 
@@ -223,14 +231,13 @@ class DBUser(APIHandler):
         finally:
             conn.close()
         
-        
         result = {}
         result.setdefault("message", "modify the user's resource limit successfully!")
         result.setdefault("db_name", dbName)
         result.setdefault("user_name", userName)
         self.finish(result)
 
-        
+
     def delete(self, dbName, userName, ipAddress):
         if not dbName:
             raise HTTPAPIError(status_code=417, error_detail="when remove db's user, no specify the database name",\
