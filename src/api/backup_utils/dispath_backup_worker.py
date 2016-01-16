@@ -7,7 +7,7 @@ import threading
 import logging
 import datetime
 from common.utils.exceptions import UserVisiableException
-from backup.backup_worker_method import BackupWorkerMethod
+from backup_utils.backup_worker_method import BackupWorkerMethod
 
 class DispatchFullBackupWorker(threading.Thread, BackupWorkerMethod):
     '''

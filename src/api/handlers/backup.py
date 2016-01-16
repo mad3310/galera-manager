@@ -18,8 +18,8 @@ from common.utils.exceptions import HTTPAPIError
 from common.backup_thread import backup_thread
 from common.helper import is_monitoring, get_localhost_ip 
 from common.tornado_basic_auth import require_basic_auth
-from backup.dispath_backup_worker import DispatchFullBackupWorker, DispatchIncrBackupWorker
-from backup.backup_worker import BackupWorkers
+from backup_utils.dispath_backup_worker import DispatchFullBackupWorker, DispatchIncrBackupWorker
+from backup_utils.backup_worker import BackupWorkers
 
 # Start backing up database data.
 #eq curl --user root:root "http://localhost:8888/backup" backup data by full dose.

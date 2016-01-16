@@ -3,15 +3,14 @@ Created on Sep 28, 2015
 
 @author: root
 '''
-from common.enum import Enum
 
-class BackupStatus(Enum):
+class BackupStatus():
     '''
     classdocs
     '''
     _status = None
     
-    Status = Enum(_status)
+    #Status = Enum(_status)
 
     def __init__(self):
         _status = ['process_start', \
