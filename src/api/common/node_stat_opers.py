@@ -6,7 +6,7 @@ Created on 2013-7-21
 import logging
 from tornado.options import options
 from common.abstract_stat_service import Abstract_Stat_Service
-from common.helper import is_monitoring, get_localhost_ip
+from common.helper import is_monitoring, get_localhost_ip, retrieve_directory_available, retrieve_directory_capacity
 
 class NodeStatOpers(Abstract_Stat_Service):
     '''
@@ -117,3 +117,38 @@ class NodeStatOpers(Abstract_Stat_Service):
   
         return {'zkAddress': zkAddress, 'zkPort': zkPort, 'zkLeader': zkLeader}
 
+    def stat_data_dir_available(self):
+        '''
+        '''
+        _srv_mcluster_available = retrieve_directory_available('/srv/mcluster')
+        _srv_mcluster_total = retrieve_directory_capacity('/srv/mcluster')
+        _data_directory_available = retrieve_directory_available('/data')
+        
+        result = {
+            "srv_mcluster_available" : _srv_mcluster_available,
+            "srv_mcluster_total" : _srv_mcluster_total,
+            "data_directory_available" : _data_directory_available
+        }
+        return result
+    
+    def stat_data_mem_available(self):
+        mem_stat = {}
+        with open("/proc/meminfo",'ro') as f:
+            con = f.read().split()
+        mem_stat['MemTotal'] = con[0]
+        mem_stat['MemFree'] = con[1]
+
+        return mem_stat 
+    
+    def stat_work_load(self):
+        loadavg = {}
+        with open("/proc/loadavg",'ro') as f:
+            con = f.read().split()
+        
+        loadavg['loadavg_5'] = con[0]
+        loadavg['loadavg_10'] = con[1]
+        loadavg['loadavg_15'] = con[2]
+        loadavg['nr'] = con[3]
+        loadavg['last_pid'] = con[4]
+        
+        return loadavg

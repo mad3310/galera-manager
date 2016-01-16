@@ -1,6 +1,6 @@
 import base64
 import logging
-
+import os
 from tornado.options import options
 from tornado.httpclient import HTTPClient
 from tornado.httpclient import HTTPError
@@ -127,3 +127,19 @@ def get_localhost_ip():
     ret_str, _ = invokeCommand._runSysCmd(cmd)
     invokeCommand = None
     return ret_str
+
+def retrieve_monitor_password():
+    value = confOpers.getValue(options.mysql_cnf_file_name)["wsrep_sst_auth"]
+    _password = value.split(":")[1][:-1]
+    return _password
+
+def retrieve_directory_available(self, directory):
+    _vfs = os.statvfs(directory)
+    _disk_available = _vfs.f_bavail * _vfs.f_bsize / (1024*1024*1024)
+    return _disk_available
+    
+def retrieve_directory_capacity(self, directory):
+    _vfs = os.statvfs(directory)
+    _disk_capacity = _vfs.f_blocks * _vfs.f_bsize / (1024*1024*1024)
+    return _disk_capacity
+

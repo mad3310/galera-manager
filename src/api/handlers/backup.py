@@ -16,8 +16,10 @@ from tornado.web import asynchronous
 from tornado import escape
 from common.utils.exceptions import HTTPAPIError
 from common.backup_thread import backup_thread
-from common.helper import _retrieve_userName_passwd, is_monitoring, get_localhost_ip 
+from common.helper import is_monitoring, get_localhost_ip 
 from common.tornado_basic_auth import require_basic_auth
+from backup.dispath_backup_worker import DispatchFullBackupWorker, DispatchIncrBackupWorker
+from backup.backup_worker import BackupWorkers
 
 # Start backing up database data.
 #eq curl --user root:root "http://localhost:8888/backup" backup data by full dose.
@@ -66,44 +68,46 @@ def get_latest_date_id(_path):
     return str(result_list[-1])
 
 @require_basic_auth
-class BackUp(APIHandler):
+class Full_Backup(APIHandler):
     
-    @tornado.gen.engine
-    @asynchronous
-    def get(self):
-        url_post = "/inner/backup"
-        
-        zkOper = self.retrieve_zkOper()
-        online_node_list = zkOper.retrieve_started_nodes()
-        
-        hostname = socket.gethostname()
-        local_ip = get_localhost_ip()
-        adminUser, adminPasswd = _retrieve_userName_passwd()
-        obj =  re.search("-n-3", hostname)
-        http_client = tornado.httpclient.AsyncHTTPClient()
+    def post(self):
+        worker = DispatchFullBackupWorker()
+        worker.start()
         
         result = {}
+        result.setdefault("message", "Full backup process is running, please waiting")
+        self.finish(result)
         
-        try:
-            if obj == None:
-                logging.info("local ip :" + str(local_ip))
-                online_node_list.remove(local_ip)
-                for node_ip in online_node_list:
-                    requesturi = "http://"+ node_ip +":"+str(options.port)+ url_post
-                    request = HTTPRequest(url=requesturi, method='GET', auth_username=adminUser, auth_password = adminPasswd)
-                    logging.info("url is " + requesturi)
-                    http_client.fetch(request, callback=None)
-                result.setdefault("message", "Process is running ,wait")
-            else:
-                requesturi = "http://"+ local_ip +":"+str(options.port)+ url_post
-                request = HTTPRequest(url=requesturi, method='GET', auth_username=adminUser, auth_password = adminPasswd)
-                logging.info("url is " + requesturi)
-                http_client.fetch(request, callback=None)
-                result.setdefault("message", "Process is running ,wait")
-        finally:
-            http_client.close()
+@require_basic_auth
+class Incr_Backup(APIHandler):
+    
+    def post(self):
+        incr_basedir = self.get_argument("incr_basedir", None)
+        worker = DispatchIncrBackupWorker(incr_basedir)
+        worker.start()
         
+        result = {}
+        result.setdefault("message", "Incr backup process is running, please waiting")
+        self.finish(result)
+        
+        
+@require_basic_auth
+class Inner_Backup_Action(APIHandler):
+    
+    def post(self):
+        backup_type = self.get_argument("backup_type", None)
+        incr_basedir = self.get_arguments("incr_basedir", None) 
+
+        if not backup_type:
+            raise HTTPAPIError(status_code=417, error_detail="backup_type params is not transmit",\
+                                notification = "direct", \
+                                log_message= "backup params is not transmit",\
+                                response =  "please check 'backup_type' params.")
             
+        backup_worker = BackupWorkers(backup_type, incr_basedir)
+        backup_worker.start()
+        result = {}
+        result.setdefault("message", "Inner backup process is running, please waiting")
         self.finish(result)
  
 

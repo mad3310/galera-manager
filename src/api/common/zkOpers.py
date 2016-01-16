@@ -237,6 +237,27 @@ class ZkOpers(object):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + username + "|" + ipAddress
         self.zk.ensure_path(path)
         self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(userProps))#version need to write
+    
+    def write_backup_fullbackup_info(self, dict_status):
+        clusterUUID = self.getClusterUUID()
+        path = self.rootPath + "/" + clusterUUID + "/backup/full_backup"
+        if not self.zk.exists(path):
+            self.zk.ensure_path(path)
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(dict_status))
+        
+    def write_backup_innerbackup_info(self, dict_status):
+        clusterUUID = self.getClusterUUID()
+        path = self.rootPath + "/" + clusterUUID + "/backup/incr_backup"
+        if not self.zk.exists(path):
+            self.zk.ensure_path(path)
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(dict_status))
+        
+    def write_backup_backup_info(self, dict_status):
+        clusterUUID = self.getClusterUUID()
+        path = self.rootPath + "/" + clusterUUID + "/backup"
+        if not self.zk.exists(path):
+            self.zk.ensure_path(path)
+        self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(dict_status))
         
     @timeout_handler  
     def retrieveClusterProp(self,clusterUUID):
@@ -395,6 +416,10 @@ class ZkOpers(object):
         
     def lock_init_node_action(self):
         lock_name = "init_node"
+        return self._lock_base_action(lock_name)
+    
+    def lock_backup_action(self):
+        lock_name = "backup"
         return self._lock_base_action(lock_name)
         
     def unLock_init_node_action(self, lock):
