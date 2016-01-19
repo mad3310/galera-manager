@@ -95,8 +95,8 @@ class Incr_Backup(APIHandler):
 class Inner_Backup_Action(APIHandler):
     
     def post(self):
-        backup_type = self.get_argument("backup_type", None)
-        incr_basedir = self.get_arguments("incr_basedir", None) 
+        backup_type = self.get_argument("backup_type")
+        incr_basedir = self.get_arguments("incr_basedir") 
 
         if not backup_type:
             raise HTTPAPIError(status_code=417, error_detail="backup_type params is not transmit",\

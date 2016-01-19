@@ -258,6 +258,12 @@ class ZkOpers(object):
         if not self.zk.exists(path):
             self.zk.ensure_path(path)
         self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(dict_status))
+
+    def retrieve_backup_status_info(self):
+        clusterUUID = self.getClusterUUID()
+        path = self.rootPath + "/" + clusterUUID + "/backup"
+        resultValue = self._retrieveSpecialPathProp(path)
+        return resultValue
         
     @timeout_handler  
     def retrieveClusterProp(self,clusterUUID):

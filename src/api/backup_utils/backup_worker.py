@@ -8,7 +8,7 @@ from backup_utils.incr_backup_opers import IncrementBackupOpers
 from common.zkOpers import Requests_ZkOpers
 from common.dba_opers import DBAOpers
 from common.helper import retrieve_monitor_password, retrieve_directory_available, retrieve_directory_capacity
-
+from common.helper import get_localhost_ip
 from common.invokeCommand import InvokeCommand
 from common.utils.exceptions import UserVisiableException
 
@@ -26,7 +26,7 @@ class BackupWorkers(threading.Thread):
     def __init__(self, backup_mode='full', incr_basedir=None):
         
         self._backup_mode = backup_mode
-        
+
         threading.Thread.__init__(self)
         
         if self._backup_mode == "full":
@@ -43,52 +43,49 @@ class BackupWorkers(threading.Thread):
         
         try:
             _password = retrieve_monitor_password()
-            conn = self.dba_opers.get_mysql_connection(data_node_ip='127.0.0.1', user="monitor", passwd=_password)
+            conn = self.dba_opers.get_mysql_connection(user="monitor", passwd=_password)
             if None == conn:
                 raise UserVisiableException("Can\'t connect to mysql server")
             
             db_status = self.dba_opers.show_status(conn)
-            logging.info(db_status[-14][1])
             if 'Synced' != db_status[-14][1]:
-                self.backup_record['error: '] = 'Mcluster is not start %s' %datetime.datetime.now()
-                self.backupOpers._write_info_to_local(self.backupOpers.file_name, self.backup_record)
+                self.backup_record['error: '] = 'Mcluster is not start %s' %datetime.datetime.now().strftime(TIME_FORMAT)
+                self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
                 return 
             
             
             if '0' == self.__run_comm(CHECK_DMP_DATA_CMD):
-                self.backup_record['error: '] = 'No have /data partition %s' %datetime.datetime.now()
-                self.backupOpers._write_info_to_local(self.backupOpers.file_name, self.backup_record)
+                self.backup_record['error: '] = 'No have /data partition %s' %datetime.datetime.now().strftime(TIME_FORMAT)
+                self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
                 return 
             
-            mcluster_disk_available = retrieve_directory_available("/srv/mcluster")
-            data_disk_available = retrieve_directory_available("/data")
+            #mcluster_disk_available = retrieve_directory_available("/srv/mcluster")
+            #data_disk_available = retrieve_directory_available("/data")
             
-            mysql_data_directory_capacity = retrieve_directory_capacity("/srv/mcluster/mysql")
-            calculation_data_directory_capacity = mysql_data_directory_capacity * 2
+            #mysql_data_directory_capacity = retrieve_directory_capacity("/srv/mcluster/mysql")
+            #calculation_data_directory_capacity = mysql_data_directory_capacity * 2
             
-            if mcluster_disk_available <= calculation_data_directory_capacity or data_disk_available <= calculation_data_directory_capacity:
-                self.backup_record['error: '] = 'The disk is full %s' %datetime.datetime.now()
-                self.backupOpers._write_info_to_local(self.backupOpers.file_name, self.backup_record)
+            #if mcluster_disk_available <= calculation_data_directory_capacity or data_disk_available <= calculation_data_directory_capacity:
+                #self.backup_record['error: '] = 'The disk is full %s' %datetime.datetime.now().strftime(TIME_FORMAT)
+                #self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
                 #return 
 
-            self.backupOpers.remove_expired_backup_file()
+            #self.backupOpers.remove_expired_backup_file()
             self.backupOpers.create_backup_directory()
             
-            time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+            self.backupOpers.backup_action(self.zkOpers)
+            self.backupOpers.trans_backup_file(self.zkOpers)
             
-            self.backupOpers.backup_action(self.zkOpers, time)
-            self.backupOpers.trans_backup_file(self.zkOpers, time)
-            
-            logging.info("== Backup completed ==")
+            record = {"recently_backup_ip: " : str(get_localhost_ip()), 'time: ' : datetime.datetime.now().strftime(TIME_FORMAT)}
+            self.zkOpers.write_backup_backup_info(record)
+
         except:
-            '''
-            @todo: put exception to queue
-            '''
-            logging.info("backup is wrong, please check it!")
+            record = {"error: " : 'backup is wrong, please check it!', 'time:' : datetime.datetime.now().strftime(TIME_FORMAT)}
+            self.zkOpers.write_backup_backup_info(record)
+    
         finally:
             conn.close()
-            if lock is not None:
-                self.zkOpers.unLock_backup_action(lock)
+            self.zkOpers.unLock_init_node_action(lock)
             
     def __run_comm(self, cmdstr):
         invokeCommand = InvokeCommand()

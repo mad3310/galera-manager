@@ -22,15 +22,15 @@ class BackupEvlScore(object):
         disk_dict = {}
         disk_max_value = 0
         
-        [system_loads_load5_list.append(system_loads[i]['loadavg_5']) for i in system_loads]
-        [system_loads_load10_list.append(system_loads[i]['loadavg_10']) for i in system_loads]
-        [system_loads_load15_list.append(system_loads[i]['loadavg_15']) for i in system_loads]
-        [memory_list.append(free_memory[i]['MemFree']) for i in free_memory]
+        [system_loads_load5_list.append(float(system_loads[i]['loadavg_5'])) for i in system_loads]
+        [system_loads_load10_list.append(float(system_loads[i]['loadavg_10'])) for i in system_loads]
+        [system_loads_load15_list.append(float(system_loads[i]['loadavg_15'])) for i in system_loads]
+        [memory_list.append(float(free_memory[i]['MemFree'])) for i in free_memory]
 
         for k in free_spaces:
-            total = free_spaces[k]['srv_mcluster_total']
-            avail = free_spaces[k]['srv_mcluster_available']
-            data_avail = free_spaces[k]['data_directory_available']
+            total = float(free_spaces[k]['srv_mcluster_total'])
+            avail = float(free_spaces[k]['srv_mcluster_available'])
+            data_avail = float(free_spaces[k]['data_directory_available'])
             
             #if avail > (total-avail) and data_avail > (total - avail):
             disk_dict[k] = avail
@@ -38,12 +38,12 @@ class BackupEvlScore(object):
                     disk_max_value = avail
         
         for i in system_loads:
-            self.load5_score_dict[i] = self.weight_item_score['load5'] * max(system_loads_load5_list)/system_loads[i]['loadavg_5']
-            self.load10_score_dict[i] = self.weight_item_score['load10'] * max(system_loads_load10_list)/system_loads[i]['loadavg_10']
-            self.load15_score_dict[i] = self.weight_item_score['load15'] * max(system_loads_load15_list)/system_loads[i]['loadavg_15']
+            self.load5_score_dict[i] = self.weight_item_score['load5'] * max(system_loads_load5_list)/(float(system_loads[i]['loadavg_5'])+0.000001)
+            self.load10_score_dict[i] = self.weight_item_score['load10'] * max(system_loads_load10_list)/(float(system_loads[i]['loadavg_10'])+0.000001)
+            self.load15_score_dict[i] = self.weight_item_score['load15'] * max(system_loads_load15_list)/(float(system_loads[i]['loadavg_15'])+000001)
 
         for j in free_memory:
-            self.memory_score_dict[j] = (self.weight_item_score['memory']*free_memory[j]['MemFree'])/max(memory_list)
+            self.memory_score_dict[j] = (self.weight_item_score['memory']*float(free_memory[j]['MemFree']))/max(memory_list)
         
         for k in disk_dict:
             if disk_max_value:

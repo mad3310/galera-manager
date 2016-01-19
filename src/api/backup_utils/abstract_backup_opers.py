@@ -7,9 +7,11 @@ import os, glob, time
 import logging
 import subprocess
 import datetime
-
 from abc import abstractmethod
 from common.appdefine.backupDefine import *
+import shutil
+
+
 
 class AbstractBackupOpers(object):
     '''
@@ -42,18 +44,22 @@ class AbstractBackupOpers(object):
         return_code = subprocess.call(cmdStr, shell=True)
         return str(return_code)
     
-    def _fb_update_index(self, re_path):
-        backup_path = "%s/full" % (re_path)
-        os.remove(backup_path)
-        os.link(backup_path, re_path)
+    def _fb_update_index(self, file_name):
+        remove_remote_file = 'rm -rf ' + REMOTE_BACKUPDIR + '/full'
+        ln_sym = 'ln -s ' + REMOTE_BACKUPDIR +'/' + file_name + ' ' + REMOTE_BACKUPDIR + '/full'
+        remove_local_file = 'rm -rf ' + BACKUPDIR + file_name
+        
+        [self._run_comm_call(cmdStr) for cmdStr in (remove_remote_file, ln_sym, remove_local_file)]
         
     def _log_create_time(self):
         log_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
         return log_time
     
-    def _write_info_to_local(self, filename, key_value):
-        with open(filename, 'a') as f_obj:
-            f_obj.writelines(key_value)
+    def _write_info_to_local(self, path, filename, key_value):
+        if os.path.exists(path) is False:
+            os.mkdir(path)
+        with open(path + filename, 'a') as f_obj:
+            f_obj.write(key_value + '\n')
         
     def _write_info_to_zk(self, zkOpers, key_value):
         time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
@@ -61,12 +67,7 @@ class AbstractBackupOpers(object):
         zkOpers.write_db_backup_info(key_value)
 
     def _delete_file(self, backup_path):
-        # remove all jpeg image files of an expired modification date = mtime
-        # you could also use creation date (ctime) or last access date (atime)
-        # os.stat(filename) returns (mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime)
-        # tested with Python24  vegaseat 6/7/2005
-        
-        # expiration date in the format YYYY-MM-DD
+
         xDate = self.get_day_of_day(4)
         #expDate = time.strptime(xDate, '%Y-%m-%d')
         expDate = xDate.strftime('%Y%m%d%H%M%S')
@@ -76,7 +77,7 @@ class AbstractBackupOpers(object):
             # the tuple element at index 8 is the last-modified-date
             stats = os.stat(backup_folder)
             # put the two dates into matching format
-            lastmodDate = time.strftime("%m/%d/%y", time.localtime(stats[8]))
+            lastmodDate = time.strftime("%Y%m%d%H%M%S", time.localtime(stats[8]))
             
             logging.info(lastmodDate)
             # check if image-last-modified-date is outdated

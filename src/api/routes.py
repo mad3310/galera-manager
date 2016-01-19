@@ -30,6 +30,11 @@ handlers = [
             (r"/node/stop", DataNodeStop),
             (r"/node/stat", DataNodeStat),
             (r"/node/stat/datadir/size", StatDataDirSize),
+            
+            (r"/node/stat/disk/available", StatDiskAvailable),
+            (r"/node/stat/memory/available", StatMemAvailable),
+            (r"/node/stat/workload", StatNodeWorkLoad),
+            
             (r"/node/stat/mysqlcpu/partion", StatMysqlCpuPartion),
             (r"/node/stat/mysqlmemory/partion", StatMysqlMemoryPartion),
             (r"/node/stat/memory/size", StatNodeMemorySize),

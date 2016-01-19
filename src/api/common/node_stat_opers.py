@@ -117,7 +117,7 @@ class NodeStatOpers(Abstract_Stat_Service):
   
         return {'zkAddress': zkAddress, 'zkPort': zkPort, 'zkLeader': zkLeader}
 
-    def stat_data_dir_available(self):
+    def stat_data_disk_available(self):
         '''
         '''
         _srv_mcluster_available = retrieve_directory_available('/srv/mcluster')
@@ -134,16 +134,17 @@ class NodeStatOpers(Abstract_Stat_Service):
     def stat_data_mem_available(self):
         mem_stat = {}
         with open("/proc/meminfo",'ro') as f:
-            con = f.read().split()
-        mem_stat['MemTotal'] = con[0]
-        mem_stat['MemFree'] = con[1]
+            con = f.readlines()
+
+        mem_stat['MemTotal'] = con[0].split()[1]
+        mem_stat['MemFree'] = con[1].split()[1]
 
         return mem_stat 
     
     def stat_work_load(self):
         loadavg = {}
         with open("/proc/loadavg",'ro') as f:
-            con = f.read().split()
+            con = f.readlines()[0].split()
         
         loadavg['loadavg_5'] = con[0]
         loadavg['loadavg_10'] = con[1]
