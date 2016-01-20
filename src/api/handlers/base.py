@@ -52,7 +52,10 @@ class APIHandler(BaseHandler):
     def finish(self, chunk=None, notification=None):
         if chunk is None:
             chunk = {}
-
+        
+        if self.request.connection.stream.closed():
+            return
+        
         if isinstance(chunk, dict) : 
             if 'error_code' not in chunk.keys():
                 chunk = {"meta": {"code": 200}, "response": chunk}
