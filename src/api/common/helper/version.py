@@ -3,5 +3,5 @@
 
 """
 
-__version__ = '0.0.7-12'
+__version__ = '0.0.7-13'
 __app__ = 'mcluster-manager'
