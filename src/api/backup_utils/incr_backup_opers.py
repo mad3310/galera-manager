@@ -27,7 +27,7 @@ class IncrementBackupOpers(AbstractBackupOpers):
         self.status = {}
         
     def remove_expired_backup_file(self):
-        [self._delete_file(_path) for _path in (INCRBACKUPDIR, REMOTE_INCRBACKUPDIR)]
+        self._delete_file(REMOTE_INCRBACKUPDIR, days_count=8)
     
     def create_backup_directory(self):
         [self._run_comm_call('mkdir -p %s' %path) for path in (INCRBACKUPDIR, REMOTE_INCRBACKUPDIR, TMPFILEDIR)]
@@ -35,8 +35,9 @@ class IncrementBackupOpers(AbstractBackupOpers):
     def backup_action(self, zkOpers):
         
         record = '%s  == incremental backup is starting  == ' %datetime.datetime.now().strftime(TIME_FORMAT)
-        self.status['incr_backup_status:'] = Status.backup_starting  + ' ' + datetime.datetime.now().strftime(TIME_FORMAT)
-                
+        self.status['incr_backup_status:'] = Status.backup_starting
+        self.status['incr_backup_status_time:'] = datetime.datetime.now().strftime(TIME_FORMAT)
+        
         self._write_info_to_local(self.path, self.file_name, record)
         zkOpers.write_backup_innerbackup_info(self.status)
         
@@ -58,15 +59,16 @@ class IncrementBackupOpers(AbstractBackupOpers):
         
         if 0 == run_bak_relust:
             record = '%s  == incr backup all data end  == ' %datetime.datetime.now().strftime(TIME_FORMAT)
-            self.status['incr_backup_status:'] = Status.backup_succecced  + ' ' + datetime.datetime.now().strftime(TIME_FORMAT)
+            self.status['incr_backup_status:'] = Status.backup_succecced
+            self.status['incr_status_time:'] = datetime.datetime.now().strftime(TIME_FORMAT)
             
             self._write_info_to_local(self.path, self.file_name, record)
             zkOpers.write_backup_innerbackup_info(self.status)
             
         else:
             record = '%s  == incr backup all data is error  == ' %datetime.datetime.now().strftime(TIME_FORMAT)
-            self.status['incr_backup_status:'] = Status.backup_failed + ' ' + datetime.datetime.now().strftime(TIME_FORMAT)
-            
+            self.status['incr_backup_status:'] = Status.backup_failed
+            self.status['incr_status_time:'] = datetime.datetime.now().strftime(TIME_FORMAT)
             self._write_info_to_local(self.path, self.file_name, record)
             zkOpers.write_backup_innerbackup_info(self.status)
             return 
@@ -80,9 +82,10 @@ class IncrementBackupOpers(AbstractBackupOpers):
             self._run_comm_call(in_backup_rs_path_cmd)
             
             record = '%s  == cp incr_backup_file ok  == ' %datetime.datetime.now().strftime(TIME_FORMAT)
-            self.status['cp_incr_status:'] = Status.backup_transmit_succeed + ' ' + datetime.datetime.now().strftime(TIME_FORMAT)
+            self.status['cp_incr_status:'] = Status.backup_transmit_succeed
             self.status['incr_backup_ip:'] = str(get_localhost_ip())
-        
+            self.status['cp_incr_status_time:'] = datetime.datetime.now().strftime(TIME_FORMAT)
+            
             self._write_info_to_local(self.path, self.file_name, record)
             zkOpers.write_backup_innerbackup_info(self.status)
             
@@ -91,7 +94,8 @@ class IncrementBackupOpers(AbstractBackupOpers):
             
         else:
             record = '%s  == incr_backup_file is not cp /data == ' %datetime.datetime.now().strftime(TIME_FORMAT)
-            self.status['cp_incr_status:'] = Status.backup_transmit_faild  + ' ' + datetime.datetime.now().strftime(TIME_FORMAT)
+            self.status['cp_incr_status:'] = Status.backup_transmit_faild
+            self.status['cp_incr_status_time:'] = datetime.datetime.now().strftime(TIME_FORMAT)
             
             self._write_info_to_local(self.path, self.file_name, record)
             zkOpers.write_backup_innerbackup_info(self.status)

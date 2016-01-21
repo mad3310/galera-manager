@@ -70,17 +70,17 @@ class BackupWorkers(threading.Thread):
                 #self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
                 #return 
 
-            #self.backupOpers.remove_expired_backup_file()
+            self.backupOpers.remove_expired_backup_file()
             self.backupOpers.create_backup_directory()
             
             self.backupOpers.backup_action(self.zkOpers)
             self.backupOpers.trans_backup_file(self.zkOpers)
             
-            record = {"recently_backup_ip: " : str(get_localhost_ip()), 'time: ' : datetime.datetime.now().strftime(TIME_FORMAT)}
+            record = {"recently_backup_ip: " : str(get_localhost_ip()), 'time: ' : datetime.datetime.now().strftime(TIME_FORMAT), 'backup_type: ': backup_mode}
             self.zkOpers.write_backup_backup_info(record)
 
         except:
-            record = {"error: " : 'backup is wrong, please check it!', 'time:' : datetime.datetime.now().strftime(TIME_FORMAT)}
+            record = {"error: " : 'backup is wrong, please check it!', 'time:' : datetime.datetime.now().strftime(TIME_FORMAT), 'backup_type: ': backup_mode}
             self.zkOpers.write_backup_backup_info(record)
     
         finally:

@@ -66,24 +66,16 @@ class AbstractBackupOpers(object):
         key_value['time'] = time
         zkOpers.write_db_backup_info(key_value)
 
-    def _delete_file(self, backup_path):
-
-        xDate = self.get_day_of_day(4)
-        #expDate = time.strptime(xDate, '%Y-%m-%d')
+    def _delete_file(self, backup_path, days_count = 4):
+        xDate = self.get_day_of_day(days_count)
         expDate = xDate.strftime('%Y%m%d%H%M%S')
         
-        for backup_folder in glob.glob(backup_path):
-            # retrieves the stats for the current folder
-            # the tuple element at index 8 is the last-modified-date
-            stats = os.stat(backup_folder)
-            # put the two dates into matching format
-            lastmodDate = time.strftime("%Y%m%d%H%M%S", time.localtime(stats[8]))
-            
-            logging.info(lastmodDate)
-            # check if image-last-modified-date is outdated
-            if expDate > lastmodDate:
-                #logging.info('removed %s', backup_folder)
-                os.remove(backup_folder) # commented out for testing
+        romote_files = os.listdir(backup_path)
+        for file_name in romote_files:
+            if file_name != 'full' and file_name != 'incr':
+                if file_name.split('-')[1] < expDate:
+                    os.system('rm -rf %s' %file_name)
+                
 
     def get_day_of_day(self, n=0):
         '''''

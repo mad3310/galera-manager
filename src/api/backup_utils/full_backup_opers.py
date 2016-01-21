@@ -26,7 +26,7 @@ class FullBackupOpers(AbstractBackupOpers):
 
 
     def remove_expired_backup_file(self):
-        [self._delete_file(directory) for directory in (REMOTE_BACKUPDIR, BACKUPDIR)]
+        self._delete_file(REMOTE_BACKUPDIR, days_count=4)
     
     def create_backup_directory(self):
         [self._run_comm_call('mkdir -p %s' %path) for path in (BACKUPDIR, REMOTE_BACKUPDIR, LOG_FILE_PATH)]
@@ -36,7 +36,8 @@ class FullBackupOpers(AbstractBackupOpers):
         
         record = '%s  == Mysql backup  is starting  == ' %datetime.datetime.now().strftime(TIME_FORMAT)
         
-        self.status['backup_status:'] = Status.backup_starting  + ' ' + datetime.datetime.now().strftime(TIME_FORMAT)
+        self.status['backup_status:'] = Status.backup_starting
+        self.status['backup_status_time:'] = datetime.datetime.now().strftime(TIME_FORMAT)
         
         self._write_info_to_local(self.path, self.file_name, record)
         ZkOpers.write_backup_fullbackup_info(self.status)
@@ -58,14 +59,16 @@ class FullBackupOpers(AbstractBackupOpers):
         if 0 == run_bak_result:
             record = '%s  == Backup All Data end == ' %datetime.datetime.now().strftime(TIME_FORMAT)
 
-            self.status['backup_status:'] = Status.backup_succecced + ' ' + datetime.datetime.now().strftime(TIME_FORMAT)
-            
+            self.status['backup_status:'] = Status.backup_succecced
+            self.status['backup_status_time:'] = datetime.datetime.now().strftime(TIME_FORMAT)
+             
             self._write_info_to_local(self.path, self.file_name, record)
             ZkOpers.write_backup_fullbackup_info(self.status)
 
         else:
             record = '%s  == Backup All Data is ERROR == ' %datetime.datetime.now().strftime(TIME_FORMAT)
-            self.status['backup_status:'] = Status.backup_failed + ' ' + datetime.datetime.now().strftime(TIME_FORMAT)
+            self.status['backup_status:'] = Status.backup_failed
+            self.status['backup_status_time:'] = datetime.datetime.now().strftime(TIME_FORMAT)
             
             self._write_info_to_local(self.path, self.file_name, record)
             ZkOpers.write_backup_fullbackup_info(self.status)
@@ -80,17 +83,19 @@ class FullBackupOpers(AbstractBackupOpers):
             self._fb_update_index('/full_backup-' + self.time)
             
             record = '%s  == Cp backup_file ok == ' %datetime.datetime.now().strftime(TIME_FORMAT)
-            self.status['cp_status:'] = Status.backup_transmit_succeed + ' ' + datetime.datetime.now().strftime(TIME_FORMAT)
+            self.status['cp_status:'] = Status.backup_transmit_succeed
             self.status['full_backup_ip:'] = str(get_localhost_ip())
+            self.status['cp_status_time:'] = datetime.datetime.now().strftime(TIME_FORMAT)
 
             self._write_info_to_local(self.path, self.file_name, record)
             ZkOpers.write_backup_fullbackup_info(self.status)
 
         else:
             record = '%s  == backup_file is not cp /data == ' %datetime.datetime.now().strftime(TIME_FORMAT)
-            self.status['cp_status:'] = Status.backup_transmit_faild + ' ' + datetime.datetime.now().strftime(TIME_FORMAT)
+            self.status['cp_status:'] = Status.backup_transmit_faild
             self.status['backup_ip:'] = None
-
+            self.status['cp_status_time:'] = datetime.datetime.now().strftime(TIME_FORMAT)
+            
             self._write_info_to_local(self.path, self.file_name, record)
             ZkOpers.write_backup_fullbackup_info(self.status)
 

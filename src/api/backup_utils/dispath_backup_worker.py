@@ -22,7 +22,7 @@ class DispatchFullBackupWorker(threading.Thread, BackupWorkerMethod):
 
 
     def run(self):
-        url_path = "/inner/backup/full"
+        url_path = "/inner/backup"
         self.data['backup_type'] = 'full'
         try:
             action_ips = self._get_usable_ips()
@@ -41,9 +41,10 @@ class DispatchIncrBackupWorker(threading.Thread, BackupWorkerMethod):
     def __init__(self, incr_basedir):
         threading.Thread.__init__(self)
         self.incr_basedir = incr_basedir
+        self.data = {}
 
     def run(self):
-        url_path = "/inner/backup/incr"
+        url_path = "/inner/backup"
         if self.incr_basedir:
             self.data['incr_basedir'] = self.incr_basedir
         self.data['backup_type'] = 'incr'

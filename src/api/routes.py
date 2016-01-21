@@ -77,9 +77,9 @@ handlers = [
             (r"/backup/full", Full_Backup),
             (r"/backup/incr", Incr_Backup),
             
-            (r"/inner/backup/full", Inner_Backup_Action),
+            (r"/inner/backup", Inner_Backup_Action),
             
-            (r"/inner/backup/incr", Inner_Backup_Action),
+            #(r"/inner/backup/incr", Inner_Backup_Action),
             
             (r"/backup/check", BackUpCheck),
             (r"/backup/checker", BackUp_Checker),
