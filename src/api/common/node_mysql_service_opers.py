@@ -62,7 +62,8 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         node_stop_action.start()
             
     def retrieve_log_for_error(self):
-        result = self.invokeCommand.run_check_shell(options.check_datanode_error)
+        #result = self.invokeCommand.run_check_shell(options.check_datanode_error)
+        result = True
         
         if cmp('false',result) == 0:
             _tmp_error_log_file_path = '/tmp_check_datanode_error'
@@ -73,8 +74,8 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         return result
     
     def retrieve_log_for_warning(self):
-        result = self.invokeCommand.run_check_shell(options.check_datanode_warning)
-        
+        #result = self.invokeCommand.run_check_shell(options.check_datanode_warning)
+        result = True
         if cmp('false',result) == 0:
             _tmp_warning_log_file_path = '/tmp_check_datanode_warning'
             _mysql_error_log_message = self.confFileOper.retrieveFullText(_tmp_warning_log_file_path)
