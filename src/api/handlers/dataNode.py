@@ -226,7 +226,7 @@ class DataNodeMonitorLogHealth(APIHandler):
 #              return 
 
         #return_dict = self.invokeCommand.run_check_shell(options.check_datanode_health)
-        return_dict = True
+        return_dict = 'true'
         return return_dict  
         
 # start mysqld service on data node

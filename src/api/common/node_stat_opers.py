@@ -30,38 +30,38 @@ class NodeStatOpers(Abstract_Stat_Service):
         return result
         
     def stat_data_dir_size(self):
-        result = {}
+        result = {'/var':'0', '/srv/mcluster':'0', '/':'0'}
         
-        return_result = self.invokeCommand.run_check_shell(options.stat_dir_size)
-        df_output_lines = [s.split() for s in return_result.splitlines()]
+        #return_result = self.invokeCommand.run_check_shell(options.stat_dir_size)
+        #df_output_lines = [s.split() for s in return_result.splitlines()]
         
-        for df_output_line in df_output_lines:
-            used = df_output_line[4]
-            mounted_on = df_output_line[5]
-            used = used.replace('%','')
-            if mounted_on == '/var' or mounted_on == '/srv/mcluster' or mounted_on == '/':
-                result.setdefault(mounted_on,used)
+        #for df_output_line in df_output_lines:
+            #used = df_output_line[4]
+            #mounted_on = df_output_line[5]
+            #used = used.replace('%','')
+            #if mounted_on == '/var' or mounted_on == '/srv/mcluster' or mounted_on == '/':
+                #result.setdefault(mounted_on,used)
         
         return result
     
     def _stat_mysql_top(self):
         result = {}
         
-        zkOper = self.retrieve_zkOper()
+        #zkOper = self.retrieve_zkOper()
         
-        if not is_monitoring(get_localhost_ip(), zkOper):
-            result.setdefault('mysql_cpu_partion', 0.0)
-            result.setdefault('mysql_mem_partion', 0.0)
-            return result
+        #if not is_monitoring(get_localhost_ip(), zkOper):
+            #result.setdefault('mysql_cpu_partion', 0.0)
+            #result.setdefault('mysql_mem_partion', 0.0)
+            #return result
         
-        return_result = self.invokeCommand.run_check_shell(options.stat_top_command)
-        logging.info("return_result :" + str(return_result))
+        #return_result = self.invokeCommand.run_check_shell(options.stat_top_command)
+        #logging.info("return_result :" + str(return_result))
         
         mysql_info_list = []
-        try: 
-            mysql_info_list = return_result.split('\n\n\n')[0].split('\n')[7].split()
-        except IndexError:
-            logging.info("mysql pid not found through top -umysql")
+        #try: 
+            #mysql_info_list = return_result.split('\n\n\n')[0].split('\n')[7].split()
+        #except IndexError:
+            #logging.info("mysql pid not found through top -umysql")
         if mysql_info_list is None or mysql_info_list == []:
             mysql_cpu = 0.0
             mysql_mem = 0.0
