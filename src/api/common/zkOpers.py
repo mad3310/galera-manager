@@ -259,9 +259,9 @@ class ZkOpers(object):
             self.zk.ensure_path(path)
         self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(dict_status))
 
-    def retrieve_backup_status_info(self):
+    def retrieve_full_backup_status_info(self):
         clusterUUID = self.getClusterUUID()
-        path = self.rootPath + "/" + clusterUUID + "/backup"
+        path = self.rootPath + "/" + clusterUUID + "/backup/full_backup"
         resultValue = self._retrieveSpecialPathProp(path)
         return resultValue
         

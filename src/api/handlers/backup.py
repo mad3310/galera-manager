@@ -18,7 +18,7 @@ from common.utils.exceptions import HTTPAPIError
 from common.backup_thread import backup_thread
 from common.helper import is_monitoring, get_localhost_ip 
 from common.tornado_basic_auth import require_basic_auth
-from backup_utils.dispath_backup_worker import DispatchFullBackupWorker, DispatchIncrBackupWorker
+from backup_utils.dispath_backup_worker import DispatchBackupWorker, DispatchIncrBackupWorker
 from backup_utils.backup_worker import BackupWorkers
 
 # Start backing up database data.
@@ -67,29 +67,25 @@ def get_latest_date_id(_path):
     result_list.sort()
     return str(result_list[-1])
 
+
 @require_basic_auth
-class Full_Backup(APIHandler):
-    
-    def post(self):
-        worker = DispatchFullBackupWorker()
-        worker.start()
-        
-        result = {}
-        result.setdefault("message", "Full backup process is running, please waiting")
-        self.finish(result)
-        
-@require_basic_auth
-class Incr_Backup(APIHandler):
+class Backup(APIHandler):
     
     def post(self):
         incr_basedir = self.get_argument("incr_basedir", None)
-        worker = DispatchIncrBackupWorker(incr_basedir)
+        backup_type = self.get_argument("backup_type")
+        if not backup_type:
+            raise HTTPAPIError(status_code=417, error_detail="backup_type params is not given",\
+                                notification = "direct", \
+                                log_message= "backup params is not given",\
+                                response =  "please check 'backup_type' params.")
+        worker = DispatchBackupWorker(backup_type, incr_basedir)
         worker.start()
         
         result = {}
-        result.setdefault("message", "Incr backup process is running, please waiting")
+        result.setdefault("message", "backup process is running, please waiting")
         self.finish(result)
-        
+
         
 @require_basic_auth
 class Inner_Backup_Action(APIHandler):
@@ -107,7 +103,7 @@ class Inner_Backup_Action(APIHandler):
         backup_worker = BackupWorkers(backup_type, incr_basedir)
         backup_worker.start()
         result = {}
-        result.setdefault("message", "Inner backup process is running, please waiting")
+        result.setdefault("message", "inner backup process is running, please waiting")
         self.finish(result)
  
 

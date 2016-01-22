@@ -66,26 +66,19 @@ class AbstractBackupOpers(object):
         key_value['time'] = time
         zkOpers.write_db_backup_info(key_value)
 
-    def _delete_file(self, backup_path, days_count = 4):
+    def _delete_file(self, backup_path, days_count=4):
         xDate = self.get_day_of_day(days_count)
         expDate = xDate.strftime('%Y%m%d%H%M%S')
-        
         romote_files = os.listdir(backup_path)
+        
         for file_name in romote_files:
             if file_name != 'full' and file_name != 'incr':
                 if file_name.split('-')[1] < expDate:
-                    os.system('rm -rf %s' %file_name)
-                
+                    os.system('rm -rf %s/%s' % (backup_path, file_name))
 
-    def get_day_of_day(self, n=0):
-        '''''
-        if n>=0,date is larger than today
-        if n<0,date is less than today
-        date format = "YYYY-MM-DD"
-        '''
-        if(n<0):
-            n = abs(n)
+    def get_day_of_day(self, n):
+        if n > 0:
             return datetime.datetime.today() - datetime.timedelta(days=n)
-        else:
-            return datetime.datetime.today() + datetime.timedelta(days=n)
+
+        return datetime.datetime.today() + datetime.timedelta(days=abs(n))
 
