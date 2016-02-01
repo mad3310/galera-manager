@@ -12,6 +12,7 @@ from common.utils.exceptions import CommonException
 from common.configFileOpers import ConfigFileOpers
 from common.utils.mail import send_email
 from common.helper import get_localhost_ip
+from common.utils.exceptions import HTTPAPIError
 
 '''
 Created on 2013-7-21
@@ -109,7 +110,12 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
         try:
             self.isLock, self.lock = self.zkOper.lock_node_start_stop_action()
         except kazoo.exceptions.LockTimeout:
-            raise CommonException("When start node, can't retrieve the start atcion lock!")
+            raise HTTPAPIError(status_code=417, error_detail="lock by other thread",\
+                                notification = "direct", \
+                                log_message= "lock by other thread",\
+                                response =  "current operation is using by other people, please wait a moment to try again!")
+            
+            #raise CommonException("When start node, can't retrieve the start atcion lock!")
             
         if not self.isLock:
             raise CommonException("When start node, can't retrieve the start atcion lock!")
