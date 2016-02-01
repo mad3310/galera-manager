@@ -86,8 +86,9 @@ class NodeStatOpers(Abstract_Stat_Service):
     
     def stat_node_memory(self):
         
-        return_result = self.invokeCommand.run_check_shell(options.stat_mem_command)
-        mysql_mem_list = return_result.split('\n\n\n')[0].split('\n')[2].split()
+        #return_result = self.invokeCommand.run_check_shell(options.stat_mem_command)
+        #mysql_mem_list = return_result.split('\n\n\n')[0].split('\n')[2].split()
+        mysql_mem_list = []
         
         if mysql_mem_list is None:
             node_mem_used_size = 0.0
