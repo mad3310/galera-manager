@@ -32,15 +32,15 @@ class BackupEvlScore(object):
             avail = float(free_spaces[k]['srv_mcluster_available'])
             data_avail = float(free_spaces[k]['data_directory_available'])
             
-            #if avail > (total-avail) and data_avail > (total - avail):
-            disk_dict[k] = avail
-            if avail > disk_max_value:
+            if avail > (total-avail) and data_avail > (total - avail):
+                disk_dict[k] = avail
+                if avail > disk_max_value:
                     disk_max_value = avail
         
         for i in system_loads:
             self.load5_score_dict[i] = self.weight_item_score['load5'] * max(system_loads_load5_list)/(float(system_loads[i]['loadavg_5'])+0.000001)
             self.load10_score_dict[i] = self.weight_item_score['load10'] * max(system_loads_load10_list)/(float(system_loads[i]['loadavg_10'])+0.000001)
-            self.load15_score_dict[i] = self.weight_item_score['load15'] * max(system_loads_load15_list)/(float(system_loads[i]['loadavg_15'])+000001)
+            self.load15_score_dict[i] = self.weight_item_score['load15'] * max(system_loads_load15_list)/(float(system_loads[i]['loadavg_15'])+0.000001)
 
         for j in free_memory:
             self.memory_score_dict[j] = (self.weight_item_score['memory']*float(free_memory[j]['MemFree']))/max(memory_list)

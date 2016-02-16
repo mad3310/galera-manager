@@ -1,25 +1,17 @@
 #-*- coding: utf-8 -*-
 import re
-import os
-import json
-import socket
+
 import logging
 import datetime
-import tornado.httpclient
 
 from os import listdir
 from base import APIHandler
-from tornado.gen import Callback, Wait
-from tornado.options import options
-from tornado.httpclient import HTTPRequest
-from tornado.web import asynchronous
-from tornado import escape
 from common.utils.exceptions import HTTPAPIError
-from common.backup_thread import backup_thread
-from common.helper import is_monitoring, get_localhost_ip 
 from common.tornado_basic_auth import require_basic_auth
-from backup_utils.dispath_backup_worker import DispatchBackupWorker, DispatchIncrBackupWorker
+from backup_utils.dispath_backup_worker import DispatchBackupWorker
 from backup_utils.backup_worker import BackupWorkers
+from backup_utils.base_backup_check import get_response_request, get_local_backup_status
+
 
 # Start backing up database data.
 #eq curl --user root:root "http://localhost:8888/backup" backup data by full dose.
@@ -31,15 +23,16 @@ def resolve_time(str_time):
     month = str_time[4:6]
     day = str_time[6:8]
     hour = str_time[8:10]
-    min = str_time[10:12]
+    minu = str_time[10:12]
     second = str_time[12:14]
     
     resolve_result.append(year)
     resolve_result.append(month)
     resolve_result.append(day)
     resolve_result.append(hour)
-    resolve_result.append(min)
+    resolve_result.append(minu)
     resolve_result.append(second)
+    
     return resolve_result
 
 
@@ -67,7 +60,8 @@ def get_latest_date_id(_path):
     result_list.sort()
     return str(result_list[-1])
 
-
+#eg. curl --user root:root -d "backup_type=full" "http://127.0.0.1:8888/backup"
+#eg. curl --user root:root -d "backup_type=incr" "http://127.0.0.1:8888/backup"
 @require_basic_auth
 class Backup(APIHandler):
     
@@ -86,7 +80,7 @@ class Backup(APIHandler):
         result.setdefault("message", "backup process is running, please waiting")
         self.finish(result)
 
-        
+#eg. curl --user root:root -d "backup_type=full" "http://127.0.0.1:8888/inner/backup"      
 @require_basic_auth
 class Inner_Backup_Action(APIHandler):
     
@@ -106,210 +100,88 @@ class Inner_Backup_Action(APIHandler):
         result.setdefault("message", "inner backup process is running, please waiting")
         self.finish(result)
  
-
-@require_basic_auth
-class BackUper(APIHandler):
     
-    @asynchronous
-    def get(self):
-        hostname = socket.gethostname()
-        obj = re.search("-n-3", hostname)
-        
-        result = {}
-        if obj == None:
-            result.setdefault("message", "not n-3 node")
-        else:
-            backup_worker = backup_thread()
-            backup_worker.start()
-            result.setdefault("message", "Process is running ,wait")
-            
-        self.finish(result)
-         
-#eq curl  "http://localhost:8888/backup/inner/check" backup data by full dose.
-class BackUpChecker(APIHandler):
-
-    @asynchronous
-    def get(self):
-        
-        zkOper = self.retrieve_zkOper()
-        '''
-        @todo: is_monitoring no have host_ip?
-        '''
-        if not is_monitoring(zkOper=zkOper):
-            self.finish("true")
-            return
-        
-        hostname = socket.gethostname()
-        obj =  re.search("-n-3", hostname)
-        if obj == None:
-            self.finish("true")
-            return
-        
-        date_id = get_latest_date_id('/var/log/mcluster-manager/mcluster-backup/')
-        if date_id == "empty":
-            logging.info("No backup process has run")
-            self.finish("expired")
-            return
-
-        log_filepath = "/var/log/mcluster-manager/mcluster-backup/" + date_id +"_script.log"
-        logging.info("date_id" + str(date_id))
-        time_partition_list = resolve_time(date_id)
-        log_datetime = datetime.datetime(int(time_partition_list[0]), int(time_partition_list[1]), 
-						int(time_partition_list[2]), int(time_partition_list[3]), int(time_partition_list[4]), int(time_partition_list[5]))
-       
-        now_time = datetime.datetime.now()
-        time_expire = datetime.timedelta(hours = 30)
-        expire_time = log_datetime + time_expire
-        logging.info("expire_time :" +str(expire_time))
-        logging.info("now_time :" + str(now_time))
-        logging.info("result:" + str(now_time > expire_time))
-        status_dict = {}
-        if now_time > expire_time:
-            status_dict.setdefault("status","expired") 
-            self.finish("expired")
-        else:
-            status_dict.setdefault("status","expected")
-            flag = "true"
-            start_lines = os.popen("grep  '== Mysql backup  is starting  ==' " + log_filepath).readlines()
-            #logging.info(str(start_lines))
-            if (len(start_lines) == 1):
-                failed_lines = os.popen(" grep '== script is failed ==' " + log_filepath).readlines()
-                if (len(failed_lines) != 0):
-                    logging.error(str(failed_lines))
-                    flag = "false"
-            end_lines = os.popen("grep '== the script is ok ==' "+ log_filepath).readlines()
-            if (len(end_lines) == 1):
-                pass
-            elif(len(end_lines) == 0):
-                pass
-            else:
-                flag = "false"
-                
-            self.finish(flag)
-        logging.info("backup status:" + str(status_dict))
-    
-    
-#eq curl  "http://localhost:8888/backup/check" backup data by full dose.
+#eq curl  "http://127.0.0.1:8888/backup/check" backup data by full dose.
 class BackUpCheck(APIHandler):
-    
-    @tornado.gen.engine
-    @asynchronous
-    def get(self):
-        url_post = "/backup/checker"
-        
-        zkOper = self.retrieve_zkOper()
-        online_node_list = zkOper.retrieve_started_nodes()
-        
-        local_ip = get_localhost_ip()
-        logging.info("local ip :" + str(local_ip))
-        
-        
-        http_client = tornado.httpclient.AsyncHTTPClient()
-        key_sets = set()
-        
-        try:
-            for node_ip in online_node_list:
-                requesturi = "http://"+ node_ip +":"+str(options.port)+ url_post
-                callback_key = str(node_ip)
-                key_sets.add(callback_key)
-                request = HTTPRequest(url=requesturi, method='GET')
-                logging.info("url is " + requesturi)
-                http_client.fetch(request, callback=(yield Callback(callback_key)))
-            
-            response_message = []
-            for i in range(len(online_node_list)):
-                callback_key = key_sets.pop()
-                response = yield Wait(callback_key)
-                if response.error:
-                    continue
-                else:
-                    logging.info("response: %s" % str(response.body.strip()))
-                    response_message.append(json.loads(response.body.strip()))
-        finally:
-            http_client.close()
-            
-        last_message = ""
-        for message in response_message:
-            logging.info("response: %s" % str(response))
-            if message["meta"]["code"] == 405:
-                continue
-            if message["meta"]["code"] == 200:
-                last_message = escape.json_encode(message)
-                break
-            else:
-                last_message = escape.json_encode(message)
 
-        if not last_message:
-            last_message = '{"notification": {"message": "direct"}, "meta": {"code": 404, "errorType": "endpoint_error", "errorDetail": "http socket failed"}, "response": "http socket failed"}'
-        self._write_buffer = [last_message]
-        self.finish("")
+    def get(self):
+        zkOper = self.retrieve_zkOper()
+        backup_info = zkOper.retrieve_backup_status_info()
+        if 'recently_backup_ip: ' not in backup_info:
+            raise HTTPAPIError(status_code= 411, error_detail="last time backup is not successed",
+                               notification = "direct",
+                               log_message= "last time backup is not successed",
+                               response =  "last time backup is not successed")
+        
+        last_backup_ip = backup_info['recently_backup_ip: ']
+        last_backup_time = backup_info['time: ']
+        last_backup_type = {'backup_type' : backup_info['backup_type: ']}
+        
+        time = long(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+        backup_time = long(datetime.datetime.strptime(last_backup_time, "%Y-%m-%d %H:%M:%S").strftime('%Y%m%d%H%M%S'))
+        
+        url_post = "/backup/checker"
+        result = {}
+        if (time - backup_time)/10000 > 30:
+            result.setdefault("message", "last backup expired")
+        
+        else:
+            response_message = get_response_request([last_backup_ip], url_post, last_backup_type)
+            logging.info(response_message)
+            
+            if response_message["meta"]["code"] == 417:
+                result.setdefault("message", "inner backup interface params transmit failed")
+            
+            elif response_message["meta"]["code"] == 200:
+                message = response_message['response']
+                if -1 != message.find('success'):
+                    result.setdefault("message", '%s backup success' %last_backup_type)
+                if -1 !=message.find('starting'):
+                    result.setdefault("message", '%s backup is processing' %last_backup_type)
+                else:
+                    result.setdefault("message", '%s backup failed' %last_backup_type)
+
+        self.finish(result)
 
 #eq curl "http://localhost:8888/backup/checker"
 class BackUp_Checker(APIHandler):
 
-    @asynchronous
     def get(self):
-        hostname = socket.gethostname()
-        obj =  re.search("-n-3", hostname)
-        if obj == None:
-            raise HTTPAPIError(status_code= 405, error_detail="not n3 node",
-                               notification = "direct",
-                               log_message= "not n3 node",
-                               response =  "not n3 node")
+        zkOper = self.retrieve_zkOper()
+        backup_type = self.get_argument("backup_type")
+        if not backup_type:
+            raise HTTPAPIError(status_code=417, error_detail="backup_type params is not transmit",\
+                                notification = "direct", \
+                                log_message= "backup params is not transmit",\
+                                response =  "please check 'backup_type' params.")
+        
+        result = {"message": "%s backup failed" %backup_type}
+        backup_info = zkOper.retrieve_type_backup_status_info(backup_type)
+        
+        if backup_type == 'full':
+            backup_start_time = backup_info['backup_start_time']
+            backup_time = datetime.datetime.strptime(backup_start_time, "%Y-%m-%d %H:%M:%S").strftime('%Y%m%d%H%M%S')
+            backup_status = backup_info['backup_status']
             
-        else:
-            date_id = get_latest_date_id('/var/log/mcluster-manager/mcluster-backup/')
-            if date_id == "empty":
-                raise HTTPAPIError(status_code=411, error_detail="Full backup ended less than one time",
-                               notification = "direct",
-                               log_message= "Full backup process ended less than one time",
-                               response =  "Full backup process ended less than one time")
+            local_backup_result = get_local_backup_status(backup_type, backup_time)
+            
+            if local_backup_result and backup_status == 'backup_succecced':
+                result["message"] = "full backup success"
                 
-
-            logging.info("date_id" + str(date_id))
-            log_filepath = "/var/log/mcluster-manager/mcluster-backup/" + date_id +"_script.log"
+            if backup_status == 'backup_starting':
+                result["message"] = "full backup is starting"
+        
+        else:
+            backup_start_time = backup_info['incr_backup_start_time']
+            backup_time = datetime.datetime.strptime(backup_start_time, "%Y-%m-%d %H:%M:%S").strftime('%Y%m%d%H%M%S')
+            backup_status = backup_info['incr_backup_status']
             
-            time_partition_list = []
-            time_partition_list = resolve_time(date_id)
-
-            log_datetime = datetime.datetime(int(time_partition_list[0]), int(time_partition_list[1]), 
-					int(time_partition_list[2]), int(time_partition_list[3]), int(time_partition_list[4]), int(time_partition_list[5]))
-       
-            now_time = datetime.datetime.now()
-            time_expire = datetime.timedelta(hours = 30)
-            expire_time = log_datetime + time_expire
-            logging.info("expire_time :" +str(expire_time))
+            local_backup_result = get_local_backup_status(backup_type, backup_time)
             
-            result = {}
-            if now_time > expire_time:
-                result.setdefault("message","expired")
-            else:
-                start_lines = os.popen("grep  '== Mysql backup  is starting  ==' " + log_filepath).readlines()
-                if (len(start_lines) == 1):
-                    failed_lines = os.popen(" grep '== script is failed ==' " + log_filepath).readlines()
-                    if (len(failed_lines) != 0):
-                        logging.error(str(failed_lines))
-                        raise HTTPAPIError(status_code=411, error_detail=str(failed_lines),
-                                      notification = "direct",
-                                      log_message= "Full backup failed",
-                                      response =  "Full backup failed")
-                        
-                    end_lines = os.popen("grep '== the script is ok ==' "+ log_filepath).readlines()
-                    
-                    if (len(end_lines) == 1):
-                        result.setdefault("message", "backup success")
-                    elif(len(end_lines) == 0):
-                        result.setdefault("message", "backup is processing")
-                    else:
-                        logging.error(str(end_lines))
-                        raise HTTPAPIError(status_code=417, error_detail="Full backup ended more than one time",
-                                      notification = "direct",
-                                      log_message= "Full backup process ended more than one time",
-                                      response =  "Full backup process ended more than one time")
-                else:
-                    raise HTTPAPIError(status_code=417, error_detail="Full backup process starts more than one time",
-                                  notification = "direct",
-                                  log_message= "Full backup process starts more than one time",
-                                  response =  "Full backup process starts more than one time")
-                     
-            self.finish(result)
+            if local_backup_result and backup_status == 'backup_succecced':
+                result["message"] = "incr backup success"
+                
+            if backup_status == 'backup_starting':
+                result["message"] = "incr backup is starting"  
+    
+        self.finish(result)

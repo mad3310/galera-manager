@@ -10,7 +10,7 @@ from tornado.gen import Callback, Wait, engine
 from tornado.options import options
 from tornado.httpclient import HTTPRequest
 from common.helper import _retrieve_userName_passwd
-import urllib
+import urllib, urllib2
 
 
 class BaseBackupWorker(object):
@@ -21,7 +21,7 @@ class BaseBackupWorker(object):
         '''
         self.response_message = None
 
-    
+
     def _dispatch_request_sync(self, online_node_list, get_or_post_type, url_post):
         http_client = tornado.httpclient.HTTPClient()
 
@@ -65,6 +65,7 @@ class BaseBackupWorker(object):
 
         finally:
             http_client.close()
+
     
     @property
     def _get_response_message(self):

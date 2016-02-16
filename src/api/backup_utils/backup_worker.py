@@ -51,24 +51,26 @@ class BackupWorkers(threading.Thread):
             if 'Synced' != db_status[-14][1]:
                 self.backup_record['error: '] = 'Mcluster is not start %s' %datetime.datetime.now().strftime(TIME_FORMAT)
                 self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
-                return 
-            
+                self.zkOpers.write_backup_backup_info(self.backup_record)
+                return
             
             if '0' == self.__run_comm(CHECK_DMP_DATA_CMD):
                 self.backup_record['error: '] = 'No have /data partition %s' %datetime.datetime.now().strftime(TIME_FORMAT)
                 self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
+                self.zkOpers.write_backup_backup_info(self.backup_record)
                 return 
             
-            #mcluster_disk_available = retrieve_directory_available("/srv/mcluster")
-            #data_disk_available = retrieve_directory_available("/data")
+            mcluster_disk_available = retrieve_directory_available("/srv/mcluster")
+            data_disk_available = retrieve_directory_available("/data")
             
-            #mysql_data_directory_capacity = retrieve_directory_capacity("/srv/mcluster/mysql")
-            #calculation_data_directory_capacity = mysql_data_directory_capacity * 2
+            mysql_data_directory_capacity = retrieve_directory_capacity("/srv/mcluster/mysql")
+            calculation_data_directory_capacity = mysql_data_directory_capacity * 2
             
-            #if mcluster_disk_available <= calculation_data_directory_capacity or data_disk_available <= calculation_data_directory_capacity:
-                #self.backup_record['error: '] = 'The disk is full %s' %datetime.datetime.now().strftime(TIME_FORMAT)
-                #self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
-                #return 
+            if mcluster_disk_available <= calculation_data_directory_capacity or data_disk_available <= calculation_data_directory_capacity:
+                self.backup_record['error: '] = 'The disk is full %s' %datetime.datetime.now().strftime(TIME_FORMAT)
+                self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
+                self.zkOpers.write_backup_backup_info(self.backup_record)
+                return 
 
             self.backupOpers.create_backup_directory()
             self.backupOpers.remove_expired_backup_file()
@@ -79,9 +81,10 @@ class BackupWorkers(threading.Thread):
             record = {"recently_backup_ip: " : str(get_localhost_ip()), 'time: ' : datetime.datetime.now().strftime(TIME_FORMAT), 'backup_type: ': self._backup_mode}
             self.zkOpers.write_backup_backup_info(record)
 
-        except:
+        except Exception, e:
             record = {"error: " : 'backup is wrong, please check it!', 'time:' : datetime.datetime.now().strftime(TIME_FORMAT), 'backup_type: ': self._backup_mode}
             self.zkOpers.write_backup_backup_info(record)
+            logging.info(e)
     
         finally:
             conn.close()

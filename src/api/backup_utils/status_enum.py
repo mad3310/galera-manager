@@ -7,6 +7,6 @@ class Enum(set):
             return name
         raise AttributeError
 
-_status = ['backup_starting', 'backup_failed', 'backup_succecced', 'backup_transmit_succeed', 'backup_transmit_faild']
+_status = ['backup_starting', 'backup_failed', 'backup_succecced', 'backup_transmit_starting', 'backup_transmit_succeed', 'backup_transmit_faild']
 
 Status = Enum(_status)

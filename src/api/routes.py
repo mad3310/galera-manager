@@ -72,12 +72,9 @@ handlers = [
             (r"/inner/node/check/log/health", DataNodeMonitorLogHealth),
             (r"/inner/node_port/check", PortCheck),
             (r"/backup", Backup),
-            #(r"/backup/incr", Incr_Backup),
             (r"/inner/backup", Inner_Backup_Action),
-            #(r"/inner/backup/incr", Inner_Backup_Action),
             (r"/backup/check", BackUpCheck),
             (r"/backup/checker", BackUp_Checker),
-            (r"/backup/inner/check", BackUpChecker),
             (r"/arbitrator/node/start", ArbitratorStart), 
             (r"/inner/arbitrator/ip", ArbitratorIP)
 #             (r"/arbitrator/check", ArbitratorCheck)

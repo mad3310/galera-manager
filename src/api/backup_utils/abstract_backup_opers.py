@@ -73,8 +73,12 @@ class AbstractBackupOpers(object):
         
         for file_name in romote_files:
             if file_name != 'full' and file_name != 'incr':
-                if file_name.split('-')[1] < expDate:
-                    os.system('rm -rf %s/%s' % (backup_path, file_name))
+                if file_name.find('-') == -1:
+                    if file_name.split('_')[0] < expDate:
+                        os.system('rm -rf %s/%s' % (backup_path, file_name))
+                else:
+                    if file_name.split('-')[1] < expDate:
+                        os.system('rm -rf %s/%s' % (backup_path, file_name))
 
     def get_day_of_day(self, n):
         if n > 0:
