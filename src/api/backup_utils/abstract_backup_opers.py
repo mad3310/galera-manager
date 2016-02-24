@@ -58,8 +58,13 @@ class AbstractBackupOpers(object):
     def _write_info_to_local(self, path, filename, key_value):
         if os.path.exists(path) is False:
             os.mkdir(path)
+        
         with open(path + filename, 'a') as f_obj:
-            f_obj.write(key_value + '\n')
+            if type(key_value) == dict: 
+                for key, value in key_value.items():
+                    f_obj.write(str(key)+': ' + str(value))
+            else:
+                f_obj.write(key_value + '\n')
         
     def _write_info_to_zk(self, zkOpers, key_value):
         time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')

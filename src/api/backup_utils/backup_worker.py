@@ -26,7 +26,7 @@ class BackupWorkers(threading.Thread):
     def __init__(self, backup_mode='full', incr_basedir=None):
         
         self._backup_mode = backup_mode
-
+        self.backup_record = {}
         threading.Thread.__init__(self)
         
         if self._backup_mode == "full":
@@ -66,11 +66,11 @@ class BackupWorkers(threading.Thread):
             mysql_data_directory_capacity = retrieve_directory_capacity("/srv/mcluster/mysql")
             calculation_data_directory_capacity = mysql_data_directory_capacity * 2
             
-            if mcluster_disk_available <= calculation_data_directory_capacity or data_disk_available <= calculation_data_directory_capacity:
-                self.backup_record['error: '] = 'The disk is full %s' %datetime.datetime.now().strftime(TIME_FORMAT)
-                self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
-                self.zkOpers.write_backup_backup_info(self.backup_record)
-                return 
+            #if mcluster_disk_available <= calculation_data_directory_capacity or data_disk_available <= calculation_data_directory_capacity:
+                #self.backup_record['error: '] = 'The disk is full %s' %datetime.datetime.now().strftime(TIME_FORMAT)
+                #self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
+                #self.zkOpers.write_backup_backup_info(self.backup_record)
+                #return 
 
             self.backupOpers.create_backup_directory()
             self.backupOpers.remove_expired_backup_file()

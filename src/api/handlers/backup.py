@@ -101,7 +101,7 @@ class Inner_Backup_Action(APIHandler):
         self.finish(result)
  
     
-#eq curl  "http://127.0.0.1:8888/backup/check" backup data by full dose.
+#eq curl  "http://127.0.0.1:8888/backup/check" 
 class BackUpCheck(APIHandler):
 
     def get(self):
@@ -126,7 +126,7 @@ class BackUpCheck(APIHandler):
             result.setdefault("message", "last backup expired")
         
         else:
-            response_message = get_response_request([last_backup_ip], url_post, last_backup_type)
+            response_message = get_response_request(last_backup_ip, url_post, last_backup_type)
             logging.info(response_message)
             
             if response_message["meta"]["code"] == 417:
@@ -134,19 +134,19 @@ class BackUpCheck(APIHandler):
             
             elif response_message["meta"]["code"] == 200:
                 message = response_message['response']
-                if -1 != message.find('success'):
-                    result.setdefault("message", '%s backup success' %last_backup_type)
-                if -1 !=message.find('starting'):
-                    result.setdefault("message", '%s backup is processing' %last_backup_type)
+                if -1 != message['message'].find('success'):
+                    result.setdefault("message", '%s backup success' %last_backup_type['backup_type'])
+                if -1 !=message['message'].find('starting'):
+                    result.setdefault("message", '%s backup is processing' %last_backup_type['backup_type'])
                 else:
-                    result.setdefault("message", '%s backup failed' %last_backup_type)
+                    result.setdefault("message", '%s backup failed' %last_backup_type['backup_type'])
 
         self.finish(result)
 
-#eq curl "http://localhost:8888/backup/checker"
+#eq curl -d "backup_type=full" "http://localhost:8888/backup/checker"
 class BackUp_Checker(APIHandler):
 
-    def get(self):
+    def post(self):
         zkOper = self.retrieve_zkOper()
         backup_type = self.get_argument("backup_type")
         if not backup_type:
@@ -159,9 +159,9 @@ class BackUp_Checker(APIHandler):
         backup_info = zkOper.retrieve_type_backup_status_info(backup_type)
         
         if backup_type == 'full':
-            backup_start_time = backup_info['backup_start_time']
+            backup_start_time = backup_info['backup_start_time:']
             backup_time = datetime.datetime.strptime(backup_start_time, "%Y-%m-%d %H:%M:%S").strftime('%Y%m%d%H%M%S')
-            backup_status = backup_info['backup_status']
+            backup_status = backup_info['backup_status:']
             
             local_backup_result = get_local_backup_status(backup_type, backup_time)
             
@@ -172,9 +172,9 @@ class BackUp_Checker(APIHandler):
                 result["message"] = "full backup is starting"
         
         else:
-            backup_start_time = backup_info['incr_backup_start_time']
+            backup_start_time = backup_info['incr_backup_start_time:']
             backup_time = datetime.datetime.strptime(backup_start_time, "%Y-%m-%d %H:%M:%S").strftime('%Y%m%d%H%M%S')
-            backup_status = backup_info['incr_backup_status']
+            backup_status = backup_info['incr_backup_status:']
             
             local_backup_result = get_local_backup_status(backup_type, backup_time)
             

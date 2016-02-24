@@ -1,12 +1,13 @@
-import urllib2
+import urllib2, urllib
 import json
 
 FULL_LOG_FILE_PATH = '/var/log/mcluster-manager/mcluster-backup/'
 INCR_LOG_FILE_PATH = '/var/log/mcluster-manager/mcluster-backup/incr/'
 
-def get_response_request(host, url_path, data, method='GET'):
+def get_response_request(host, url_path, data):
     url = "http://%s:8888%s" % (host, url_path)
-    f = urllib2.urlopen(url, date=data)
+    data = urllib.urlencode(data)
+    f = urllib2.urlopen(url, data)
     encodedjson =  f.read()
     return json.loads(encodedjson)
 

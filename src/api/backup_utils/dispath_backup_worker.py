@@ -34,7 +34,7 @@ class DispatchBackupWorker(threading.Thread, BackupWorkerMethod):
                     raise UserVisiableException('no available node, usually disk is not enough!')
                 self._dispatch_request([action_ips[0]], 'POST', url_path, self.data)
             else:
-                key_value = self.zkOper.retrieve_full_backup_status_info()
+                key_value = self.zkOper.retrieve_type_backup_status_info('full')
                 action_ips = key_value['full_backup_ip:']
                 if not action_ips:
                     raise UserVisiableException('no available full-backup node')
