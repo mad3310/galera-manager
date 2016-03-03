@@ -45,23 +45,28 @@ class Replication(Connsync):
         sql_show_slave = 'show slave status'
         rows_show_slave = self.exc_mysql_sql(conn, sql_show_slave)
         self.current_master = rows_show_slave[0][1]
-        
+
         self.__get_started_nodes()
         self.__get_master_nodes()
         
         logging.info("status: %s" % rows_show_slave[0][10])
+        _slave_io_running = rows_show_slave[0][10]
+        _slave_sql_running = rows_show_slave[0][11]
         
-        if 'Yes' != rows_show_slave[0][10]: 
-            if not self.start_time:
-                  self.start_time = time.time()                        
+        if 'Yes' == _slave_io_running and 'Yes' == _slave_sql_running:
             self.data['Relay_Log_Pos'] = rows_show_slave[0][8]
-            relay_log_file = rows_show_slave[0][7]
-            rows_xid = self.exc_mysql_sql(conn, "SHOW RELAYLOG EVENTS IN '%s'" %relay_log_file)
-            self.data['xid'] = long(rows_xid[-1][-1].strip('COMMIT /* xid='))
-            self.finish_time = time.time()
-            logging.info(self.data)
-            return False
-        return True
+            self.start_time = ''
+            return True
+
+        if not self.start_time:
+            self.start_time = time.time()
+
+        relay_log_file = rows_show_slave[0][7]
+        rows_xid = self.exc_mysql_sql(conn, "SHOW RELAYLOG EVENTS IN '%s' from %s" %(relay_log_file, self.data['Relay_Log_Pos']))
+        self.data['xid'] = long(rows_xid[-1][-1].strip('COMMIT /* xid='))
+        self.finish_time = time.time()
+        logging.info(self.data)
+        return False
     
     def __get_master_nodes(self):
         if not self.masters:
@@ -126,6 +131,7 @@ class Replication(Connsync):
             self.exc_mysql_sql(conn,'stop slave')
             self.exc_mysql_sql(conn, sqlstr)
             self.exc_mysql_sql(conn,'start slave')
+            self.start_time = ''
         except Exception,e:
             logging.info(e)
 
