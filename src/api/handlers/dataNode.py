@@ -294,29 +294,53 @@ class DataNodeStat(APIHandler):
 class StatDataDirSize(APIHandler):
     stat_opers = NodeStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
-        result = self.stat_opers.stat_data_dir_size()
+        result = yield self.do()
         self.finish(result)
-         
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_data_dir_size()
+        return return_dict  
+
         
 # retrieve the node stat for mysql cpu partion
 # eg. curl "http://localhost:8888/node/stat/mysqlcpu/partion"        
 class StatMysqlCpuPartion(APIHandler):
     stat_opers = NodeStatOpers()
-
+    
+    @asynchronous
+    @engine
     def get(self):
-        result = self.stat_opers.stat_mysql_cpu()
-        self.finish(result) 
+        result = yield self.do()
+        self.finish(result)
         
-
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_mysql_cpu()
+        return return_dict  
+        
+        
 # retrieve the node stat for mysql memory partion
 # eg. curl "http://localhost:8888/node/stat/mysqlmemory/partion"        
 class StatMysqlMemoryPartion(APIHandler):
     stat_opers = NodeStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
-        result = self.stat_opers.stat_mysql_memory()
-        self.finish(result)  
+        result = yield self.do()
+        self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_mysql_memory()
+        return return_dict  
         
         
 # retrieve the node stat for memory size
@@ -324,12 +348,20 @@ class StatMysqlMemoryPartion(APIHandler):
 class StatNodeMemorySize(APIHandler):
     stat_opers = NodeStatOpers()
     
+    @asynchronous
+    @engine
     def get(self):
-        result = self.stat_opers.stat_node_memory()
+        result = yield self.do()
         self.finish(result)
         
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_node_memory()
+        return return_dict
+        
 
-# retrieve the port of the  node.
+# retrieve the port of the node.
 # eg. curl "http://localhost:8888/inner/node_port/check"
 class PortCheck(APIHandler):
     invokeCommand = InvokeCommand()

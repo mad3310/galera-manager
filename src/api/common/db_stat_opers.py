@@ -160,8 +160,8 @@ class DBStatOpers(Abstract_Stat_Service):
             invokecommand = InvokeCommand()
             for i in range(len(rows_bin_logs)):
                 current_bin_logs = rows_bin_logs[-i-1][-2]
-                ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep %s'''%(current_bin_logs, params['xid']))
-                if ret_str:
+                ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep 'xid=%s' '''%(current_bin_logs, params['xid']))
+                if ret_str[0]:
                     break
             assert ret_str
             end_log_pos = ret_str[0].strip('\n').split('\t')[-2]

@@ -54,9 +54,16 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         '''
         @todo: check only pass lock to below action and close the zkOper object, real action if can release the lock
         '''
-        node_start_action = Node_start_action(isNewCluster)
-        node_start_action.start()
-         
+        try:
+            node_start_action = Node_start_action(isNewCluster)
+            node_start_action.start()
+        except Exception, kazoo.exceptions.LockTimeout:
+            raise HTTPAPIError(status_code=417, error_detail="lock by other thread",\
+                                notification = "direct", \
+                                log_message= "lock by other thread",\
+                                response =  "current operation is using by other people, please wait a moment to try again!")
+            
+
     def stop(self):
         # Stop a thread to run the events
         node_stop_action = Node_stop_action()
@@ -110,12 +117,7 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
         try:
             self.isLock, self.lock = self.zkOper.lock_node_start_stop_action()
         except kazoo.exceptions.LockTimeout:
-            raise HTTPAPIError(status_code=417, error_detail="lock by other thread",\
-                                notification = "direct", \
-                                log_message= "lock by other thread",\
-                                response =  "current operation is using by other people, please wait a moment to try again!")
-            
-            #raise CommonException("When start node, can't retrieve the start atcion lock!")
+            raise CommonException("When start node, can't retrieve the start atcion lock!")
             
         if not self.isLock:
             raise CommonException("When start node, can't retrieve the start atcion lock!")
