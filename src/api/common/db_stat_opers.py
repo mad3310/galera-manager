@@ -153,6 +153,10 @@ class DBStatOpers(Abstract_Stat_Service):
         if None == conn:
             raise UserVisiableException("Can\'t connect to mysql server")
         
+        rows_bin_logs = None
+        log_pos_info = None        
+        master_log_file = None
+        end_log_pos = None
         try:
             cursor = conn.cursor()
             cursor.execute('show binary logs')
@@ -162,14 +166,13 @@ class DBStatOpers(Abstract_Stat_Service):
             for i in range(len(rows_bin_logs)):
                 master_log_file = rows_bin_logs[-i-1][-2]
                 ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep 'xid=%s' '''%(master_log_file, params['xid']))
-                assert ret_str               
-                if ret_str[0]:
+                assert ret_str 
+                log_pos_info = ret_str[0]     
+                if log_pos_info:
                     break
             
-            end_log_pos = ret_str[0].strip('\n').split('\t')[-2]
+            end_log_pos = log_pos_info.strip('\n').split('\t')[-2]
         
-        except AssertionError, e:
-            logging.info(e)
         finally:
             conn.close()
             
