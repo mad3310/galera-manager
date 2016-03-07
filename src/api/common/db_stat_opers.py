@@ -153,10 +153,9 @@ class DBStatOpers(Abstract_Stat_Service):
         if None == conn:
             raise UserVisiableException("Can\'t connect to mysql server")
         
-        rows_bin_logs = None
-        log_pos_info = None        
-        master_log_file = None
-        end_log_pos = None
+        log_pos_info = ''        
+        master_log_file = ''
+        end_log_pos = ''
         try:
             cursor = conn.cursor()
             cursor.execute('show binary logs')
