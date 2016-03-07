@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 
 import logging
-
+import kazoo
 from common.configFileOpers import ConfigFileOpers
 from common.tornado_basic_auth import require_basic_auth
 from base import APIHandler
@@ -245,12 +245,18 @@ class DataNodeStart(APIHandler):
         logging.info("args :" + str(args))
         if args != {}:
             isNewCluster = args['isNewCluster'][0]
-    
-        self.mysql_service_opers.start(isNewCluster)
-        
+        try:
+            self.mysql_service_opers.start(isNewCluster)
+
+        except Exception, kazoo.exceptions.LockTimeout:
+            raise HTTPAPIError(status_code=417, error_detail="lock by other thread",\
+                                notification = "direct", \
+                                log_message = "lock by other thread",\
+                                response =  "current operation is using by other people, please wait a moment to try again!")
+
         result = {}
         result.setdefault("message", "due to start data node need a large of times, please wait to finished and email to you, when data node has started!")
-#        dict.setdefault("code", "000000")
+
         self.finish(result)
 
 # stop mysqld service on data node

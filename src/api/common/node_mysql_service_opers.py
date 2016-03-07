@@ -12,7 +12,6 @@ from common.utils.exceptions import CommonException
 from common.configFileOpers import ConfigFileOpers
 from common.utils.mail import send_email
 from common.helper import get_localhost_ip
-from common.utils.exceptions import HTTPAPIError
 
 '''
 Created on 2013-7-21
@@ -54,14 +53,8 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         '''
         @todo: check only pass lock to below action and close the zkOper object, real action if can release the lock
         '''
-        try:
-            node_start_action = Node_start_action(isNewCluster)
-            node_start_action.start()
-        except Exception, kazoo.exceptions.LockTimeout:
-            raise HTTPAPIError(status_code=417, error_detail="lock by other thread",\
-                                notification = "direct", \
-                                log_message= "lock by other thread",\
-                                response =  "current operation is using by other people, please wait a moment to try again!")
+        node_start_action = Node_start_action(isNewCluster)
+        node_start_action.start()
             
 
     def stop(self):

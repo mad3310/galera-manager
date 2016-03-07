@@ -149,27 +149,32 @@ class DBStatOpers(Abstract_Stat_Service):
         if not params:
             raise UserVisiableException('params are not given')
      
-        conn=self.dba_opers.get_mysql_connection()
-        if None==conn:
+        conn = self.dba_opers.get_mysql_connection()
+        if None == conn:
             raise UserVisiableException("Can\'t connect to mysql server")
         
         try:
             cursor = conn.cursor()
             cursor.execute('show binary logs')
             rows_bin_logs = cursor.fetchall()
+            assert rows_bin_logs
             invokecommand = InvokeCommand()
             for i in range(len(rows_bin_logs)):
-                current_bin_logs = rows_bin_logs[-i-1][-2]
-                ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep 'xid=%s' '''%(current_bin_logs, params['xid']))
+                master_log_file = rows_bin_logs[-i-1][-2]
+                ret_str = invokecommand._runSysCmd('''mysql -uroot -pMcluster -e "show binlog events IN '%s'"|grep 'xid=%s' '''%(master_log_file, params['xid']))
+                assert ret_str               
                 if ret_str[0]:
                     break
-            assert ret_str
+            
             end_log_pos = ret_str[0].strip('\n').split('\t')[-2]
+        
+        except AssertionError, e:
+            logging.info(e)
         finally:
             conn.close()
             
         result = {}
-        result.setdefault('Master_Log_File', current_bin_logs)
+        result.setdefault('Master_Log_File', master_log_file)
         result.setdefault('End_Log_Pos', end_log_pos)
         return result
     
