@@ -54,7 +54,7 @@ class Node_Mysql_Service_Opers(Abstract_Mysql_Service_Opers):
         @todo: check only pass lock to below action and close the zkOper object, real action if can release the lock
         '''
         node_start_action = Node_start_action(isNewCluster)
-        node_start_action.start()
+        node_start_action.start_run()
             
 
     def stop(self):
@@ -115,7 +115,7 @@ class Node_start_action(Abstract_Mysql_Service_Action_Thread):
         if not self.isLock:
             raise CommonException("When start node, can't retrieve the start atcion lock!")
         
-    def run(self):
+    def start_run(self):
         try:
             self._issue_start_action(self.isNewCluster)
         except:

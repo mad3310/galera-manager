@@ -238,6 +238,7 @@ class DataNodeStart(APIHandler):
     mysql_service_opers = Node_Mysql_Service_Opers()
     
     @asynchronous
+    @engine
     def post(self):
         isNewCluster = False
     
@@ -245,19 +246,24 @@ class DataNodeStart(APIHandler):
         logging.info("args :" + str(args))
         if args != {}:
             isNewCluster = args['isNewCluster'][0]
-        try:
-            self.mysql_service_opers.start(isNewCluster)
-
-        except Exception, kazoo.exceptions.LockTimeout:
-            raise HTTPAPIError(status_code=417, error_detail="lock by other thread",\
-                                notification = "direct", \
-                                log_message = "lock by other thread",\
-                                response =  "current operation is using by other people, please wait a moment to try again!")
+            
+        yield self.do(isNewCluster)
 
         result = {}
         result.setdefault("message", "due to start data node need a large of times, please wait to finished and email to you, when data node has started!")
 
         self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self, isNewCluster):
+        try:
+            self.mysql_service_opers.start(isNewCluster)
+        except Exception, kazoo.exceptions.LockTimeout: 
+            raise HTTPAPIError(status_code=417, error_detail="lock by other thread",\
+                                notification = "direct", \
+                                log_message = "lock by other thread",\
+                                response =  "current operation is using by other people, please wait a moment to try again!")
 
 # stop mysqld service on data node
 # eg. curl --user root:root "http://localhost:8888/node/stop"
