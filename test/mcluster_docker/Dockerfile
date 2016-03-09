@@ -15,7 +15,7 @@ RUN yum install MySQL-python -y
 RUN yum install python-futures -y
 RUN yum install mcluster-manager -y
 
-EXPOSE 3306 8888 2888 3888
+EXPOSE 3306 8888 2888 3888 4567
 USER root
 RUN mkdir -p /usr/local/mcluster/init/
 RUN mkdir -p /opt/letv/mcluster-manager

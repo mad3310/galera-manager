@@ -102,4 +102,20 @@ class NodeStatOpers(Abstract_Stat_Service):
         result.setdefault('node_mem_free_size', node_mem_free_size)
         
         return result
+    
+    def stat_node_zk_address(self):
+        _zk_infos = []
+        zkAddress = ''
+        zkPort = ''
+        try:
+            with open('/opt/letv/mcluster-manager/api/config/mclusterManager.cnf', 'r') as f:
+                _zk_infos = f.readlines()
+            
+            zkAddress = _zk_infos[0].split('=')[1].strip('\n')
+            zkPort = _zk_infos[1].split('=')[1].strip('\n')
+            #zkLeader = _zk_infos[2].split('=')[1].strip('\n')
+        except Exception, e:
+            raise e
+  
+        return {'zkAddress': zkAddress, 'zkPort': zkPort}
 

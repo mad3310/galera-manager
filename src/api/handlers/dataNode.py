@@ -383,4 +383,22 @@ class PortCheck(APIHandler):
         if result != '':
             self.finish('true')
         else:
-            self.finish('false')               
+            self.finish('false')
+
+            
+# retrieve the node stat for zookeeper address
+# eg. curl "http://localhost:8888/node/stat/zk_address"        
+class StatNodeZookeeperAddr(APIHandler):
+    stat_opers = NodeStatOpers()
+    
+    @asynchronous
+    @engine
+    def get(self):
+        result = yield self.do()
+        self.finish(result)
+        
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_node_zk_address()
+        return return_dict            

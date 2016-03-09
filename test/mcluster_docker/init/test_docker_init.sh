@@ -12,7 +12,6 @@ sed -e "/\[mysqld_safe\]/i\max_user_connections=200" -i /opt/letv/mcluster/root/
 sed -e "/\[mysqld_safe\]/i\innodb_buffer_pool_size=256M" -i /opt/letv/mcluster/root/etc/my.cnf
 sed -e "/\[mysqld_safe\]/i\innodb_log_file_size=256M" -i /opt/letv/mcluster/root/etc/my.cnf
 sed -e "/\[mysqld_safe\]/i\innodb_log_buffer_size=256M" -i /opt/letv/mcluster/root/etc/my.cnf
-sed -e "/\[mysqld_safe\]/i\tmpdir=/srv/mcluster/tmp" -i /opt/letv/mcluster/root/etc/my.cnf
 sed "s/#wsrep_node_name=node1/wsrep_node_name=node1/g" -i /opt/letv/mcluster/root/etc/my.cnf
 echo 'set my.cnf successuflly'
 fi
