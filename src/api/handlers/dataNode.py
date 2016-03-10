@@ -387,8 +387,8 @@ class PortCheck(APIHandler):
 
             
 # retrieve the node stat for zookeeper address
-# eg. curl "http://localhost:8888/node/stat/zk_address"        
-class StatNodeZookeeperAddr(APIHandler):
+# eg. curl "http://localhost:8888/node/conf/zk"        
+class DateNodeConfZk(APIHandler):
     stat_opers = NodeStatOpers()
     
     @asynchronous
