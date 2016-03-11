@@ -48,6 +48,8 @@ def _request_fetch(request):
             logging.error(message)
         else:
             return_result = response.body.strip()
+            while 200 != response.code:
+                response = http_client.fetch(request)
             
     http_client.close()
     logging.info("coming here mean Exception was caught, if exist any")        
