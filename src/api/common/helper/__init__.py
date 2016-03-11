@@ -48,12 +48,28 @@ def _request_fetch(request):
             logging.error(message)
         else:
             return_result = response.body.strip()
-            while 200 != response.code:
-                response = http_client.fetch(request)
             
     http_client.close()
     logging.info("coming here mean Exception was caught, if exist any")        
     return return_result
+
+
+def _request_node_fetch(request):
+    #access to the target ip machine to retrieve the dict,then modify the config
+    http_client = HTTPClient()
+    
+    response = None
+    try:
+        response = http_client.fetch(request)
+    except HTTPError, e:
+        logging.error(e)
+    
+    if response != None:
+        while 200 != response.code:
+            response = http_client.fetch(request)
+            
+    http_client.close()
+    logging.info("coming here mean this node was started")
     
     
 def _retrieve_userName_passwd():
