@@ -30,13 +30,13 @@ def retrieve_kv_from_db_rows(rows, key_list=None):
     return key_value
 
 
-def _request_fetch(request, timeout=0):
+def _request_fetch(request, timeout=20):
     #access to the target ip machine to retrieve the dict,then modify the config
     http_client = HTTPClient()
     
     response = None
-    if timeout > 0:
-        request.request_timeout = timeout
+
+    request.request_timeout = timeout
         
     try:
         response = http_client.fetch(request)
