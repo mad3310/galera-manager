@@ -30,18 +30,21 @@ def retrieve_kv_from_db_rows(rows, key_list=None):
     return key_value
 
 
-def _request_fetch(request):
+def _request_fetch(request, timeout=20):
     #access to the target ip machine to retrieve the dict,then modify the config
     http_client = HTTPClient()
     
     response = None
+
+    request.request_timeout = timeout
+        
     try:
         response = http_client.fetch(request)
     except HTTPError, e:
         logging.error(e)
     
     return_result = False
-    if response != None:    
+    if response != None:   
         if response.error:
             return_result = False
             message = "remote access,the key:%s,error message:%s" % (request,response.error)
@@ -52,8 +55,8 @@ def _request_fetch(request):
     http_client.close()
     logging.info("coming here mean Exception was caught, if exist any")        
     return return_result
-    
-    
+
+
 def _retrieve_userName_passwd():
     confDict = confOpers.getValue(options.cluster_property, ['adminUser','adminPassword'])
     adminUser = confDict['adminUser']

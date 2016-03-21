@@ -90,7 +90,7 @@ class NodeStatOpers(Abstract_Stat_Service):
         #mysql_mem_list = return_result.split('\n\n\n')[0].split('\n')[2].split()
         mysql_mem_list = []
         
-        if mysql_mem_list is None:
+        if mysql_mem_list is None or mysql_mem_list == []:
             node_mem_used_size = 0.0
             node_mem_free_size = 0.0
         else:
