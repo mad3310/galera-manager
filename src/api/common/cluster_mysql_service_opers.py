@@ -15,7 +15,7 @@ from common.zkOpers import ZkOpers
 from common.abstract_mysql_service_opers import Abstract_Mysql_Service_Opers
 from common.utils.exceptions import HTTPAPIError
 from common.helper import _retrieve_userName_passwd
-from common.helper import _request_fetch, _request_node_fetch
+from common.helper import _request_fetch
 from common.abstract_mysql_service_action_thread import Abstract_Mysql_Service_Action_Thread
 from common.utils.exceptions import CommonException
 
@@ -347,7 +347,8 @@ class Cluster_start_action(Abstract_Mysql_Service_Action_Thread):
                 requesturi = "http://%s:%s%s" % (data_node_ip, options.port, url_post)
                 request = HTTPRequest(url=requesturi, method='POST', body=urllib.urlencode(args_dict),
                                       auth_username = adminUser, auth_password = adminPasswd)
-                _request_node_fetch(request)
+                
+                _request_fetch(request, timeout=100)
                 
                 start_finished = self._check_start_status(data_node_ip, cluster_flag)
                 logging.info('request from node/start is ' + str(start_finished))
