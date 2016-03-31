@@ -5,29 +5,27 @@ from pip._vendor.requests.exceptions import HTTPError
 
 class TestMonitor(unittest.TestCase):
     
-    zkip=None
+    test_container_ip='127.0.0.1'
+
     def setUp(self):
-        if not self.zkip:
-            with open('/opt/letv/mcluster-manager/api/config/mclusterManager.cnf', 'r') as f:
-                self.zkip = f.readlines()[0].split('=')[1].strip('\n')
-                print self.zkip
+        pass
         
     def test_mcluster_monitor(self):
-        r = requests.get('http://127.0.0.1:8888/mcluster/monitor')
+        r = requests.get('http://%s:8888/mcluster/monitor' %self.test_container_ip)
 
         def testit():
             raise HTTPError()
         self.assertEqual(200, r.status_code, testit)
         
     def test_monitor_async(self):
-        r = requests.get('http://127.0.0.1:8888/mcluster/monitor/async')
+        r = requests.get('http://%s:8888/mcluster/monitor/async' %self.test_container_ip)
         
         def testit():
             raise HTTPError()
         self.assertEqual(200, r.status_code, testit)
         
     def test_mcluster_status(self):
-        r = requests.get('http://127.0.0.1:8888/mcluster/status')
+        r = requests.get('http://%s:8888/mcluster/status' %self.test_container_ip)
         
         def testit():
             raise HTTPError()
@@ -44,55 +42,56 @@ class TestMonitor(unittest.TestCase):
         self.assertEqual('nothing', eval(r.text)['response']["db"]['write_read_avaliable']['alarm'], testit)
         
     def test_db_check_wr(self):
-        r = requests.get('http://127.0.0.1:8888/db/check/wr')
+        r = requests.get('http://%s:8888/db/check/wr' %self.test_container_ip)
         
         def testit():
             raise HTTPError()
         self.assertTrue(r.text, testit)
         
     def test_db_check_wsrep(self):
-        r = requests.get('http://127.0.0.1:8888/db/check/wsrep_status')
+        r = requests.get('http://%s:8888/db/check/wsrep_status' %self.test_container_ip)
         
         def testit():
             raise HTTPError()
         self.assertTrue(r.text, testit)
         
     def test_db_check_cur_conns(self):
-        r = requests.get('http://127.0.0.1:8888/db/check/cur_conns')
+        r = requests.get('http://%s:8888/db/check/cur_conns' %self.test_container_ip)
         
         def testit():
             raise HTTPError()
         self.assertTrue(r.text, testit)
         
     def test_db_check_cur_user_conns(self):
-        r = requests.get('http://127.0.0.1:8888/db/check/cur_user_conns')
+        r = requests.get('http://%s:8888/db/check/cur_user_conns' %self.test_container_ip)
         
         def testit():
             raise HTTPError()
         self.assertTrue(r.text, testit)
         
     def test_node_check_log_error(self):
-        r = requests.get('http://127.0.0.1:8888/node/check/log/error')
+        r = requests.get('http://%s:8888/node/check/log/error' %self.test_container_ip)
         
         def testit():
             raise HTTPError()
         self.assertTrue(r.text, testit)
         
     def test_node_check_log_warning(self):
-        r = requests.get('http://127.0.0.1:8888/node/check/log/warning')
+        r = requests.get('http://%s:8888/node/check/log/warning' %self.test_container_ip)
         
         def testit():
             raise HTTPError()
         self.assertTrue(r.text, testit)
         
     def test_node_check_log_health(self):
-        r = requests.get('http://127.0.0.1:8888/node/check/log/health')
+        r = requests.get('http://%s:8888/node/check/log/health' %self.test_container_ip)
         
         def testit():
             raise HTTPError()
         self.assertTrue(r.text, testit) 
         
-
+if __name__=="__main__":
+    unittest.main()
 
 
     

@@ -250,7 +250,7 @@ class DBAOpers(object):
         cursor = conn.cursor()
         cursor.execute(resource_password_sql)
         rows = cursor.fetchall()
-        passwd = rows[0][0]
+        passwd = rows[-1][0]
         try:
             resource_limit_sql = """REVOKE all ON `{database}`.* 
             from `{username}`@'{ip_address}'""".format(database=database,

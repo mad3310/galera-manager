@@ -1,41 +1,52 @@
 import logging
-
-from common.helper import is_monitoring,get_localhost_ip
+import kazoo
+import time
 from common.zkOpers import Scheduler_ZkOpers
-from common.helper import check_leader
-from common.utils import local_get_zk_address
 from common.status_opers import Check_DB_Anti_Item
+from common.abstract_mysql_service_action_thread import Abstract_Mysql_Service_Action_Thread
 
-TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-class Monitor_Db_Anti_Item(object):
+class Monitor_Db_Anti_Item(Abstract_Mysql_Service_Action_Thread):
     
     check_db_anti_itmes = Check_DB_Anti_Item()
 
-    def __init__(self):
+    def __init__(self, timeout):
         super(Monitor_Db_Anti_Item,self).__init__()
+        self.timeout = timeout
         
-    def run(self):    
+    def run(self):
         '''
             if no logic below, singleton Scheduler_ZkOpers may have no self.zk object.
         '''
-        
-        zk_addr, zk_port = local_get_zk_address()
-        if not (zk_addr and zk_port):
-            return
+        begin_time = time.time()
         
         zkOper = Scheduler_ZkOpers()
-        leader_flag = check_leader(zkOper)
-        if leader_flag == False:
-            logging.info("This node is not the leader of zookeeper, give up this chance")
+        logging.info('check zk is connected :%s' % str(zkOper.is_connected()))
+
+        isLock, lock = None, None
+        try:
+            isLock, lock = zkOper.lock_async_monitor_anti_action()
+            if not isLock:
+                return
+        except kazoo.exceptions.LockTimeout:
+            logging.info("a thread is running the monitor async, give up this oper on this machine!")
             return
         
-        if not is_monitoring(get_localhost_ip(), zkOper):
-            return
-        logging.info('do db anti item monitor~' )
+        try:
+            data_node_info_list = zkOper.retrieve_data_node_list()
+            self.__action_monitor_async(data_node_info_list)
+            logging.info('do db anti monitor over~' )
+            end_time = time.time()
+            time_span = int(end_time - begin_time)
+            
+            if time_span < self.timeout-1:
+                time.sleep(self.timeout-1 - time_span)
 
-        data_node_info_list = zkOper.retrieve_data_node_list()
-        self.__action_monitor_async(data_node_info_list)
-        logging.info('do db anti monitor over~' )
+        except Exception, e:
+            self.threading_exception_queue.put(e.exc_info())
+        
+        finally:
+            if lock is not None:
+                zkOper.unLock_aysnc_monitor_action(lock)
 
     def __action_monitor_async(self, data_node_info_list):
         self.check_db_anti_itmes.check(data_node_info_list)
