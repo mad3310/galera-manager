@@ -38,9 +38,9 @@ class Check_Status_Base(object):
         zk_data_node_count = len(data_node_info_list)
         
         zkOper = Scheduler_ZkOpers()
-        leader_flag = check_leader(zkOper)
-        if leader_flag == False:
-            return
+#         leader_flag = check_leader(zkOper)
+#         if leader_flag == False:
+#             return
         
         pre_stat = zkOper.retrieveClusterStatus()
         ''' The following logic expression means 

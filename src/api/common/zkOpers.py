@@ -381,9 +381,8 @@ class ZkOpers(object):
     
     def unLock_node_start_stop_action(self, lock):
         self._unLock_base_action(lock)
-        
-    def lock_async_monitor_action(self):
-        lock_name = "async_monitor"
+    
+    def lock_async_monitor_action(self, lock_name):
         return self._lock_base_action(lock_name)
     
     def unLock_aysnc_monitor_action(self, lock):

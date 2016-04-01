@@ -1,13 +1,27 @@
 import unittest
-
+import time,base64
 import requests
 from pip._vendor.requests.exceptions import HTTPError
 
 class TestMcluster(unittest.TestCase):
+    encode_user = base64.encodestring("%s:%s" % ('root', 'root'))
+    auth = "Basic %s" % encode_user
+    headers = {
+    "Content-type": "application/x-www-form-urlencoded",
+    "Accept": "text/plain"}
+    headers["Authorization"] = auth
+
+    test_container1_ip=''
+    test_container2_ip=''
+    test_container3_ip=''
     
+    zookeeper_ips=[]
+
+    zkip=None
     def setUp(self):
-        with open('/tmp/zkip', 'r') as f:
-            self.zkip = f.readline().strip('\n').split('=')[1]
+        if not self.zkip:
+            with open('/opt/letv/mcluster-manager/api/config/mclusterManager.cnf', 'r') as f:
+                self.zkip = f.readlines()[0].split('=')[1].strip('\n')
     
     def _makeOne(self, **kw):
         from kazoo.retry import KazooRetry
@@ -30,8 +44,8 @@ class TestMcluster(unittest.TestCase):
         self.assertRaises(Exception, retry, testit)
         
     def test_admin_conf(self):
-        payload = dict(zkAddress=self.zkip, zkPort='2181')
-        r = requests.get('https://127.0.0.1:8888/admin/conf', data=payload)
+        payload = dict(zkAddress=self.zookeeper_ips[0], zkPort='2181')
+        r = requests.post('http://%s:8888/admin/conf' %self.test_container1_ip, data=payload)
         
         def testit():
             raise HTTPError()
@@ -39,53 +53,81 @@ class TestMcluster(unittest.TestCase):
         
     def test_admin_user(self):
         payload = dict(adminUser='root', adminPassword='root')
-        r = requests.get('https://127.0.0.1:8888/admin/user', data=payload)
+        r = requests.post('http://%s:8888/admin/user' %self.test_container1_ip, data=payload)
         
         def testit():
             raise HTTPError()
         self.assertEqual(200, r.status_code, testit)
         
+
+        
     def test_cluster(self):
-        payload = dict(clusterName='mcluster-manager-test', dataNodeIp='', dataNodeName='d-mcl-mcluster-manager-test-n-1')
-        r = requests.post('https://127.0.0.1:8888/cluster', data=payload)
+        payload = dict(clusterName='mcluster-manager-test', dataNodeIp=self.test_container1_ip, dataNodeName='d-mcl-mcluster-manager-test-n-1')
+        r = requests.post('http://%s:8888/cluster' %self.test_container1_ip, data=payload, headers=self.headers)
         
         def testit():
             raise HTTPError()
         self.assertEqual(200, r.status_code, testit)
         
     def test_cluster_init(self):
-        payload = dict(forceInit=false)
-        r = requests.get('https://127.0.0.1:8888/cluster/init', data=payload)
+        r = requests.get('http://%s:8888/cluster/init?forceInit=false' %self.test_container1_ip, headers=self.headers)
         
         def testit():
             raise HTTPError()
-        self.assertEqual(200, r.status_code, testit)      
+        self.assertEqual(200, r.status_code, testit)
         
+    def test_cluster_db_start(self):
+        payload = dict(role='manager', dbName='testdb',userName='test')
+        r = requests.post('http://%s:8888/dbUser' %self.test_container1_ip, data=payload, headers=self.headers)
+        
+        def testit():
+            raise HTTPError()
+        self.assertEqual(200, r.status_code, testit)
+  
+        
+    def test_admin_conf(self):
+        payload = dict(zkAddress=self.zookeeper_ips[1], zkPort='2181')
+        r = requests.post('http://%s:8888/admin/conf' %self.test_container2_ip, data=payload)
+        
+        def testit():
+            raise HTTPError()
+        self.assertEqual(200, r.status_code, testit)    
+    
     def test_cluster_sync(self):
-        r = requests.get('https://127.0.0.1:8888/cluster/sync')
+        r = requests.get('http://%s:8888/cluster/sync' %self.test_container2_ip)
         
         def testit():
             raise HTTPError()
         self.assertEqual(200, r.status_code, testit)
         
     def test_cluster_node(self):
-        payload = dict(dataNodeIp='', dataNodeName='d-mcl-mcluster-manager-test-n-2')
-        r = requests.post('https://127.0.0.1:8888/cluster/node', data=payload)
+        payload = dict(dataNodeIp=self.test_container2_ip, dataNodeName='d-mcl-mcluster-manager-test-n-2')
+        r = requests.post('http://%s:8888/cluster/node' %self.test_container2_ip, data=payload, headers=self.headers)
+        
+        def testit():
+            raise HTTPError()
+        self.assertEqual(200, r.status_code, testit)
+        
+
+        
+    def test_admin_conf(self):
+        payload = dict(zkAddress=self.zookeeper_ips[2], zkPort='2181')
+        r = requests.post('http://%s:8888/admin/conf' %self.test_container3_ip, data=payload)
         
         def testit():
             raise HTTPError()
         self.assertEqual(200, r.status_code, testit)
         
     def test_cluster_sync(self):
-        r = requests.get('https://127.0.0.1:8888/cluster/sync')
+        r = requests.get('http://%s:8888/cluster/sync' %self.test_container3_ip)
 
         def testit():
             raise HTTPError()
         self.assertEqual(200, r.status_code, testit)
         
     def test_cluster_node(self):
-        payload = dict(dataNodeIp='', dataNodeName='d-mcl-mcluster-manager-test-n-3')
-        r = requests.post('https://127.0.0.1:8888/cluster/node', data=payload)
+        payload = dict(dataNodeIp=self.test_container3_ip, dataNodeName='d-mcl-mcluster-manager-test-n-3')
+        r = requests.post('http://%s:8888/cluster/node' %self.test_container3_ip, data=payload, headers=self.headers)
         
         def testit():
             raise HTTPError()
@@ -93,8 +135,24 @@ class TestMcluster(unittest.TestCase):
         
     def test_cluster_start(self):
         payload = dict(cluster_flag='new')
-        r = requests.post('https://127.0.0.1:8888/cluster/start', data=payload)
+        r = requests.post('http://%s:8888/cluster/start' %self.test_container1_ip, data=payload, headers=self.headers)
         
         def testit():
             raise HTTPError()
         self.assertEqual(200, r.status_code, testit)
+        
+    def test_cluster_check(self):
+        r = requests.get('http://%s:8888/cluster/check/online_node' %self.test_container1_ip, headers=self.headers)
+        def testit():
+            time.sleep(2)
+            self.test_cluster_check()
+        try:
+            self.assertEqual(3, len(eval(r.text)['response']["nodelist"]), 'testit')
+        except AssertionError, e:
+            eval(str(e))()
+        
+    def tearDown(self):
+        print "call this method is finish"
+        
+if __name__=="__main__":
+    unittest.main()
