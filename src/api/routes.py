@@ -24,6 +24,7 @@ handlers = [
             (r"/cluster/start", ClusterStart),
             (r"/cluster/stop", ClusterStop),
             (r"/cluster/check/online_node", ClusterStatus),
+            (r"/cluster/zk/remove", ClusterZkRemove),
             (r"/node/sync/([\.0-9]+)", SyncDataNode),
             (r"/node/start", DataNodeStart),
             (r"/node/stop", DataNodeStop),

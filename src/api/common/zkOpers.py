@@ -330,6 +330,11 @@ class ZkOpers(object):
         if self.zk.exists(path):
             self.DEFAULT_RETRY_POLICY(self.zk.delete, path)
             
+    def remove_zk_info(self, clustername):
+        path = self.rootPath + "/" + clustername
+        if self.zk.exists(path):
+            self.DEFAULT_RETRY_POLICY(self.zk.delete, path, recursive=True)
+            
     def retrieve_started_nodes(self):
         #self.zk = self.ensureinstance()
         clusterUUID = self.getClusterUUID()
