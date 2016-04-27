@@ -1,0 +1,46 @@
+{  "test1" :
+	{ 
+		"curl":"curl -d 'zkAdress=127.0.0.1' 'http://192.168.116.200:8888/admin/conf'",
+ 		"expect_result":{"meta": {"code": 200}, "response": {"message": "admin conf successful!"}}
+	},
+   "test2" :
+  	{ 
+		"curl":"curl -d 'adminUser=root&adminPassword=root' 'http://192.168.116.200:8888/admin/user'",
+		"expect_result": {"meta": {"code": 200}, "response": {"message": "creating admin user successful!"}}
+	},
+   "test3" :
+   	{
+		"curl" :"curl --user root:root -d 'clusterName=letv_mc_d_clvimysql3309&dataNodeIp=192.168.116.200&dataNodeName=letv_mc_d_clvimysql3310_node_1' 'http://192.168.116.200:8888/cluster'", 
+		"expect_result": {"meta": {"code": 200}, "response": {"message": "creating cluster successful!"}}
+   	},
+   "test4" :
+   	{
+		"curl":"curl --user root:root 'http://192.168.116.200:8888/cluster/init?forceInit=false'", 
+		"expect_result":{"meta": {"code": 200}, "response": {"sst_user_password":"regular_expression:^[a-zA-Z0-9+/]+$", "message": "init cluster successful!"}}
+   	},
+   "test5" :
+   	{
+		"curl":"curl 'http://192.168.116.201:8888/cluster/sync'", 
+		"expect_result":{"meta": {"code": 200}, "response": {"message": "sync mcluster info to local successful!"}}
+   	},
+   "test6" :
+   	{
+		"curl":"curl --user root:root -d 'dataNodeIp=192.168.116.201&dataNodeName=letv_mc_d_clvimysql3309_node_2' 'http://192.168.116.201:8888/cluster/node'", 
+		"expect_result":{"meta": {"code": 200}, "response": {"message": "add data node into cluster successful!"}}
+   	},
+   "test7" :
+   	{	
+		"curl":"curl 'http://192.168.116.202:8888/cluster/sync'", 
+		"expect_result":{"meta": {"code": 200}, "response": {"message": "sync mcluster info to local successful!"}}
+   	},
+   "test8" :
+   	{	
+		"curl":"curl --user root:root -d 'dataNodeIp=192.168.116.202&dataNodeName=letv_mc_d_clvimysql3309_node_3' 'http://192.168.116.202:8888/cluster/node'", 
+		"expect_result":{"meta": {"code": 200}, "response": {"message": "add data node into cluster successful!"}}
+   	},
+   "test9" :
+   	{
+		"curl":"curl --user root:root -d 'cluster_flag=new' 'http://192.168.116.200:8888/cluster/start'",
+		"expect_result":{"meta": {"code": 200}, "response": {"message": "due to start cluster need a large of times, please wait to finished and email to you, when cluster have started!"}}
+	}
+}
