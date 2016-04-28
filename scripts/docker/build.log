@@ -1,0 +1,240 @@
+ -------------------start building letv-mcluster images----------------------
+Step 0 : FROM letv:centos6
+ ---> 22ad12513f21
+Step 1 : MAINTAINER bingzheng.zhou <zhoubingzheng@letv.com>
+ ---> Using cache
+ ---> 228dce780542
+Step 2 : RUN rpm -ivh http://pkg-repo.oss.letv.com/pkgs/centos6/letv-release.noarch.rpm
+ ---> Using cache
+ ---> 09f24e0c8b46
+Step 3 : RUN yum --enablerepo=staging install mcluster-mysql-server -y
+ ---> Using cache
+ ---> 5073b54ac625
+Step 4 : RUN yum install innotop -y
+ ---> Using cache
+ ---> e07fc4fdee7f
+Step 5 : RUN yum install percona-toolkit -y
+ ---> Using cache
+ ---> 2fc7beef4bcb
+Step 6 : RUN yum install cronie -y
+ ---> Using cache
+ ---> 9272648f433f
+Step 7 : RUN yum install vim -y
+ ---> Using cache
+ ---> a0554207881b
+Step 8 : RUN yum install java-1.7.0-openjdk-devel -y
+ ---> Using cache
+ ---> 66f53460c4a1
+Step 9 : RUN yum update bash -y
+ ---> Using cache
+ ---> 1a4bfc064981
+Step 10 : RUN yum install mcluster-manager -y
+ ---> Using cache
+ ---> 63a7dd2d440c
+Step 11 : EXPOSE 3306 4567 4568 4569 2181 2888 3888
+ ---> Using cache
+ ---> 57e6f1bccb2d
+Step 12 : USER root
+ ---> Using cache
+ ---> 592e05df39d0
+Step 13 : RUN mkdir -p /usr/local/init/
+ ---> Using cache
+ ---> 5d736cb8adcb
+Step 14 : ADD ./init/mcluster_docker_init.sh /usr/local/init/mcluster_docker_init.sh
+ ---> Using cache
+ ---> f51225519373
+Step 15 : ADD ./init/salt-minion-2014.7.0-3.el6.noarch.rpm /tmp/salt-minion-2014.7.0-3.el6.noarch.rpm
+ ---> Using cache
+ ---> 5293d4c071a5
+Step 16 : ADD ./init/salt-2014.7.0-3.el6.noarch.rpm /tmp/salt-2014.7.0-3.el6.noarch.rpm
+ ---> Using cache
+ ---> 126fc4ef6995
+Step 17 : RUN yum -y localinstall /tmp/salt-2014.7.0-3.el6.noarch.rpm /tmp/salt-minion-2014.7.0-3.el6.noarch.rpm
+ ---> Using cache
+ ---> 7b08693b1537
+Step 18 : RUN rm -rf /etc/salt/*
+ ---> Using cache
+ ---> 155a3b193caa
+Step 19 : ADD ./init/minion /etc/salt/minion
+ ---> Using cache
+ ---> 2432261e53f9
+Step 20 : RUN chmod 775 /usr/local/init/mcluster_docker_init.sh
+ ---> Using cache
+ ---> 11887589bf03
+Step 21 : ADD ./init/logstash-forwarder-0.4.0-1.x86_64.rpm /tmp/logstash-forwarder-0.4.0-1.x86_64.rpm
+ ---> Using cache
+ ---> 6c87f920f3b6
+Step 22 : RUN rpm -ivh /tmp/logstash-forwarder-0.4.0-1.x86_64.rpm
+ ---> Using cache
+ ---> 202b71a916d9
+Step 23 : RUN rm -rf /etc/logstash-forwarder.conf
+ ---> Using cache
+ ---> 50c2d74fbbcf
+Step 24 : RUN yum install -y wget
+ ---> Using cache
+ ---> 1514b840e96d
+Step 25 : RUN yum install -y monit
+ ---> Using cache
+ ---> 07cf9040bc85
+Step 26 : ADD ./init/monit /etc/init.d/monit
+ ---> Using cache
+ ---> 8f1eb3fdebf3
+Step 27 : RUN chmod 755 /etc/init.d/monit
+ ---> Using cache
+ ---> 40565c9bd906
+Step 28 : ENTRYPOINT /usr/local/init/mcluster_docker_init.sh && service mcluster-manager start && /bin/bash
+ ---> Using cache
+ ---> 73d3ff2d3bb0
+Successfully built 73d3ff2d3bb0
+ -------------------finish building letv-mcluster images----------------------
+ -------------------start building letv-mcluster-gbalancer images----------------------
+Step 0 : FROM letv:centos6
+ ---> 22ad12513f21
+Step 1 : MAINTAINER bingzheng.zhou <zhoubingzheng@letv.com>
+ ---> Using cache
+ ---> 228dce780542
+Step 2 : RUN rpm -ivh http://pkg-repo.oss.letv.com/pkgs/centos6/letv-release.noarch.rpm
+ ---> Using cache
+ ---> 09f24e0c8b46
+Step 3 : RUN yum install vim -y
+ ---> Using cache
+ ---> aa54b650be2e
+Step 4 : RUN yum install tar -y
+ ---> Using cache
+ ---> 033b886abb8b
+Step 5 : RUN yum install cronie -y
+ ---> Using cache
+ ---> aef538004401
+Step 6 : RUN yum install gbalancer-manager -y
+ ---> Using cache
+ ---> f0b3167ea997
+Step 7 : RUN yum install gbalancer -y
+ ---> Using cache
+ ---> 81d57383efbb
+Step 8 : RUN yum update bash -y
+ ---> Using cache
+ ---> e9c4f7c719cd
+Step 9 : RUN yum install -y mcluster-manager
+ ---> Using cache
+ ---> 4eda09de9c6b
+Step 10 : EXPOSE 3306 8888 9888
+ ---> Using cache
+ ---> 1e9b40dfc080
+Step 11 : USER root
+ ---> Using cache
+ ---> 81fdfd4a1137
+Step 12 : RUN mkdir -p /usr/local/init/
+ ---> Using cache
+ ---> e74ce05a314e
+Step 13 : ADD ./init/mcluster_vip_gbalancer_init.sh /usr/local/init/mcluster_vip_gbalancer_init.sh
+ ---> Using cache
+ ---> 4e66ea7ee007
+Step 14 : RUN chmod 775 /usr/local/init/mcluster_vip_gbalancer_init.sh
+ ---> Using cache
+ ---> 311108429b60
+Step 15 : ADD ./init/salt-minion-2014.7.0-3.el6.noarch.rpm /tmp/salt-minion-2014.7.0-3.el6.noarch.rpm
+ ---> Using cache
+ ---> d0eea019c0c3
+Step 16 : ADD ./init/salt-2014.7.0-3.el6.noarch.rpm /tmp/salt-2014.7.0-3.el6.noarch.rpm
+ ---> Using cache
+ ---> 1cfcfbf9725e
+Step 17 : RUN yum -y localinstall /tmp/salt-2014.7.0-3.el6.noarch.rpm /tmp/salt-minion-2014.7.0-3.el6.noarch.rpm
+ ---> Using cache
+ ---> 12a9ab34fbdb
+Step 18 : RUN rm -rf /etc/salt/*
+ ---> Using cache
+ ---> 60a5701e95c7
+Step 19 : ADD ./init/minion /etc/salt/minion
+ ---> Using cache
+ ---> 390e15ff524d
+Step 20 : ADD ./init/check_gbalancer.sh /usr/local/init/check_gbalancer.sh
+ ---> Using cache
+ ---> 7f9c7d285db9
+Step 21 : RUN chmod 755 /usr/local/init/check_gbalancer.sh
+ ---> Using cache
+ ---> 8d3caf956149
+Step 22 : RUN yum install -y wget
+ ---> Using cache
+ ---> c4517d101228
+Step 23 : RUN yum install -y monit
+ ---> Using cache
+ ---> 1043fc31c189
+Step 24 : ADD ./init/monit /etc/init.d/monit
+ ---> Using cache
+ ---> a9bcd03a4b02
+Step 25 : RUN chmod 755 /etc/init.d/monit
+ ---> Using cache
+ ---> a68264c295d0
+Step 26 : ENTRYPOINT /usr/local/init/mcluster_vip_gbalancer_init.sh  && service gbalancer-manager start && /bin/bash
+ ---> Using cache
+ ---> 796136810bc5
+Successfully built 796136810bc5
+ -------------------start building letv-mcluster-gbalancer images----------------------
+ -------------------start push letv-mcluster images----------------------
+The push refers to a repository [10.160.140.32:5000/letv-mcluster] (len: 1)
+Sending image list
+Pushing repository 10.160.140.32:5000/letv-mcluster (1 tags)
+Image 22ad12513f21 already pushed, skipping
+Image 228dce780542 already pushed, skipping
+Image 09f24e0c8b46 already pushed, skipping
+Image 5073b54ac625 already pushed, skipping
+Image e07fc4fdee7f already pushed, skipping
+Image 2fc7beef4bcb already pushed, skipping
+Image 9272648f433f already pushed, skipping
+Image a0554207881b already pushed, skipping
+Image 66f53460c4a1 already pushed, skipping
+Image 1a4bfc064981 already pushed, skipping
+Image 63a7dd2d440c already pushed, skipping
+Image 57e6f1bccb2d already pushed, skipping
+Image 592e05df39d0 already pushed, skipping
+Image 5d736cb8adcb already pushed, skipping
+Image f51225519373 already pushed, skipping
+Image 5293d4c071a5 already pushed, skipping
+Image 126fc4ef6995 already pushed, skipping
+Image 7b08693b1537 already pushed, skipping
+Image 155a3b193caa already pushed, skipping
+Image 2432261e53f9 already pushed, skipping
+Image 11887589bf03 already pushed, skipping
+Image 6c87f920f3b6 already pushed, skipping
+Image 202b71a916d9 already pushed, skipping
+Image 50c2d74fbbcf already pushed, skipping
+Image 1514b840e96d already pushed, skipping
+Image 07cf9040bc85 already pushed, skipping
+Image 8f1eb3fdebf3 already pushed, skipping
+Image 40565c9bd906 already pushed, skipping
+Image 73d3ff2d3bb0 already pushed, skipping
+Pushing tag for rev [73d3ff2d3bb0] on {http://10.160.140.32:5000/v1/repositories/letv-mcluster/tags/0.1.8.dev01}
+ -------------------finish push letv-mcluster images----------------------
+ -------------------start push letv-mcluster-gbalancer images----------------------
+The push refers to a repository [10.160.140.32:5000/letv_mcluster_gbalancer] (len: 1)
+Sending image list
+Pushing repository 10.160.140.32:5000/letv_mcluster_gbalancer (1 tags)
+Image 22ad12513f21 already pushed, skipping
+Image 228dce780542 already pushed, skipping
+Image 09f24e0c8b46 already pushed, skipping
+Image aa54b650be2e already pushed, skipping
+Image 033b886abb8b already pushed, skipping
+Image aef538004401 already pushed, skipping
+Image f0b3167ea997 already pushed, skipping
+Image 81d57383efbb already pushed, skipping
+Image e9c4f7c719cd already pushed, skipping
+Image 4eda09de9c6b already pushed, skipping
+Image 1e9b40dfc080 already pushed, skipping
+Image 81fdfd4a1137 already pushed, skipping
+Image e74ce05a314e already pushed, skipping
+Image 4e66ea7ee007 already pushed, skipping
+Image 311108429b60 already pushed, skipping
+Image d0eea019c0c3 already pushed, skipping
+Image 1cfcfbf9725e already pushed, skipping
+Image 12a9ab34fbdb already pushed, skipping
+Image 60a5701e95c7 already pushed, skipping
+Image 390e15ff524d already pushed, skipping
+Image 7f9c7d285db9 already pushed, skipping
+Image 8d3caf956149 already pushed, skipping
+Image c4517d101228 already pushed, skipping
+Image 1043fc31c189 already pushed, skipping
+Image a9bcd03a4b02 already pushed, skipping
+Image a68264c295d0 already pushed, skipping
+Image 796136810bc5 already pushed, skipping
+Pushing tag for rev [796136810bc5] on {http://10.160.140.32:5000/v1/repositories/letv_mcluster_gbalancer/tags/0.1.8.dev01}
+ -------------------finish push letv-mcluster-gbalancer images----------------------
