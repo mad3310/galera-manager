@@ -246,4 +246,20 @@ class ClusterStop(APIHandler):
         #dict.setdefault("code", '000000')
         result.setdefault("message", "due to stop cluster need a large of times, please wait to finished and email to you, when cluster have stoped!")
         self.finish(result)
+
+
+
+# eg. curl --user root:root "http://localhost:8888/cluster/zk/remove"
+@require_basic_auth    
+class ClusterZkRemove(APIHandler):
+    
+    @asynchronous
+    def get(self):
+        zkOper = self.retrieve_zkOper()
+        clustername = zkOper.getclustername()
+        zkOper.remove_zk_info(clustername)
         
+        result = {}
+        result.setdefault("message", "del zk info success")
+        self.finish(result)
+  
