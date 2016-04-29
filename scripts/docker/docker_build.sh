@@ -3,6 +3,7 @@ BUILE_LOG=build.log
 VERSION=`/bin/cat version.cnf`
 
 echo ' -------------------start building letv-mcluster images----------------------' > ${BUILE_LOG}
+/usr/bin/docker import http://pkg-repo.oss.letv.com/pkgs/centos6/images/letv-centos6.tar letv:centos6
 /usr/bin/docker build -t="10.160.140.32:5000/letv-mcluster:${VERSION}" letv_mcluster_image/ >> ${BUILE_LOG}
 echo ' -------------------finish building letv-mcluster images----------------------' >> ${BUILE_LOG}
 
