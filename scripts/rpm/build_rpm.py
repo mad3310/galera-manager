@@ -30,7 +30,7 @@ def build_source():
 
 def generate_rpm():
     print(yellow("Start generate rpm package ..."))
-    commad = """fpm -f \
+    commad = """/home/vagrant/.rvm/gems/ruby-2.3.0/bin/fpm -f \
         -s {source_type} \
         -t {target_type} \
         -C {buildroot} \
