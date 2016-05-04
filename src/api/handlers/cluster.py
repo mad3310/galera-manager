@@ -41,7 +41,7 @@ class CreateMCluster(APIHandler):
         logging.info("args :" + str(args))
         
         if args == {}:
-            raise HTTPAPIError(status_code=401, error_detail="cluster_name or node_name or node_ip is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="cluster_name or node_name or node_ip is empty",\
                                notification = "direct", \
                                log_message= "cluster_name or node_name or node_ip is empty", \
                                response = "cluster_name or node_name or node_ip is empty")
@@ -51,19 +51,19 @@ class CreateMCluster(APIHandler):
             requestParam.setdefault(key,value)
             
         if "clusterName" not in requestParam:
-            raise HTTPAPIError(status_code=401, error_detail="cluster_name is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="cluster_name is empty",\
                                notification = "direct", \
                                log_message= "cluster_name is empty", \
                                response = "cluster_name is empty")
         
         if 'dataNodeIp' not in requestParam:
-            raise HTTPAPIError(status_code=401, error_detail="node_ip is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="node_ip is empty",\
                                notification = "direct", \
                                log_message= "node_ip is empty", \
                                response = "node_ip is empty")
 
         if 'dataNodeName' not in requestParam:
-            raise HTTPAPIError(status_code=401, error_detail="node_name is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="node_name is empty",\
                                notification = "direct", \
                                log_message= "node_name is empty", \
                                response = "node_name is empty")
@@ -75,6 +75,12 @@ class CreateMCluster(APIHandler):
                                 notification = "direct", \
                                 log_message= "Cluster name is too long, please use name whoes length is less than 33 characters",\
                                 response =  "Cluster name is too long, please use name whoes length is less than 33 characters!")
+            
+        if not self.confOpers.ipFormatChk(requestParam['dataNodeIp']):
+            raise HTTPAPIError(status_code=417, error_detail="dataNodeIp is illegal",\
+                               notification = "direct", \
+                               log_message= "dataNodeIp is illegal", \
+                               response = "dataNodeIp is illegal")
             
         clusterUUID =zkOper.getclustername() + '/' + str(uuid.uuid1())
         requestParam.setdefault("clusterUUID",clusterUUID)

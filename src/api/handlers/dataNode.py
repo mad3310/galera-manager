@@ -27,7 +27,7 @@ class DataNodeToMCluster(APIHandler):
         logging.info("args :" + str(args))
         
         if args == {}:
-            raise HTTPAPIError(status_code=401, error_detail="dataNodeName or dataNodeIp is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="dataNodeName or dataNodeIp is empty",\
                                notification = "direct", \
                                log_message= "dataNodeName or dataNodeIp is empty", \
                                response = "dataNodeName or dataNodeIp is empty")
@@ -37,16 +37,22 @@ class DataNodeToMCluster(APIHandler):
             requestParam.setdefault(key,value)
             
         if "dataNodeIp" not in requestParam:
-            raise HTTPAPIError(status_code=401, error_detail="dataNodeIp is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="dataNodeIp is empty",\
                                notification = "direct", \
                                log_message= "dataNodeIp is empty", \
                                response = "dataNodeIp is empty")
             
         if "dataNodeName" not in requestParam:
-            raise HTTPAPIError(status_code=401, error_detail="dataNodeName is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="dataNodeName is empty",\
                                notification = "direct", \
                                log_message= "dataNodeName is empty", \
                                response = "dataNodeName is empty")
+            
+        if not self.confOpers.ipFormatChk(requestParam['dataNodeIp']):
+            raise HTTPAPIError(status_code=417, error_detail="dataNodeIp is illegal",\
+                               notification = "direct", \
+                               log_message= "dataNodeIp is illegal", \
+                               response = "dataNodeIp is illegal")
         
         self.confOpers.setValue(options.data_node_property, requestParam)
 

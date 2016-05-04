@@ -25,7 +25,7 @@ class AdminConf(APIHandler):
         args = self.request.arguments
         
         if args == {}:
-            raise HTTPAPIError(status_code=401, error_detail="zk address or port is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="zk address or port is empty",\
                                notification = "direct", \
                                log_message= "zk address or port is empty", \
                                response = "zk address or port is empty")
@@ -34,16 +34,23 @@ class AdminConf(APIHandler):
             requestParam.setdefault(key,args[key][0])
             
         if "zkAddress" not in requestParam:
-            raise HTTPAPIError(status_code=401, error_detail="zkaddress is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="zkaddress is empty",\
                                notification = "direct", \
                                log_message= "zkaddress is empty", \
                                response = "zkaddress is empty")
         
         if 'zkPort' not in requestParam:
-            raise HTTPAPIError(status_code=401, error_detail="zk port is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="zk port is empty",\
                                notification = "direct", \
                                log_message= "zk port is empty", \
                                response = "zk port is empty")
+            
+        
+        if not self.confOpers.ipFormatChk(requestParam['zkAddress']):
+            raise HTTPAPIError(status_code=417, error_detail="zkaddress is illegal",\
+                               notification = "direct", \
+                               log_message= "zkaddress is illegal", \
+                               response = "zkaddress is illegal")
 
         self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
         self.adminOpers.sync_info_from_zk(requestParam['zkAddress'][0])
@@ -99,7 +106,7 @@ class AdminUser(APIHandler):
         args = self.request.arguments
         logging.info("args :"+ str(args))
         if args == {}:
-            raise HTTPAPIError(status_code=401, error_detail="username or password is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="username or password is empty",\
                                notification = "direct", \
                                log_message= "username or password is empty", \
                                response = "username or password is empty")
@@ -111,13 +118,13 @@ class AdminUser(APIHandler):
             requestParam.setdefault(key,value)
             
         if "adminUser" not in requestParam:
-            raise HTTPAPIError(status_code=401, error_detail="username is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="admin user is empty",\
                                notification = "direct", \
-                               log_message= "username or password is empty", \
-                               response = "username or password is empty")
+                               log_message= "admin user is empty", \
+                               response = "admin user is empty")
         
         if 'adminPassword' not in requestParam:
-            raise HTTPAPIError(status_code=401, error_detail="admin password is empty",\
+            raise HTTPAPIError(status_code=400, error_detail="admin password is empty",\
                                notification = "direct", \
                                log_message= "admin password is empty", \
                                response = "admin password is empty")

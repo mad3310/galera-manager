@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-import os
+import os, re
 from common.utils.exceptions import CommonException
 
 class ConfigFileOpers(object):
@@ -84,8 +84,13 @@ class ConfigFileOpers(object):
         outputstream.write(fullText)
         outputstream.close()
                     
+    def ipFormatChk(self, ip_str):
+        pattern = r"\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
+        if re.match(pattern, ip_str):
+            return True
+        return False
     
-    
+
 if __name__ == "__main__":
     s = ConfigFileOpers()
     resultValue = s.getValue('C:/Users/asus/Downloads/my.cnf', ['wsrep_cluster_address','wsrep_sst_auth'])
