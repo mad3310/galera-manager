@@ -23,13 +23,29 @@ class AdminConf(APIHandler):
     def post(self):
         requestParam = {}
         args = self.request.arguments
+        
+        if args == {}:
+            raise HTTPAPIError(status_code=401, error_detail="zk address or port is empty",\
+                               notification = "direct", \
+                               log_message= "zk address or port is empty", \
+                               response = "zk address or port is empty")
 
         for key in args:
             requestParam.setdefault(key,args[key][0])
-       
-        if requestParam != {}:
-            self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
+            
+        if "zkAddress" not in requestParam:
+            raise HTTPAPIError(status_code=401, error_detail="zkaddress is empty",\
+                               notification = "direct", \
+                               log_message= "zkaddress is empty", \
+                               response = "zkaddress is empty")
+        
+        if 'zkPort' not in requestParam:
+            raise HTTPAPIError(status_code=401, error_detail="zk port is empty",\
+                               notification = "direct", \
+                               log_message= "zk port is empty", \
+                               response = "zk port is empty")
 
+        self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
         self.adminOpers.sync_info_from_zk(requestParam['zkAddress'][0])
             
         result = {}
@@ -82,18 +98,31 @@ class AdminUser(APIHandler):
         requestParam = {}
         args = self.request.arguments
         logging.info("args :"+ str(args))
+        if args == {}:
+            raise HTTPAPIError(status_code=401, error_detail="username or password is empty",\
+                               notification = "direct", \
+                               log_message= "username or password is empty", \
+                               response = "username or password is empty")
+
         for key in args:
             value = args[key][0]
             if key == 'adminPassword':
                 value = base64.encodestring(value).strip('\n')
             requestParam.setdefault(key,value)
-        if requestParam['adminUser'] == '' or requestParam['adminPassword'] == '':
-            raise HTTPAPIError(status_code=401, error_detail="username or password is empty",\
+            
+        if "adminUser" not in requestParam:
+            raise HTTPAPIError(status_code=401, error_detail="username is empty",\
                                notification = "direct", \
                                log_message= "username or password is empty", \
                                response = "username or password is empty")
-        if requestParam != {}:
-            self.confOpers.setValue(options.cluster_property, requestParam)
+        
+        if 'adminPassword' not in requestParam:
+            raise HTTPAPIError(status_code=401, error_detail="admin password is empty",\
+                               notification = "direct", \
+                               log_message= "admin password is empty", \
+                               response = "admin password is empty")
+
+        self.confOpers.setValue(options.cluster_property, requestParam)
         
         result = {}
         #dict.setdefault("code", '000000')

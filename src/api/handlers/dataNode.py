@@ -25,14 +25,31 @@ class DataNodeToMCluster(APIHandler):
         requestParam = {}
         args = self.request.arguments
         logging.info("args :" + str(args))
+        
+        if args == {}:
+            raise HTTPAPIError(status_code=401, error_detail="dataNodeName or dataNodeIp is empty",\
+                               notification = "direct", \
+                               log_message= "dataNodeName or dataNodeIp is empty", \
+                               response = "dataNodeName or dataNodeIp is empty")
+        
         for key in args:
             value = args[key][0]
             requestParam.setdefault(key,value)
+            
+        if "dataNodeIp" not in requestParam:
+            raise HTTPAPIError(status_code=401, error_detail="dataNodeIp is empty",\
+                               notification = "direct", \
+                               log_message= "dataNodeIp is empty", \
+                               response = "dataNodeIp is empty")
+            
+        if "dataNodeName" not in requestParam:
+            raise HTTPAPIError(status_code=401, error_detail="dataNodeName is empty",\
+                               notification = "direct", \
+                               log_message= "dataNodeName is empty", \
+                               response = "dataNodeName is empty")
         
-        if requestParam != {}:
-            self.confOpers.setValue(options.data_node_property, requestParam)
-            
-            
+        self.confOpers.setValue(options.data_node_property, requestParam)
+
         dataNodeProprs = self.confOpers.getValue(options.data_node_property)
         
         zkOper = self.retrieve_watch_zkOper()
