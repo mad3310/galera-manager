@@ -30,7 +30,7 @@ def build_source():
 
 def generate_rpm():
     print(yellow("Start generate rpm package ..."))
-    commad = """/home/vagrant/.rvm/gems/ruby-2.3.0/bin/fpm -f \
+    commad = """fpm -f \
         -s {source_type} \
         -t {target_type} \
         -C {buildroot} \
@@ -66,7 +66,7 @@ def generate_rpm():
         release=y['release']
     )
     if not os.path.exists(y['packout']):
-        local("sudo mkdir -p {}".y['packout'])
+        local("sudo mkdir -p {0}".format(y['packout']))
     local(commad)
     print(green("Generate rpm package Successful!"))
 
