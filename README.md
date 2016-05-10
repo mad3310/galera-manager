@@ -4,12 +4,12 @@
 * 是什么
 [mcluster-manager介绍](http://wiki.letv.cn/pages/viewpage.action?title=mcluster-manager&spaceKey=pla)
 * 为什么要用这个
-* [mcluster-manager 特性](http://wiki.letv.cn/display/pla/the+feature+list+of+mcluster+manager)
+[mcluster-manager 特性](http://wiki.letv.cn/display/pla/the+feature+list+of+mcluster+manager)
 
 
 ## 变更历史
 [mcluster-manager版本更新历史](http://wiki.letv.cn/pages/viewpage.action?pageId=30838427)
-### v2.0.1(2016-04-26)(只是个例子)
+### v0.0.8(2016-04-26)
 #### 重大更新
 
 #### 新功能
