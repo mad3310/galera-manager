@@ -1,6 +1,6 @@
 ---
 # 源码git仓库地址
-git_repo: git@git.letv.cn:dengliangju/mcluster-manager.git
+git_repo: git@git.letv.cn:mcluster/mcluster-manager.git
 # 获取指定分支的代码
 git_branch: develop
 
@@ -15,7 +15,7 @@ target_type: rpm
 # 软件包名
 name: mcluster-manager
 # 软件包版本号
-version: 0.0.8
+version: 0.1.9.dev1
 # 软件包安装及运行时依赖
 dependencies:
     - MySQL-python
@@ -40,7 +40,7 @@ release: 1
 category: GCP
 # 软件包描述
 description: |
-    mcluster-manager (v0.0.8) is a devops tool.
+    mcluster-manager is a devops tool.
     developed by GCP.
 # 软件包项目主页
 url: http://git.letv.cn/mcluster/mcluster-manager
