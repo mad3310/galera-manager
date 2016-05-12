@@ -14,7 +14,7 @@ define('sitename', default = "mcluster manager", help = 'site name')
 define('domain', default = "letv.com", help = 'domain name')
 
 define('send_email_switch', default = True, type = bool, help = 'the flag of if send error email')
-define('admins', default = ("zhoubingzheng <zhoubingzheng@letv.com>", "gaoqiang3 <gaoqiang3@letv.com>", "xuyanwei <xuyanwei@letv.com>", ), help = 'admin email address')
+define('admins', default = ("zhoubingzheng <zhoubingzheng@letv.com>", "gaoqiang3 <gaoqiang3@letv.com>", "xuyanwei <xuyanwei@letv.com>", "dengliangju <dengliangju@le.com>"), help = 'admin email address')
 #define('admins', default = ("zhangzeng <zhangzeng@letv.com>", ), help = 'admin email address')
 define('smtp_host', default = "10.205.91.22", help = 'smtp host')
 define('smtp_port', default = 587, help = 'smtp port')
@@ -71,3 +71,4 @@ define("delta_time", default = 8, type = int, help = "delta time between read an
 define("new_count_times", default = 60, type = int, help = "if it is new cluster, we use this by default")
 define("old_count_times", default = 300, type = int, help = "Others we use this value.")
 define("full_back_sh", default=join(base_dir,"shell","mcluster_backup_full.sh"), help="full backup")
+define("on_check_storedprocedure", default = False, type = bool, help = 'the flag of checking stored procedure')
