@@ -313,7 +313,8 @@ class Check_DB_Anti_Item(Check_Status_Base):
                     anti_item_count += anti_item_myisam_count
                     msg += " Myisam,"
                     
-                if anti_item_procedure_count:
+                on_check_storedprocedure = options.on_check_storedprocedure
+                if anti_item_procedure_count and on_check_storedprocedure:
                     anti_item_message = "check db status, existed stored procedure. Item's count:%s"%(str(anti_item_procedure_count))
                     self._send_monitor_email(anti_item_message)
                     
