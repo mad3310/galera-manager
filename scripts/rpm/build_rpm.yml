@@ -15,7 +15,7 @@ target_type: rpm
 # 软件包名
 name: mcluster-manager
 # 软件包版本号
-version: 0.1.9.dev1
+version: 0.1.9a1
 # 软件包安装及运行时依赖
 dependencies:
     - MySQL-python
