@@ -16,6 +16,9 @@ target_type: rpm
 name: mcluster-manager
 # 软件包版本号
 version: 0.1.9a1
+# 软件包发型序号，即相同版本号（version）的代码这是第几次打包发型
+release: 2
+
 # 软件包安装及运行时依赖
 dependencies:
     - MySQL-python
@@ -34,8 +37,6 @@ before_install: scripts/rpm/before_install.sh
 after_install: scripts/rpm/after_install.sh
 # 卸载后执行的脚本
 after_remove: scripts/rpm/after_remove.sh
-# 软件包发型序号，即相同版本号（version）的代码这是第几次打包发型
-release: 1
 # 软件包所属分类，供软件仓库分类使用
 category: GCP
 # 软件包描述
