@@ -26,7 +26,7 @@ class DataNodeToMCluster(APIHandler):
         args = self.request.arguments
         logging.info("args :" + str(args))
         
-        if args == {}:
+        if not args:
             raise HTTPAPIError(status_code=400, error_detail="dataNodeName or dataNodeIp is empty",\
                                notification = "direct", \
                                log_message= "dataNodeName or dataNodeIp is empty", \

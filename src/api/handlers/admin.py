@@ -24,7 +24,7 @@ class AdminConf(APIHandler):
         requestParam = {}
         args = self.request.arguments
         
-        if args == {}:
+        if not args:
             raise HTTPAPIError(status_code=400, error_detail="zk address or port is empty",\
                                notification = "direct", \
                                log_message= "zk address or port is empty", \
@@ -105,7 +105,7 @@ class AdminUser(APIHandler):
         requestParam = {}
         args = self.request.arguments
         logging.info("args :"+ str(args))
-        if args == {}:
+        if not args:
             raise HTTPAPIError(status_code=400, error_detail="username or password is empty",\
                                notification = "direct", \
                                log_message= "username or password is empty", \
@@ -145,7 +145,7 @@ class DownloadFile(BaseHandler):
         self.set_header ('Content-Disposition', 'attachment; filename='+filename+'')
         self.write (ifile.read())
         
-        
+
         
 #
 #no used

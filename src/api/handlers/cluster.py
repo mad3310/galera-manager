@@ -40,7 +40,7 @@ class CreateMCluster(APIHandler):
         args = self.request.arguments
         logging.info("args :" + str(args))
         
-        if args == {}:
+        if not args:
             raise HTTPAPIError(status_code=400, error_detail="cluster_name or node_name or node_ip is empty",\
                                notification = "direct", \
                                log_message= "cluster_name or node_name or node_ip is empty", \
