@@ -1,13 +1,19 @@
 FROM letv:centos6
 MAINTAINER bingzheng.zhou <zhoubingzheng@letv.com>
 RUN rpm -ivh http://pkg-repo.oss.letv.com/pkgs/centos6/letv-release.noarch.rpm
+
+# set yum repo
+ADD ./init/test.repo /etc/yum.repos.d/test.repo
+RUN chmod 755 /etc/yum.repos.d/test.repo
+RUN yum clean all
+
 RUN yum install vim -y
 RUN yum install tar -y
 RUN yum install cronie -y
 RUN yum install gbalancer-manager -y
 RUN yum install gbalancer -y
 RUN yum update bash -y
-RUN yum install -y mcluster-manager
+RUN yum install -y mcluster-manager-version
 
 
 EXPOSE 3306 8888 9888
@@ -35,6 +41,5 @@ RUN yum install -y wget
 RUN yum install -y monit
 ADD ./init/monit /etc/init.d/monit
 RUN chmod 755 /etc/init.d/monit
-
 
 ENTRYPOINT /usr/local/init/mcluster_vip_gbalancer_init.sh  && service gbalancer-manager start && /bin/bash

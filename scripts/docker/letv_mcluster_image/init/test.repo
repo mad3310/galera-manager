@@ -1,0 +1,5 @@
+[test-jenkins]
+name=mcluster test repo
+baseurl=http://10.200.91.144/
+enabled=1
+gpgcheck=0
