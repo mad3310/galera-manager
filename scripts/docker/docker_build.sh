@@ -14,21 +14,20 @@ docker import http://pkg-repo.oss.letv.com/pkgs/centos6/images/letv-centos6.tar 
 echo ' -------------------finish import letv-centos6 images----------------------' >> ${BUILE_LOG}
 
 echo ' -------------------start building letv-mcluster images----------------------' >> ${BUILE_LOG}
-/usr/bin/docker build -t="dockerapp.et.letv.com/letv-mcluster:${FINALE_VERSION}" letv_mcluster_image/ >> ${BUILE_LOG}
+/usr/bin/docker build -t="dockerapp.et.letv.com/mcluster/letv-mcluster:${FINALE_VERSION}" letv_mcluster_image/ >> ${BUILE_LOG}
 echo ' -------------------finish building letv-mcluster images----------------------' >> ${BUILE_LOG}
 
 echo ' -------------------start building letv-mcluster-gbalancer images----------------------' >> ${BUILE_LOG}
-/usr/bin/docker build -t="dockerapp.et.letv.com/letv_mcluster_gbalancer:${FINALE_VERSION}" mcluster_vip_gbalancer/  >> ${BUILE_LOG}
-echo ' -------------------start building letv-mcluster-gbalancer images----------------------' >> ${BUILE_LOG}
+/usr/bin/docker build -t="dockerapp.et.letv.com/mcluster/letv_mcluster_gbalancer:${FINALE_VERSION}" mcluster_vip_gbalancer/  >> ${BUILE_LOG}
+echo ' -------------------finish building letv-mcluster-gbalancer images----------------------' >> ${BUILE_LOG}
 
 echo ' -------------------start push letv-mcluster images----------------------' >> ${BUILE_LOG}
-/usr/bin/docker push dockerapp.et.letv.com/letv-mcluster:${FINALE_VERSION}  >> ${BUILE_LOG}
+/usr/bin/docker push dockerapp.et.letv.com/mcluster/letv-mcluster:${FINALE_VERSION}  >> ${BUILE_LOG}
 echo ' -------------------finish push letv-mcluster images----------------------' >> ${BUILE_LOG}
 
 echo ' -------------------start push letv-mcluster-gbalancer images----------------------' >> ${BUILE_LOG}
-/usr/bin/docker push dockerapp.et.letv.com/letv_mcluster_gbalancer:${FINALE_VERSION}  >> ${BUILE_LOG}
+/usr/bin/docker push dockerapp.et.letv.com/mcluster/letv_mcluster_gbalancer:${FINALE_VERSION}  >> ${BUILE_LOG}
 echo ' -------------------finish push letv-mcluster-gbalancer images----------------------' >> ${BUILE_LOG}
-
 
 /bin/sed -i "s/mcluster-manager-${FINALE_VERSION}/mcluster-manager-version/g" letv_mcluster_image/Dockerfile
 /bin/sed -i "s/mcluster-manager-${FINALE_VERSION}/mcluster-manager-version/g" mcluster_vip_gbalancer/Dockerfile
