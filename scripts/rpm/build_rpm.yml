@@ -2,7 +2,7 @@
 # 源码git仓库地址
 git_repo: git@git.letv.cn:mcluster/mcluster-manager.git
 # 获取指定分支的代码
-git_branch: develop
+git_branch: master
 
 # 源类型，支持："dir" "rpm" "gem" "python" "empty" "tar" "deb" "cpan" "npm"
 # "osxpkg" "pear" "pkgin" "virtualenv" "zip"
@@ -15,9 +15,9 @@ target_type: rpm
 # 软件包名
 name: mcluster-manager
 # 软件包版本号
-version: 0.1.9a1
+version: 0.1.9
 # 软件包发型序号，即相同版本号（version）的代码这是第几次打包发型
-release: 2
+release: 1
 
 # 软件包安装及运行时依赖
 dependencies:
