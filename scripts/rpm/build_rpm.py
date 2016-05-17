@@ -66,7 +66,7 @@ def generate_rpm():
         release=y['release']
     )
     if not os.path.exists(y['packout']):
-        local("sudo mkdir -p {}".y['packout'])
+        local("sudo mkdir -p {0}".format(y['packout']))
     local(commad)
     print(green("Generate rpm package Successful!"))
 

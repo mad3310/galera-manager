@@ -1,7 +1,12 @@
 FROM letv:centos6
 MAINTAINER bingzheng.zhou <zhoubingzheng@letv.com>
 
-RUN rpm -ivh http://pkg-repo.oss.letv.com/pkgs/centos6/letv-release.noarch.rpm 
+RUN rpm -ivh http://pkg-repo.oss.letv.com/pkgs/centos6/letv-release.noarch.rpm
+
+# set yum repo
+ADD ./init/test.repo /etc/yum.repos.d/test.repo
+RUN chmod 755 /etc/yum.repos.d/test.repo
+RUN yum clean all
 
 RUN yum --enablerepo=staging install mcluster-mysql-server -y
 RUN yum install innotop -y
@@ -10,7 +15,7 @@ RUN yum install cronie -y
 RUN yum install vim -y
 RUN yum install java-1.7.0-openjdk-devel -y
 RUN yum update bash -y
-RUN yum install mcluster-manager -y
+RUN yum install mcluster-manager-version -y
 
 EXPOSE 3306 4567 4568 4569 2181 2888 3888
 USER root
