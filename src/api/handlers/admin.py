@@ -8,7 +8,7 @@ import logging
 from common.configFileOpers import ConfigFileOpers
 from base import BaseHandler, APIHandler
 from tornado.options import options
-from common.utils.exceptions import HTTPAPIError
+from common.utils.exceptions import HTTPAPIErrorException
 from configuration.adminOpers import AdminOpers
 
 
@@ -23,34 +23,22 @@ class AdminConf(APIHandler):
     def post(self):
         requestParam = {}
         args = self.request.arguments
-        
-        if not args:
-            raise HTTPAPIError(status_code=400, error_detail="zk address or port is empty",\
-                               notification = "direct", \
-                               log_message= "zk address or port is empty", \
-                               response = "zk address or port is empty")
-
         for key in args:
-            requestParam.setdefault(key,args[key][0])
-            
-        if "zkAddress" not in requestParam:
-            raise HTTPAPIError(status_code=400, error_detail="zkaddress is empty",\
-                               notification = "direct", \
-                               log_message= "zkaddress is empty", \
-                               response = "zkaddress is empty")
+            requestParam.setdefault(key,args[key][0])        
         
-        if 'zkPort' not in requestParam:
-            raise HTTPAPIError(status_code=400, error_detail="zk port is empty",\
-                               notification = "direct", \
-                               log_message= "zk port is empty", \
-                               response = "zk port is empty")
-            
-        
-        if not self.confOpers.ipFormatChk(requestParam['zkAddress']):
-            raise HTTPAPIError(status_code=417, error_detail="zkaddress is illegal",\
-                               notification = "direct", \
-                               log_message= "zkaddress is illegal", \
-                               response = "zkaddress is illegal")
+        if not requestParam:
+            raise HTTPAPIErrorException("params is empty")
+
+        #TODO:
+        '''1.judge throwing code reuse rate is very low.
+           2.thrown error code directly, automatically reads the type of error, error messages, and so on.'''
+
+        if "zkAddress" not in requestParam or 'zkPort' not in requestParam:
+            raise HTTPAPIErrorException("zkaddress or port is empty, please check it!")
+
+        if self.confOpers.ipFormatChk(requestParam['zkAddress']):
+            raise HTTPAPIErrorException("zkaddress is illegal", status_code=417)
+
 
         self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
         self.adminOpers.sync_info_from_zk(requestParam['zkAddress'][0])
@@ -106,10 +94,7 @@ class AdminUser(APIHandler):
         args = self.request.arguments
         logging.info("args :"+ str(args))
         if not args:
-            raise HTTPAPIError(status_code=400, error_detail="username or password is empty",\
-                               notification = "direct", \
-                               log_message= "username or password is empty", \
-                               response = "username or password is empty")
+            raise HTTPAPIErrorException("params is empty")
 
         for key in args:
             value = args[key][0]
@@ -117,17 +102,10 @@ class AdminUser(APIHandler):
                 value = base64.encodestring(value).strip('\n')
             requestParam.setdefault(key,value)
             
-        if "adminUser" not in requestParam:
-            raise HTTPAPIError(status_code=400, error_detail="admin user is empty",\
-                               notification = "direct", \
-                               log_message= "admin user is empty", \
-                               response = "admin user is empty")
-        
-        if 'adminPassword' not in requestParam:
-            raise HTTPAPIError(status_code=400, error_detail="admin password is empty",\
-                               notification = "direct", \
-                               log_message= "admin password is empty", \
-                               response = "admin password is empty")
+        if "adminUser" not in requestParam or 'adminPassword' not in requestParam:
+            raise HTTPAPIErrorException("admin user or password is empty, please check it!")
+
+        #if 'adminPassword' not in requestParam:
 
         self.confOpers.setValue(options.cluster_property, requestParam)
         

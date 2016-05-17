@@ -41,8 +41,26 @@ class HTTPAPIError(HTTPError):
             v = getattr(self, name)
             if v:
                 err[name] = v
+
                 
-                
+class HTTPAPIErrorException(HTTPAPIError):
+    
+    def __init__(self, value, status_code=400):
+        super(HTTPAPIErrorException, self).__init__(status_code=status_code, error_detail=value, 
+                                                    notification="direct", response=value, 
+                                                    log_message=value)
+
+_error_types = {400: "param_error",
+                401: "invalid_auth",
+                403: "not_authorized",
+                404: "endpoint_error",
+                405: "method_not_allowed",
+                417: "user_visible_error",
+                500: "server_error",
+                578: "conncurrency_error"
+                }
+
+
 class CommonException(Exception):
     
     def __init__(self, value):
