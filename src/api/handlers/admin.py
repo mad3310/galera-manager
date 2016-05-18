@@ -105,8 +105,6 @@ class AdminUser(APIHandler):
         if "adminUser" not in requestParam or 'adminPassword' not in requestParam:
             raise HTTPAPIErrorException("admin user or password is empty, please check it!")
 
-        #if 'adminPassword' not in requestParam:
-
         self.confOpers.setValue(options.cluster_property, requestParam)
         
         result = {}
