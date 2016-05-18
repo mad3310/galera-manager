@@ -49,7 +49,7 @@ class HTTPAPIErrorException(HTTPAPIError):
         super(HTTPAPIErrorException, self).__init__(status_code=status_code, error_detail=value, 
                                                     notification="direct", response=value, 
                                                     log_message=value)
-
+#params are not passed to throw 400 error, other visible error throw 417 error. 
 _error_types = {400: "param_error",
                 401: "invalid_auth",
                 403: "not_authorized",
