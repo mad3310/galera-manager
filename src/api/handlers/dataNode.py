@@ -8,7 +8,7 @@ from base import APIHandler
 from tornado.options import options
 from common.invokeCommand import InvokeCommand
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
-from common.utils.exceptions import HTTPAPIError
+from common.utils.exceptions import HTTPAPIError, HTTPAPIErrorException
 from common.node_stat_opers import NodeStatOpers
 from tornado.web import asynchronous
 from tornado.gen import engine
@@ -25,14 +25,22 @@ class DataNodeToMCluster(APIHandler):
         requestParam = {}
         args = self.request.arguments
         logging.info("args :" + str(args))
+        
+        if not args:
+            raise HTTPAPIErrorException("params is empty")
+        
         for key in args:
             value = args[key][0]
             requestParam.setdefault(key,value)
+            
+        if "dataNodeName" not in requestParam or "dataNodeIp" not in requestParam:
+            raise HTTPAPIErrorException("dataNodeName or dataNodeIp is empty, please check it!")
+            
+        if self.confOpers.ipFormatChk(requestParam['dataNodeIp']):
+            raise HTTPAPIErrorException("dataNodeIp is illegal", status_code=417)
         
-        if requestParam != {}:
-            self.confOpers.setValue(options.data_node_property, requestParam)
-            
-            
+        self.confOpers.setValue(options.data_node_property, requestParam)
+
         dataNodeProprs = self.confOpers.getValue(options.data_node_property)
         
         zkOper = self.retrieve_watch_zkOper()
@@ -56,10 +64,7 @@ class DataNodeToMCluster(APIHandler):
         
         if data_node_ip in ip_lists:
             error_message = "this node have add to cluster, no need to add it!"
-            raise HTTPAPIError(status_code=417, error_detail= error_message,\
-                                notification = "direct", \
-                                log_message= error_message,\
-                                response =  error_message)
+            raise HTTPAPIErrorException(error_message, status_code=417)
               
         new_cluster_address = orginal_cluster_address + "," + str(data_node_ip)
         

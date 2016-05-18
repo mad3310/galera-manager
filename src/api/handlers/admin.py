@@ -8,7 +8,7 @@ import logging
 from common.configFileOpers import ConfigFileOpers
 from base import BaseHandler, APIHandler
 from tornado.options import options
-from common.utils.exceptions import HTTPAPIError
+from common.utils.exceptions import HTTPAPIErrorException
 from configuration.adminOpers import AdminOpers
 
 
@@ -23,13 +23,24 @@ class AdminConf(APIHandler):
     def post(self):
         requestParam = {}
         args = self.request.arguments
-
         for key in args:
-            requestParam.setdefault(key,args[key][0])
-       
-        if requestParam != {}:
-            self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
+            requestParam.setdefault(key,args[key][0])        
+        
+        if not requestParam:
+            raise HTTPAPIErrorException("params is empty")
 
+        #TODO:
+        '''1.judge throwing code reuse rate is very low.
+           2.thrown error code directly, automatically reads the type of error, error messages, and so on.'''
+
+        if "zkAddress" not in requestParam or 'zkPort' not in requestParam:
+            raise HTTPAPIErrorException("zkaddress or port is empty, please check it!")
+
+        if self.confOpers.ipFormatChk(requestParam['zkAddress']):
+            raise HTTPAPIErrorException("zkaddress is illegal", status_code=417)
+
+
+        self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
         self.adminOpers.sync_info_from_zk(requestParam['zkAddress'][0])
             
         result = {}
@@ -82,18 +93,19 @@ class AdminUser(APIHandler):
         requestParam = {}
         args = self.request.arguments
         logging.info("args :"+ str(args))
+        if not args:
+            raise HTTPAPIErrorException("params is empty")
+
         for key in args:
             value = args[key][0]
             if key == 'adminPassword':
                 value = base64.encodestring(value).strip('\n')
             requestParam.setdefault(key,value)
-        if requestParam['adminUser'] == '' or requestParam['adminPassword'] == '':
-            raise HTTPAPIError(status_code=401, error_detail="username or password is empty",\
-                               notification = "direct", \
-                               log_message= "username or password is empty", \
-                               response = "username or password is empty")
-        if requestParam != {}:
-            self.confOpers.setValue(options.cluster_property, requestParam)
+            
+        if "adminUser" not in requestParam or 'adminPassword' not in requestParam:
+            raise HTTPAPIErrorException("admin user or password is empty, please check it!")
+
+        self.confOpers.setValue(options.cluster_property, requestParam)
         
         result = {}
         #dict.setdefault("code", '000000')
@@ -109,7 +121,7 @@ class DownloadFile(BaseHandler):
         self.set_header ('Content-Disposition', 'attachment; filename='+filename+'')
         self.write (ifile.read())
         
-        
+
         
 #
 #no used

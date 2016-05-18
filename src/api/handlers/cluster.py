@@ -7,7 +7,7 @@ from common.tornado_basic_auth import require_basic_auth
 from common.cluster_mysql_service_opers import Cluster_Mysql_Service_Opers
 from tornado.options import options
 from tornado.web import asynchronous
-from common.utils.exceptions import HTTPAPIError
+from common.utils.exceptions import HTTPAPIError, HTTPAPIErrorException
 
 import logging
 import uuid
@@ -31,25 +31,34 @@ class CreateMCluster(APIHandler):
         zkOper = self.retrieve_zkOper()
         existCluster = zkOper.existCluster()
         if existCluster:
-            raise HTTPAPIError(status_code=417, error_detail="server has belong to a cluster,should be not create new cluster!",\
-                                notification = "direct", \
-                                log_message= "server has belong to a cluster,should be not create new cluster!",\
-                                response =  "the server has belonged to a cluster,should be not create new cluster!")
+            raise HTTPAPIErrorException("server has belong to a cluster,should be not create new cluster!", status_code=417)
         
         requestParam = {}
         args = self.request.arguments
         logging.info("args :" + str(args))
+        
+        if not args:
+            raise HTTPAPIErrorException("params is empty")
+
         for key in args:
             value = args[key][0]
             requestParam.setdefault(key,value)
             
+        if "clusterName" not in requestParam or 'dataNodeName' not in requestParam:
+            raise HTTPAPIErrorException("cluster_name or node_name is empty, please check it!")
+
+        if 'dataNodeIp' not in requestParam:
+            raise HTTPAPIErrorException("node_ip is empty, please check it!")
+
+
         cluster_name = requestParam['clusterName']
         if len(cluster_name) >= 33:
-            raise HTTPAPIError(status_code=417, error_detail="Cluster name is too long, please use name whoes length is less than 33 characters",\
-                                notification = "direct", \
-                                log_message= "Cluster name is too long, please use name whoes length is less than 33 characters",\
-                                response =  "Cluster name is too long, please use name whoes length is less than 33 characters!")
+            raise HTTPAPIErrorException("Cluster name is too long, please use name whoes length is less than 33 characters",
+                                        status_code=417)
             
+        if self.confOpers.ipFormatChk(requestParam['dataNodeIp']):
+            raise HTTPAPIErrorException("dataNodeIp is illegal", status_code=417)
+
         clusterUUID =zkOper.getclustername() + '/' + str(uuid.uuid1())
         requestParam.setdefault("clusterUUID",clusterUUID)
         
