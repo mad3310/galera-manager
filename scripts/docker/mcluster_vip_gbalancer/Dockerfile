@@ -13,8 +13,6 @@ RUN yum install cronie -y
 RUN yum install gbalancer-manager -y
 RUN yum install gbalancer -y
 RUN yum update bash -y
-RUN yum install -y mcluster-manager-version
-
 
 EXPOSE 3306 8888 9888
 
@@ -41,5 +39,7 @@ RUN yum install -y wget
 RUN yum install -y monit
 ADD ./init/monit /etc/init.d/monit
 RUN chmod 755 /etc/init.d/monit
+
+RUN yum install -y mcluster-manager-version
 
 ENTRYPOINT /usr/local/init/mcluster_vip_gbalancer_init.sh  && service gbalancer-manager start && /bin/bash

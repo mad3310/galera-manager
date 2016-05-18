@@ -15,7 +15,6 @@ RUN yum install cronie -y
 RUN yum install vim -y
 RUN yum install java-1.7.0-openjdk-devel -y
 RUN yum update bash -y
-RUN yum install mcluster-manager-version -y
 
 EXPOSE 3306 4567 4568 4569 2181 2888 3888
 USER root
@@ -42,5 +41,7 @@ RUN yum install -y wget
 RUN yum install -y monit
 ADD ./init/monit /etc/init.d/monit
 RUN chmod 755 /etc/init.d/monit
+
+RUN yum install mcluster-manager-version -y
 
 ENTRYPOINT /usr/local/init/mcluster_docker_init.sh && service mcluster-manager start && /bin/bash
