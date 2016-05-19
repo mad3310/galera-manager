@@ -8,7 +8,7 @@ from base import APIHandler
 from tornado.options import options
 from common.invokeCommand import InvokeCommand
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
-from common.utils.exceptions import HTTPAPIError, HTTPAPIErrorException
+from common.utils.exceptions import HTTPAPIErrorException
 from common.node_stat_opers import NodeStatOpers
 from tornado.web import asynchronous
 from tornado.gen import engine
@@ -128,16 +128,13 @@ class SyncDataNode(APIHandler):
     
     def get(self,ip_address):
         if ip_address is None:
-                error_message = "you should specify the ip address need to sync"
-                raise HTTPAPIError(status_code=417, error_detail= error_message,\
-                                    notification = "direct", \
-                                    log_message= error_message,\
-                                    response =  error_message)
+            error_message = "you should specify the ip address need to sync"
+            raise HTTPAPIErrorException(error_message, status_code=417)
         
         zkOper = self.retrieve_zkOper()        
         return_result = zkOper.retrieve_data_node_info(ip_address)
         self.confOpers.setValue(options.data_node_property, return_result)
-            
+
         result = {}
 #        dict.setdefault("code", "000000")
         result.setdefault("message", "sync data node info to local successful!")
@@ -264,11 +261,9 @@ class DataNodeStart(APIHandler):
     def do(self, isNewCluster):
         try:
             self.mysql_service_opers.start(isNewCluster)
-        except Exception, kazoo.exceptions.LockTimeout: 
-            raise HTTPAPIError(status_code=417, error_detail="lock by other thread",\
-                                notification = "direct", \
-                                log_message = "lock by other thread",\
-                                response =  "current operation is using by other people, please wait a moment to try again!")
+        except Exception, kazoo.exceptions.LockTimeout:
+            raise HTTPAPIErrorException("current operation is using by other people, please wait a moment to try again!", 
+                                        status_code=417)
 
 # stop mysqld service on data node
 # eg. curl --user root:root "http://localhost:8888/node/stop"
