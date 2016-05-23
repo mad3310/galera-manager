@@ -14,7 +14,7 @@ ERROR_CODE=500
 default_executor = ThreadPoolExecutor(10)
 
 
-def  run_on_executor(executor=default_executor):
+def run_on_executor(executor=default_executor):
     def run_on_executor_decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
