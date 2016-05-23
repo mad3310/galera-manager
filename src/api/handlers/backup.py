@@ -6,7 +6,7 @@ import datetime
 
 from os import listdir
 from base import APIHandler
-from common.utils.exceptions import HTTPAPIError
+from common.utils.exceptions import HTTPAPIErrorException
 from common.tornado_basic_auth import require_basic_auth
 from backup_utils.dispath_backup_worker import DispatchBackupWorker
 from backup_utils.backup_worker import BackupWorkers
@@ -69,10 +69,8 @@ class Backup(APIHandler):
         incr_basedir = self.get_argument("incr_basedir", None)
         backup_type = self.get_argument("backup_type")
         if not backup_type:
-            raise HTTPAPIError(status_code=417, error_detail="backup_type params is not given",\
-                                notification = "direct", \
-                                log_message= "backup params is not given",\
-                                response =  "please check 'backup_type' params.")
+            raise HTTPAPIErrorException("backup params is not given, please check 'backup_type' params.", status_code=417)
+
         worker = DispatchBackupWorker(backup_type, incr_basedir)
         worker.start()
         
@@ -89,10 +87,7 @@ class Inner_Backup_Action(APIHandler):
         incr_basedir = self.get_arguments("incr_basedir") 
 
         if not backup_type:
-            raise HTTPAPIError(status_code=417, error_detail="backup_type params is not transmit",\
-                                notification = "direct", \
-                                log_message= "backup params is not transmit",\
-                                response =  "please check 'backup_type' params.")
+            raise HTTPAPIErrorException("backup params is not transmit, please check 'backup_type' params.", status_code=417)
             
         backup_worker = BackupWorkers(backup_type, incr_basedir)
         backup_worker.start()
@@ -108,10 +103,7 @@ class BackUpCheck(APIHandler):
         zkOper = self.retrieve_zkOper()
         backup_info = zkOper.retrieve_backup_status_info()
         if 'recently_backup_ip: ' not in backup_info:
-            raise HTTPAPIError(status_code= 411, error_detail="last time backup is not successed",
-                               notification = "direct",
-                               log_message= "last time backup is not successed",
-                               response =  "last time backup is not successed")
+            raise HTTPAPIErrorException("last time backup is not successed", status_code=417)
         
         last_backup_ip = backup_info['recently_backup_ip: ']
         last_backup_time = backup_info['time: ']
@@ -150,10 +142,7 @@ class BackUp_Checker(APIHandler):
         zkOper = self.retrieve_zkOper()
         backup_type = self.get_argument("backup_type")
         if not backup_type:
-            raise HTTPAPIError(status_code=417, error_detail="backup_type params is not transmit",\
-                                notification = "direct", \
-                                log_message= "backup params is not transmit",\
-                                response =  "please check 'backup_type' params.")
+            raise HTTPAPIErrorException("backup_type params is not given, please check 'backup_type' params.", status_code=417)
         
         result = {"message": "%s backup failed" %backup_type}
         backup_info = zkOper.retrieve_type_backup_status_info(backup_type)
