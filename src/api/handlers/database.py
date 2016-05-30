@@ -11,7 +11,7 @@ from tornado.options import options
 from common.dba_opers import DBAOpers
 from common.configFileOpers import ConfigFileOpers
 from common.utils import get_random_password
-from common.utils.exceptions import HTTPAPIError
+from common.utils.exceptions import HTTPAPIErrorException
 from common.db_stat_opers import DBStatOpers
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
@@ -85,10 +85,9 @@ class DBOnMCluster(APIHandler):
         
     def delete(self, dbName):
         if not dbName:
-            raise HTTPAPIError(status_code=417, error_detail="when remove the db, no have database name",\
-                                notification = "direct", \
-                                log_message= "when remove the db, no have database name",\
-                                response =  "please provide database name you want to removed!")
+            raise HTTPAPIErrorException("when remove the db, no have database name,\
+                                         please provide database name you want to removed!", 
+                                         status_code=417)
         
         zkOper = self.retrieve_zkOper()
         clusterUUID = zkOper.getClusterUUID()
@@ -227,10 +226,7 @@ class Inner_DB_Check_WsrepStatus(APIHandler):
             logging.info("check_wsrepstatus : %s" %(check_result))
         except:
             error_message = "connection break down"
-            raise HTTPAPIError(status_code=417, error_detail= error_message,\
-                            notification = "direct", \
-                            log_message = error_message,\
-                            response =  error_message)
+            raise HTTPAPIErrorException(error_message, status_code=417)
             
         if check_result == False:
             self.finish("false")
@@ -332,10 +328,7 @@ class Inner_DB_Check_WR(APIHandler):
         
         if delta_time > t_threshold:
             error_message = 'delta_time between read and write exceed the threshold time, the delta_time is %s' % (delta_time)
-            raise HTTPAPIError(status_code=500, error_detail= error_message,\
-                         notification = "direct", \
-                         log_message= error_message,\
-                         response = error_message)
+            raise HTTPAPIErrorException(error_message, status_code=500)
                     
         return_flag = 'true'       
         self.finish(return_flag)

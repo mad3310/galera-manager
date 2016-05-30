@@ -12,7 +12,7 @@ from common.tornado_basic_auth import require_basic_auth
 from common.dba_opers import DBAOpers
 from common.configFileOpers import ConfigFileOpers
 from common.utils import get_random_password
-from common.utils.exceptions import HTTPAPIError
+from common.utils.exceptions import HTTPAPIErrorException
 
 # create manager user in mcluster
 # eg. curl --user root:root -d "role=manager&dbName=managerTest&userName=zbz" "http://localhost:8888/dbUser"
@@ -57,28 +57,20 @@ class DBUser(APIHandler):
         logging.info(str(dict))
         
         if role is None:
-            raise HTTPAPIError(status_code=417, error_detail="when create db's user, no specify the user role",\
-                                notification = "direct", \
-                                log_message= "when create db's user, no specify the user role",\
-                                response =  "please specify the user role.")
+            raise HTTPAPIErrorException("when create db's user, no specify the user role, please specify the user role.", 
+                                        status_code=417)
         
         if dbName is None:
-            raise HTTPAPIError(status_code=417, error_detail="when create db's user, no specify the database name",\
-                                notification = "direct", \
-                                log_message= "when create db's user, no specify the database name",\
-                                response =  "please specify the database name.")
+            raise HTTPAPIErrorException("when create db's user, no specify the database name, please specify the database name.", 
+                                        status_code=417)
         
         if userName is None:
-            raise HTTPAPIError(status_code=417, error_detail="when create db's user, no specify the user name",\
-                                notification = "direct", \
-                                log_message= "when create db's user, no specify the user name",\
-                                response =  "please specify the user name.")
+            raise HTTPAPIErrorException("when create db's user, no specify the user name, please specify the user name.", 
+                                        status_code=417)
         
         if ip_address is None:
-            raise HTTPAPIError(status_code=417, error_detail="when create db's user, no specify the ip address",\
-                                notification = "direct", \
-                                log_message= "when create db's user, no specify the ip address",\
-                                response =  "please specify the ip address.")
+            raise HTTPAPIErrorException("when create db's user, no specify the ip address, please specify the ip address.", 
+                                        status_code=417)
         
         if user_password is None:
             user_password = get_random_password()
@@ -88,11 +80,9 @@ class DBUser(APIHandler):
         conn = self.dba_opers.get_mysql_connection()
         try:
             existed_flag = self.dba_opers.check_if_existed_database(conn, dbName)
-            if existed_flag == "false": 
-                raise HTTPAPIError(status_code = 417, error_detail = dbName + \
-                                 " database doesn't exist", notification = "direct", \
-                                 log_message = "database " + dbName + " doesn't exist", \
-                                 response = "Please create database " + dbName + " first")
+            if existed_flag == "false":
+                raise HTTPAPIErrorException("Please create database " + dbName + " first", 
+                                        status_code=417)
     
             self.dba_opers.create_user(conn, userName, user_password, ip_address)
             
@@ -119,11 +109,7 @@ class DBUser(APIHandler):
             else:
                 #use try catch to close the conn
                 #conn.close()
-                
-                raise HTTPAPIError(status_code=417, error_detail="when create db's user, the role type is un-valid, the error type is " + role,\
-                                    notification = "direct", \
-                                    log_message= "when create db's user, the role type is un-valid, the error type is " + role,\
-                                    response =  "please valid the specified role, the type is [manager,ro,wr]")
+                raise HTTPAPIErrorException("please valid the specified role, the type is [manager,ro,wr]", status_code=417)
             
             self.dba_opers.flush_privileges(conn)
         finally:
@@ -160,34 +146,26 @@ class DBUser(APIHandler):
         role = self.get_argument("role", None)
 
         if dbName is None:
-            raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no specify the database name",\
-                                notification = "direct", \
-                                log_message= "when modify db's user, no specify the database name",\
-                                response =  "please specify the database name.")
+            raise HTTPAPIErrorException("when modify db's user, no specify the database name, please specify the database name.", 
+                                        status_code=417)
         
         if userName is None:
-            raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no specify the user name",\
-                                notification = "direct", \
-                                log_message= "when modify db's user, no specify the user name",\
-                                response =  "please specify the user name.")
+            raise HTTPAPIErrorException("when modify db's user, no specify the user name, please specify the user name.", 
+                                        status_code=417)
         
         if ip_address is None:
-            raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no specify the ip address",\
-                                notification = "direct", \
-                                log_message= "when modify db's user, no specify the ip address",\
-                                response =  "please specify the ip address.")
+            raise HTTPAPIErrorException("when modify db's user, no specify the ip address, please specify the ip address.", 
+                                        status_code=417)
         
         if max_queries_per_hour is None and max_updates_per_hour is None and max_connections_per_hour is None and max_user_connections is None:
-            raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no specify any modified parameter",\
-                                notification = "direct", \
-                                log_message= "when modify db's user, no specify any modified parameter",\
-                                response =  "please specify any one or all of following parameter:[max_queries_per_hour,max_updates_per_hour,max_connections_per_hour,max_user_connections]")
+            raise HTTPAPIErrorException("when modify db's user, no specify any modified parameter, please specify the ip address.\
+                                         please specify any one or all of following parameter:[max_queries_per_hour,\
+                                         max_updates_per_hour,max_connections_per_hour,max_user_connections]", 
+                                         status_code=417)
         
         if role is None:
-            raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no specify the role",\
-                                notification = "direct", \
-                                log_message= "when modify db's user, no specify the role",\
-                                response =  "please specify the role.")
+            raise HTTPAPIErrorException("when modify db's user, no specify the role, please specify the role.", 
+                                        status_code=417)
 
         conn = self.dba_opers.get_mysql_connection()
         try:
@@ -197,10 +175,9 @@ class DBUser(APIHandler):
             if not max_queries_per_hour or not max_updates_per_hour or not max_connections_per_hour or not max_user_connections:
                 user_limit_map = zkOper.retrieve_user_limit_props(clusterUUID, dbName, userName, ip_address)
                 if not user_limit_map:
-                    raise HTTPAPIError(status_code=417, error_detail="when modify db's user, no found specified user!",\
-                                       notification = "direct", \
-                                       log_message = "when modify db's user, no found specified user!",\
-                                       response =  "please check the valid of the specified user, because the system no found the user!")
+                    raise HTTPAPIErrorException("when modify db's user, no found specified user!\
+                                                 please check the valid of the specified user, because the system no found the user!", 
+                                                 status_code=417)
             
             if max_queries_per_hour is None:
                 max_queries_per_hour = user_limit_map.get('max_queries_per_hour')
@@ -240,22 +217,19 @@ class DBUser(APIHandler):
 
     def delete(self, dbName, userName, ipAddress):
         if not dbName:
-            raise HTTPAPIError(status_code=417, error_detail="when remove db's user, no specify the database name",\
-                                notification = "direct", \
-                                log_message= "when remove db's user, no specify the database name",\
-                                response =  "please specify the database name.")
+            raise HTTPAPIErrorException("when remove db's user, no specify the database name,\
+                                         please specify the database name.", 
+                                         status_code=417)
         
         if not userName:
-            raise HTTPAPIError(status_code=417, error_detail="when remove db's user, no specify the user name",\
-                                notification = "direct", \
-                                log_message= "when remove db's user, no specify the user name",\
-                                response =  "please specify the user name.")
+            raise HTTPAPIErrorException("when remove db's user, no specify the user name,\
+                                         please specify the user name.", 
+                                         status_code=417)
         
         if not ipAddress:
-            raise HTTPAPIError(status_code=417, error_detail="when remove db's user, no specify the ip address",\
-                                notification = "direct", \
-                                log_message= "when remove db's user, no specify the ip address",\
-                                response =  "please specify the ip address.")
+            raise HTTPAPIErrorException("when remove db's user, no specify the ip address,\
+                                         please specify the ip address.", 
+                                         status_code=417)
         
         conn = self.dba_opers.get_mysql_connection()
         
