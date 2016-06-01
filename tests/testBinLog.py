@@ -2,6 +2,7 @@
 import base64
 import requests
 from requests.exceptions import HTTPError
+import json
 
 class TestLogBin(unittest.TestCase):
 	encode_user = base64.encodestring("%s:%s" % ('root', 'root'))
@@ -11,21 +12,24 @@ class TestLogBin(unittest.TestCase):
 		"Accept": "text/plain"}
 	headers["Authorization"] = auth
 
-	test_container_ip=''
+	container_ip=''
+	
 	def setUp(self):
 		pass 	
-	def test_binlog_node_stat(self):
-		r = requests.get('http://%s:8888/db/binlog/node/stat' %self.test_container_ip)
+	def test_db_binlog_node_stat(self):
+		r = requests.get('http://%s:8888/db/binlog/node/stat' %self.container_ip)
 		print r.text 
-		code=eval(r.text)["meta"]["code"]
-		self.assertEqual(200,code,"api BinLogPos gets an error!")
+		p=json.loads(r.text)
+		code=p["meta"]["code"]
+		self.assertEqual(200,code,"dbBinLogNodeState gets an error!")
 	def test_dbUser(self):
 		print "/dbUser"
 		payload = dict(role='manager', dbName='testdb',userName='test')
-		r = requests.post('http://%s:8888/dbUser' %self.test_container_ip, data=payload,headers=self.headers)
+		r = requests.post('http://%s:8888/dbUser' %self.container_ip, data=payload,headers=self.headers)
 		print r.text
-		code=eval(r.text)["meta"]["code"]
-		self.assertEqual(200,code,"api DBUser gets an error!")       
+		p=json.loads(r.text)
+		code=p["meta"]["code"]
+		self.assertEqual(200,code," DBUser gets an error!")       
  	def tearDown(self):
 		print "call this method is finish\n"
         
