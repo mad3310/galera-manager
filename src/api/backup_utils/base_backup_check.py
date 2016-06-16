@@ -1,5 +1,6 @@
 import urllib2, urllib
 import json
+from common.utils.exceptions import HTTPAPIErrorException
 
 FULL_LOG_FILE_PATH = '/var/log/mcluster-manager/mcluster-backup/'
 INCR_LOG_FILE_PATH = '/var/log/mcluster-manager/mcluster-backup/incr/'
@@ -13,20 +14,18 @@ def get_response_request(host, url_path, data):
 
 def get_local_backup_status(full_type, time_path):
     result = False
-
     if full_type == 'full':
-        full_file_name = FULL_LOG_FILE_PATH + time_path + '_script.log'
-        with open(full_file_name, 'r') as f:
-            for line in f.readlines():
-                if line.find('== the full backup is completed ==') != -1:
-                    result = True
-            return result
-
+        file_name = FULL_LOG_FILE_PATH + time_path + '_script.log'
     else:
-        incr_file_name = INCR_LOG_FILE_PATH + time_path + '_incr_script.log'
-        with open(incr_file_name, 'r') as f:
+        file_name = INCR_LOG_FILE_PATH + time_path + '_incr_script.log'
+    
+    try:  
+        with open(file_name, 'r') as f:
             for line in f.readlines():
-                if line.find('== the incr backup is completed ==') != -1:
+                if line.find('backup is completed ==') != -1:
                     result = True
             return result
-
+    
+    except Exception,e:
+        raise HTTPAPIErrorException("no such a backup file", status_code=500)
+    

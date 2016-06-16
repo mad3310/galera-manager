@@ -11,6 +11,9 @@ from common.tornado_basic_auth import require_basic_auth
 from backup_utils.dispath_backup_worker import DispatchBackupWorker
 from backup_utils.backup_worker import BackupWorkers
 from backup_utils.base_backup_check import get_response_request, get_local_backup_status
+from tornado.web import asynchronous
+from tornado.gen import engine
+from common.utils.asyc_utils import run_on_executor, run_callback
 
 
 # Start backing up database data.
@@ -98,10 +101,22 @@ class Inner_Backup_Action(APIHandler):
     
 #eq curl  "http://127.0.0.1:8888/backup/check" 
 class BackUpCheck(APIHandler):
-
+    
+    @asynchronous
+    @engine
     def get(self):
+        return_result = yield self._check_backup_stat()  
+        self.finish(return_result)
+        
+    @run_on_executor()
+    @run_callback
+    def _check_backup_stat(self):
         zkOper = self.retrieve_zkOper()
         backup_info = zkOper.retrieve_backup_status_info()
+        
+        if not backup_info:
+            raise HTTPAPIErrorException("this cluster is not backup, please full backup!", status_code=417)
+
         if 'recently_backup_ip: ' not in backup_info:
             raise HTTPAPIErrorException("last time backup is not successed", status_code=417)
         
@@ -128,12 +143,14 @@ class BackUpCheck(APIHandler):
                 message = response_message['response']
                 if -1 != message['message'].find('success'):
                     result.setdefault("message", '%s backup success' %last_backup_type['backup_type'])
-                if -1 !=message['message'].find('starting'):
-                    result.setdefault("message", '%s backup is processing' %last_backup_type['backup_type'])
+                if -1 != message['message'].find('starting'):
+                    result.setdefault("message", 'last time %s backup is processing' %last_backup_type['backup_type'])
                 else:
-                    result.setdefault("message", '%s backup failed' %last_backup_type['backup_type'])
+                    result.setdefault("message", 'last time %s backup failed' %last_backup_type['backup_type'])
+            else:
+                result.setdefault("message", 'last time %s backup failed' %last_backup_type['backup_type'])
 
-        self.finish(result)
+        return result
 
 #eq curl -d "backup_type=full" "http://localhost:8888/backup/checker"
 class BackUp_Checker(APIHandler):
