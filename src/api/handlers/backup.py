@@ -161,7 +161,7 @@ class BackUp_Checker(APIHandler):
         if not backup_type:
             raise HTTPAPIErrorException("backup_type params is not given, please check 'backup_type' params.", status_code=417)
         
-        result = {"message": "%s backup failed" %backup_type}
+        result = {"message": "%s backup is starting" %backup_type}
         backup_info = zkOper.retrieve_type_backup_status_info(backup_type)
         
         if backup_type == 'full':
@@ -171,11 +171,15 @@ class BackUp_Checker(APIHandler):
             
             local_backup_result = get_local_backup_status(backup_type, backup_time)
             
-            if local_backup_result and backup_status == 'backup_succecced':
-                result["message"] = "full backup success"
+            if local_backup_result:
+                if backup_status == 'backup_succecced':
+                    result["message"] = "full backup success"
                 
-            if backup_status == 'backup_starting':
-                result["message"] = "full backup is starting"
+                elif backup_status == 'backup_starting':
+                    result["message"] = "full backup is starting"
+                    
+                elif backup_status == 'backup_failed':
+                    result["message"] = "full backup is failed"
         
         else:
             backup_start_time = backup_info['incr_backup_start_time:']
@@ -184,10 +188,14 @@ class BackUp_Checker(APIHandler):
             
             local_backup_result = get_local_backup_status(backup_type, backup_time)
             
-            if local_backup_result and backup_status == 'backup_succecced':
-                result["message"] = "incr backup success"
+            if local_backup_result:
+                if backup_status == 'backup_succecced':
+                    result["message"] = "incr backup success"
                 
-            if backup_status == 'backup_starting':
-                result["message"] = "incr backup is starting"  
+                elif backup_status == 'backup_starting':
+                    result["message"] = "incr backup is starting" 
+                
+                elif backup_status == 'backup_failed':
+                    result["message"] = "incr backup is failed" 
     
         self.finish(result)
