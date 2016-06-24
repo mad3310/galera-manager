@@ -32,7 +32,7 @@ class BackupEvlScore(object):
             avail = float(free_spaces[k]['srv_mcluster_available'])
             data_avail = float(free_spaces[k]['data_directory_available'])
             
-            if avail > (total-avail) and data_avail > (total - avail):
+            if avail > (total-avail):
                 disk_dict[k] = avail
                 if avail > disk_max_value:
                     disk_max_value = avail
