@@ -142,13 +142,13 @@ class BackUpCheck(APIHandler):
             elif response_message["meta"]["code"] == 200:
                 message = response_message['response']
                 if -1 != message['message'].find('success'):
-                    result.setdefault("message", '%s backup success' %last_backup_type['backup_type'])
+                    result.setdefault("message", '%s backup success, backup ip: %s' %(last_backup_type['backup_type'], last_backup_ip))
                 if -1 != message['message'].find('starting'):
-                    result.setdefault("message", 'last time %s backup is processing' %last_backup_type['backup_type'])
+                    result.setdefault("message", 'last time %s backup is processing, backup ip: %s' %(last_backup_type['backup_type'], last_backup_ip))
                 else:
-                    result.setdefault("message", 'last time %s backup failed' %last_backup_type['backup_type'])
+                    result.setdefault("message", 'last time %s backup failed, backup ip: %s' %(last_backup_type['backup_type'], last_backup_ip))
             else:
-                result.setdefault("message", 'last time %s backup failed' %last_backup_type['backup_type'])
+                result.setdefault("message", 'last time %s backup failed, backup ip: %s' %(last_backup_type['backup_type'], last_backup_ip))
 
         return result
 
