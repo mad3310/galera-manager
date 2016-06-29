@@ -14,6 +14,7 @@ from backup_utils.base_backup_check import get_response_request, get_local_backu
 from tornado.web import asynchronous
 from tornado.gen import engine
 from common.utils.asyc_utils import run_on_executor, run_callback
+from common.zkOpers import Requests_ZkOpers
 
 
 # Start backing up database data.
@@ -74,6 +75,8 @@ class Backup(APIHandler):
         if not backup_type:
             raise HTTPAPIErrorException("backup params is not given, please check 'backup_type' params.", status_code=417)
 
+        zkOper = Requests_ZkOpers()
+        zkOper.write_backup_backup_info({"backup type":"backup is building"})
         worker = DispatchBackupWorker(backup_type, incr_basedir)
         worker.start()
         
@@ -113,10 +116,15 @@ class BackUpCheck(APIHandler):
     def _check_backup_stat(self):
         zkOper = self.retrieve_zkOper()
         backup_info = zkOper.retrieve_backup_status_info()
+        result = {}
         
         if not backup_info:
             raise HTTPAPIErrorException("this cluster is not backup, please full backup!", status_code=417)
 
+        if 'backup type' in backup_info and 'backup is building' == backup_info['backup type']:
+            result.setdefault("message", 'backup is processing')
+            return result
+                
         if 'recently_backup_ip: ' not in backup_info:
             raise HTTPAPIErrorException("last time backup is not successed", status_code=417)
         
@@ -128,7 +136,7 @@ class BackUpCheck(APIHandler):
         backup_time = long(datetime.datetime.strptime(last_backup_time, "%Y-%m-%d %H:%M:%S").strftime('%Y%m%d%H%M%S'))
         
         url_post = "/backup/checker"
-        result = {}
+        
         if (time - backup_time)/10000 > 30:
             result.setdefault("message", "last backup expired")
         
