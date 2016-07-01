@@ -30,6 +30,9 @@ handlers = [
             (r"/node/stop", DataNodeStop),
             (r"/node/stat", DataNodeStat),
             (r"/node/stat/datadir/size", StatDataDirSize),
+            (r"/node/stat/disk/available", StatDiskAvailable),
+            (r"/node/stat/memory/available", StatMemAvailable),
+            (r"/node/stat/workload", StatNodeWorkLoad),
             (r"/node/stat/mysqlcpu/partion", StatMysqlCpuPartion),
             (r"/node/stat/mysqlmemory/partion", StatMysqlMemoryPartion),
             (r"/node/stat/memory/size", StatNodeMemorySize),
@@ -68,11 +71,10 @@ handlers = [
             (r"/inner/node/check/log/warning", DataNodeMonitorLogWarning),
             (r"/inner/node/check/log/health", DataNodeMonitorLogHealth),
             (r"/inner/node_port/check", PortCheck),
-            (r"/backup", BackUp),
-            (r"/inner/backup", BackUper),
+            (r"/backup", Backup),
+            (r"/inner/backup", Inner_Backup_Action),
             (r"/backup/check", BackUpCheck),
             (r"/backup/checker", BackUp_Checker),
-            (r"/backup/inner/check", BackUpChecker),
             (r"/arbitrator/node/start", ArbitratorStart), 
             (r"/inner/arbitrator/ip", ArbitratorIP)
 #             (r"/arbitrator/check", ArbitratorCheck)
