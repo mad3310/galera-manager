@@ -40,6 +40,14 @@ RUN yum install -y monit
 ADD ./init/monit /etc/init.d/monit
 RUN chmod 755 /etc/init.d/monit
 
+#install zabbix
+ADD ./init/zabbix_install.sh /usr/local/zabbix_install.sh
+ADD ./init/zabbix_agents.tar.gz /usr/local/zabbix/
+ADD ./init/check_api.mcluster.sh /usr/local/zabbix/script/check_api.mcluster.sh
+RUN chmod 775 /usr/local/zabbix_install.sh
+RUN chmod 755 /opt/letv/mcluster-manager/client/zabbix_mcluster_monitor_main.py
+RUN chmod 755 /usr/local/zabbix/script/check_api.mcluster.sh
+
 RUN yum install -y mcluster-manager-version
 
 ENTRYPOINT /usr/local/init/mcluster_vip_gbalancer_init.sh  && service gbalancer-manager start && /bin/bash
