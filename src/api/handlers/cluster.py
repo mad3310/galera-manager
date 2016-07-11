@@ -7,7 +7,7 @@ from common.tornado_basic_auth import require_basic_auth
 from common.cluster_mysql_service_opers import Cluster_Mysql_Service_Opers
 from tornado.options import options
 from tornado.web import asynchronous
-from common.utils.exceptions import HTTPAPIError
+from common.utils.exceptions import HTTPAPIErrorException
 
 import logging
 import uuid
@@ -31,25 +31,34 @@ class CreateMCluster(APIHandler):
         zkOper = self.retrieve_zkOper()
         existCluster = zkOper.existCluster()
         if existCluster:
-            raise HTTPAPIError(status_code=417, error_detail="server has belong to a cluster,should be not create new cluster!",\
-                                notification = "direct", \
-                                log_message= "server has belong to a cluster,should be not create new cluster!",\
-                                response =  "the server has belonged to a cluster,should be not create new cluster!")
+            raise HTTPAPIErrorException("server has belong to a cluster,should be not create new cluster!", status_code=417)
         
         requestParam = {}
         args = self.request.arguments
         logging.info("args :" + str(args))
+        
+        if not args:
+            raise HTTPAPIErrorException("params is empty")
+
         for key in args:
             value = args[key][0]
             requestParam.setdefault(key,value)
             
+        if "clusterName" not in requestParam or 'dataNodeName' not in requestParam:
+            raise HTTPAPIErrorException("cluster_name or node_name is empty, please check it!")
+
+        if 'dataNodeIp' not in requestParam:
+            raise HTTPAPIErrorException("node_ip is empty, please check it!")
+
+
         cluster_name = requestParam['clusterName']
         if len(cluster_name) >= 33:
-            raise HTTPAPIError(status_code=417, error_detail="Cluster name is too long, please use name whoes length is less than 33 characters",\
-                                notification = "direct", \
-                                log_message= "Cluster name is too long, please use name whoes length is less than 33 characters",\
-                                response =  "Cluster name is too long, please use name whoes length is less than 33 characters!")
+            raise HTTPAPIErrorException("Cluster name is too long, please use name whoes length is less than 33 characters",
+                                        status_code=417)
             
+        if self.confOpers.ipFormatChk(requestParam['dataNodeIp']):
+            raise HTTPAPIErrorException("dataNodeIp is illegal", status_code=417)
+
         clusterUUID =zkOper.getclustername() + '/' + str(uuid.uuid1())
         requestParam.setdefault("clusterUUID",clusterUUID)
         
@@ -100,11 +109,9 @@ class InitMCluster(APIHandler):
             if not forceInit:
                 dataNodeNumber = zkOper.getDataNodeNumber(clusterUUID)
                 if dataNodeNumber/2 == 0:
-                    raise HTTPAPIError(status_code=417, error_detail="the server number of cluster should be odd number",\
-                                    notification = "direct", \
-                                    log_message= "the server number of cluster should be odd number",\
-                                    response =  "the number should be not odd number,please add 1 or 3 data node into cluster!")
-            
+                    raise HTTPAPIErrorException("the number should be not odd number,please add 1 or 3 data node into cluster!", 
+                                                status_code=417)
+
             clusterName = clusterProKeyValue['clusterName']
             clusterAddress = 'gcomm://%s' % (data_node_ip)
             
@@ -117,10 +124,9 @@ class InitMCluster(APIHandler):
             zkOper.writeMysqlCnf(clusterUUID, mysql_cnf_text)
             zkOper.write_started_node(data_node_ip)
         except kazoo.exceptions.LockTimeout:
-            raise HTTPAPIError(status_code=578, error_detail="a server is initing, need to wait for the completion of init oper.",\
-                                notification = "direct", \
-                                log_message= "a server is initing, need to wait for the completion of init oper.",\
-                                response =  "the mysql cluster is initing,please wait for the completion of other machine join this cluster.")
+            raise HTTPAPIErrorException("the mysql cluster is initing,please wait for the completion of other machine join this cluster.", 
+                                        status_code=417)
+
         finally:
             if isLock:
                 zkOper.unLock_init_node_action(lock)
@@ -172,18 +178,14 @@ class ClusterStart(APIHandler):
         cluster_flag = requestParam.get('cluster_flag')
             
         if cluster_flag != 'new' and cluster_flag != 'old':
-            raise HTTPAPIError(status_code=417, error_detail="arguments are wrong",
-                               notification = "direct",
-                               log_message= "arguments are wrong",
-                               response =  "arguments are wrong, retry again.")
+            raise HTTPAPIErrorException("arguments are wrong, retry again.", status_code=417)
         
         try:
             self.mysql_service_opers.start(cluster_flag, None)
         except kazoo.exceptions.LockTimeout:
-            raise HTTPAPIError(status_code=578, error_detail="lock by other thread",
-                               notification = "direct",
-                               log_message= "lock by other thread",
-                               response =  "current operation is using by other people, please wait a moment to try again!")
+            raise HTTPAPIErrorException("current operation is using by other people, please wait a moment to try again!", 
+                                        status_code=578)
+
         result = {}
 #       dict.setdefault("code", '000000')
         result.setdefault("message", "due to start cluster need a large of times, please wait to finished and email to you, when cluster have started!")
@@ -199,14 +201,11 @@ class ClusterStatus(APIHandler):
         try:
             zkOper = self.retrieve_zkOper()
             existCluster = zkOper.existCluster()
-
             cluster_status = zkOper.retrieveClusterStatus()
             cluster_started_nodes = zkOper.retrieve_started_nodes()
         except kazoo.exceptions.LockTimeout:
-            raise HTTPAPIError(status_code=578, error_detail="lock by other thread",\
-                                notification = "direct", \
-                                log_message= "lock by other thread",\
-                                response =  "current operation is using by other people, please wait a moment to try again!")
+            raise HTTPAPIErrorException("current operation is using by other people, please wait a moment to try again!", 
+                                        status_code=578)
             
         result = {}
 #       dict.setdefault("code", '000000')
@@ -229,10 +228,8 @@ class ClusterStop(APIHandler):
         try:
             self.mysql_service_opers.stop()
         except kazoo.exceptions.LockTimeout:
-            raise HTTPAPIError(status_code=578, error_detail="lock by other thread",\
-                                notification = "direct", \
-                                log_message= "lock by other thread",\
-                                response =  "current operation is using by other people, please wait a moment to try again!")
+            raise HTTPAPIErrorException("current operation is using by other people, please wait a moment to try again!", 
+                                        status_code=578)
         
         status_dict = {}
         status_dict['_status'] = 'stopping'

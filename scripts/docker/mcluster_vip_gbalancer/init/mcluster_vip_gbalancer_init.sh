@@ -69,5 +69,20 @@ echo 'set monit successfully'
 
 service crond restart
 
+#zabbix init
+if [ ! -d "/usr/local/zabbix/conf" ]; then
+cd /usr/local/zabbix/
+tar -xvzf zabbix_agents.tar.gz
+fi
+cd /usr/local
+chmod 775 zabbix_install.sh
+./zabbix_install.sh
+cd /usr/local/zabbix/conf
+touch host.temp
+echo "${IP},115.182.93.64,218.206.201.236,211.162.59.93,114.80.187.245,114.80.187.246,121.14.196.239,10.0.51.13" > host.temp
+service crond restart
+cd /usr/local/zabbix
+./install.sh
+./check_zabbix.sh
 
 $@
