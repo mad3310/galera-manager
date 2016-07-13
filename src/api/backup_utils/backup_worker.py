@@ -19,15 +19,13 @@ CHECK_DMP_DATA_CMD = 'df -hmP|grep "/data"|wc -l'
 
 class BackupWorkers(threading.Thread):
 
-    zkOpers = Requests_ZkOpers()
-
-    dba_opers = DBAOpers()
-
     def __init__(self, backup_mode='full', incr_basedir=None):
 
         self._backup_mode = backup_mode
         self.backup_record = {}
         threading.Thread.__init__(self)
+        self.zkOpers = Requests_ZkOpers()
+        self.dba_opers = DBAOpers()
 
         if self._backup_mode == "full":
             self.backupOpers = FullBackupOpers()
