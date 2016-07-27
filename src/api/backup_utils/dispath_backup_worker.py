@@ -6,15 +6,14 @@ Created on Sep 28, 2015
 '''
 import threading
 import logging
-import datetime
 from common.utils.exceptions import UserVisiableException
 from backup_utils.backup_worker_method import BackupWorkerMethod
 
-TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class DispatchBackupWorker(threading.Thread, BackupWorkerMethod):
-    '''
-    分发备份任务
+    '''分发备份任务。
+    若为全量备份则先从集群中根据各节点负载获取可用IP，
+    增量备份则直接在上一次全量备份成功的节点上继续进行。
     '''
     def __init__(self, backup_type, incr_basedir=None):
         threading.Thread.__init__(self)
@@ -43,4 +42,3 @@ class DispatchBackupWorker(threading.Thread, BackupWorkerMethod):
 
         except Exception, e:
             logging.info(e)
-
