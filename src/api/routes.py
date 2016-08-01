@@ -5,8 +5,8 @@
 from handlers.admin import (GenerateConfigFileHandler, AdminConf, AdminUser,
                             DownloadFile, AdminReset)
 from handlers.cluster import (CreateMCluster, InitMCluster, SyncMCluster, ClusterStart,
-                              ClusterStop, ClusterStatus)
-from handlers.dataNode import (DataNodeToMCluster, ClusterZkRemove, SyncDataNode,
+                              ClusterStop, ClusterStatus, ClusterZkRemove)
+from handlers.dataNode import (DataNodeToMCluster, SyncDataNode,
                                DataNodeStart, DataNodeStop, DataNodeStat,
                                StatDataDirSize, DataNodeMonitorLogHealth,
                                DataNodeMonitorLogWarning, DateNodeConfZk,
