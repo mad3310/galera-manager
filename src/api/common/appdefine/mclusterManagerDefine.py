@@ -1,57 +1,56 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import os
 
 from tornado.options import define
 
-join = os.path.join
-dirname = os.path.dirname
+join=os.path.join
+dirname=os.path.dirname
 
-base_dir = os.path.abspath(dirname(dirname(dirname(__file__))))
+base_dir=os.path.abspath(dirname(dirname(dirname(__file__))))
 
-define('port', default = 8888, type = int, help = 'app listen port')
-define('debug', default = False, type = bool, help = 'is debuging?')
-define('sitename', default = "mcluster manager", help = 'site name')
-define('domain', default = "letv.com", help = 'domain name')
+define('port', default=8888, type=int, help='app listen port')
+define('debug', default=False, type=bool, help='is debuging?')
+define('sitename', default="mcluster manager", help='site name')
+define('domain', default="letv.com", help='domain name')
 
-define('send_email_switch', default = True, type = bool, help = 'the flag of if send error email')
-define('admins', default = ("zhoubingzheng <zhoubingzheng@letv.com>", "gaoqiang3 <gaoqiang3@letv.com>", "xuyanwei <xuyanwei@letv.com>", "dengliangju <dengliangju@le.com>"), help = 'admin email address')
-#define('admins', default = ("zhangzeng <zhangzeng@letv.com>", ), help = 'admin email address')
-define('smtp_host', default = "10.205.91.22", help = 'smtp host')
-define('smtp_port', default = 587, help = 'smtp port')
-define('smtp_user', default = "mcluster", help = 'smtp user')
-define('smtp_password', default = "Mcl_20140903!", help = 'smtp password')
-define('smtp_from_address', default='mcluster@letv.com', help = 'smtp from address')
-define('smtp_duration', default = 10000, type = int, help = 'smtp duration')
-define('smtp_tls', default = False, type = bool, help = 'smtp tls')
+define('send_email_switch', default=True, type=bool, help='the flag of if send error email')
+define('admins', default=("zhoubingzheng <zhoubingzheng@letv.com>", "gaoqiang3 <gaoqiang3@letv.com>", "zhangchengqiang <zhangchengqiang@le.com>", "dengliangju <dengliangju@le.com>"), help='admin email address')
+define('smtp_host', default="10.205.91.22", help='smtp host')
+define('smtp_port', default=587, help='smtp port')
+define('smtp_user', default="mcluster", help='smtp user')
+define('smtp_password', default="Mcl_20140903!", help='smtp password')
+define('smtp_from_address', default='mcluster@letv.com', help='smtp from address')
+define('smtp_duration', default=10000, type=int, help='smtp duration')
+define('smtp_tls', default=False, type=bool, help='smtp tls')
 
 
 define("base_dir", default=base_dir, help="project base dir")
 define("mysql_cnf_file_name", default="/opt/letv/mcluster/root/etc/my.cnf", help="mysql cnf file name")
-define("mcluster_manager_cnf",default=join(base_dir, "config","mclusterManager.cnf"), help="mcluster manager config file")
-define("data_node_property",default=join(base_dir,"config","dataNode.property"), help="data node config file")
-define ('zk_address', default=join(base_dir,"config","mclusterManager.cnf"),help = "zookeeper address config file")
-define("cluster_property",default=join(base_dir,"config","cluster.property"), help="cluster config file")
+define("mcluster_manager_cnf", default=join(base_dir, "config", "mclusterManager.cnf"), help="mcluster manager config file")
+define("data_node_property", default=join(base_dir, "config", "dataNode.property"), help="data node config file")
+define('zk_address', default=join(base_dir, "config", "mclusterManager.cnf"), help="zookeeper address config file")
+define("cluster_property", default=join(base_dir, "config", "cluster.property"), help="cluster config file")
 
 
-define("start_gbalancer",default="nohup gbalancer --config=%s %s >/dev/null 2>&1 &", help="start gbalancer")
-define("glb_json_file_name",default="/etc/gbalancer/%sconfiguration.json", help="gbalancer config file")
+define("start_gbalancer", default="nohup gbalancer --config=%s %s >/dev/null 2>&1 &", help="start gbalancer")
+define("glb_json_file_name", default="/etc/gbalancer/%sconfiguration.json", help="gbalancer config file")
 
-define("check_datanode_health",default=join(base_dir,"shell","check_datanode_health.sh"), help="check datanode health")
-define("check_datanode_error",default=join(base_dir,"shell","check_datanode_error.sh"), help="check datanode error")
-define("check_datanode_warning",default=join(base_dir,"shell","check_datanode_warning.sh"), help="check datanode warning")
-define("kill_innotop",default=join(base_dir,"shell","kill_innotop.sh"), help="kill innotop")
+define("check_datanode_health", default=join(base_dir, "shell", "check_datanode_health.sh"), help="check datanode health")
+define("check_datanode_error", default=join(base_dir, "shell", "check_datanode_error.sh"), help="check datanode error")
+define("check_datanode_warning", default=join(base_dir, "shell", "check_datanode_warning.sh"), help="check datanode warning")
+define("kill_innotop", default=join(base_dir, "shell", "kill_innotop.sh"), help="kill innotop")
 
 
 define("mysql_host", default="127.0.0.1", help="mcluster database host")
-define("mysql_port", default=3306, type = int,help ="mcluster database port")
+define("mysql_port", default=3306, type=int, help="mcluster database port")
 define("mysql_start_command", default="service mcluster-mysqld start", help="mysql start command")
 define("remove_mysql_socket", default="rm /var/lib/mysql/mysql.sock", help="remove mysql socket")
 define("mysql_start_new_cluster_command", default="service mcluster-mysqld start --wsrep-cluster-address='gcomm://'", help="mysql start new cluster command")
 define("mysql_restart_command", default="service mcluster-mysqld restart", help="mysql restart command")
 define("mysql_stop_command", default="service mcluster-mysqld stop", help="mysql stop command")
 define("mysql_status_command", default="service mcluster-mysqld status", help="mysql status command")
-define("mysql_boot_strape_script", default="/usr/share/mysql/mcluster-bootstrap",help="mysql boot strape script position")
-define("retrieve_node_uuid_seqno_script", default=join(base_dir,"shell","retrieve_node_uuid_seqno.sh"),help="retrieve node uuid and seqno")
+define("mysql_boot_strape_script", default="/usr/share/mysql/mcluster-bootstrap", help="mysql boot strape script position")
+define("retrieve_node_uuid_seqno_script", default=join(base_dir, "shell", "retrieve_node_uuid_seqno.sh"), help="retrieve node uuid and seqno")
 
 
 define("alarm_serious", default="tel:sms:email", help="alarm level is serious")
@@ -65,10 +64,10 @@ define("stat_dir_size", default="df -Ph", help="stat_dir_size")
 define("stat_top_command", default='top -u mysql -bn 1', help='stat_top_command')
 define("stat_mem_command", default='free -g', help='stat_mem_command')
 
-define("sleep_time", default = 10, type = int, help = "sleep time in _check_start_status")
-define("delta_time", default = 8, type = int, help = "delta time between read and write")
+define("sleep_time", default=10, type=int, help="sleep time in _check_start_status")
+define("delta_time", default=8, type=int, help="delta time between read and write")
 
-define("new_count_times", default = 60, type = int, help = "if it is new cluster, we use this by default")
-define("old_count_times", default = 300, type = int, help = "Others we use this value.")
-define("full_back_sh", default=join(base_dir,"shell","mcluster_backup_full.sh"), help="full backup")
-define("on_check_storedprocedure", default = False, type = bool, help = 'the flag of checking stored procedure')
+define("new_count_times", default=60, type=int, help="if it is new cluster, we use this by default")
+define("old_count_times", default=300, type=int, help="Others we use this value.")
+define("full_back_sh", default=join(base_dir, "shell", "mcluster_backup_full.sh"), help="full backup")
+define("on_check_storedprocedure", default=False, type=bool, help='the flag of checking stored procedure')
