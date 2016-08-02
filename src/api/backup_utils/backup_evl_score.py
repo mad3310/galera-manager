@@ -28,12 +28,12 @@ class BackupEvlScore(object):
 
         # 获取各节点剩余内存的分数，可用内存越大，得分越高
         memory_values = {}
-        for node_ip, meminfo in free_memory:
+        for node_ip, meminfo in free_memory.iteritems():
             memory_values[node_ip] = self.item_weight['memory'] * float(meminfo['MemFree']) / memory_max
 
         # 获取各节点剩余磁盘容量的分数，容量越大，得分越高
         disk_values = {}
-        for node_ip, diskinfo in free_spaces:
+        for node_ip, diskinfo in free_spaces.iteritems():
             disk_values[node_ip] = self.item_weight['disk'] * float(diskinfo['srv_mcluster_available']) / disk_avail_max
 
         # 计算每个节点的总分
