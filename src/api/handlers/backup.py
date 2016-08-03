@@ -133,7 +133,7 @@ class BackUp_Checker(APIHandler):
         backup_info = zkOper.retrieve_type_backup_status_info(backup_type)
 
         # 不要问我从哪里来，我的故乡在远方。翻翻历史便可知。
-        _tmp_type = 'backup' if backup_type is 'full' else 'incr_backup'
+        _tmp_type = 'backup' if backup_type == 'full' else 'incr_backup'
         backup_start_time = backup_info['{tmp_type}_start_time:'.format(tmp_type=_tmp_type)]
         backup_status = backup_info['{tmp_type}_status:'.format(tmp_type=_tmp_type)]
         backup_time = datetime.datetime.strptime(backup_start_time, "%Y-%m-%d %H:%M:%S").strftime('%Y%m%d%H%M%S')
