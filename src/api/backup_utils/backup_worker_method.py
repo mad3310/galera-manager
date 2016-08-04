@@ -3,6 +3,7 @@ Created on 01.11, 2016
 
 @author: xu
 '''
+import traceback
 from tornado import escape
 from backup_utils.base_backup_worker import BaseBackupWorker
 from common.zkOpers import Requests_ZkOpers
@@ -31,7 +32,7 @@ class BackupWorkerMethod(BaseBackupWorker):
             usable_ips = self._analysis_usable_backup_node(system_loads, available_spaces, available_memory)
 
         except Exception, e:
-            self.zkOper.write_backup_backup_info({e:''})
+            self.zkOper.write_backup_backup_info({'error': traceback.format_exc()})
             raise UserVisiableException(e)
 
         return usable_ips
