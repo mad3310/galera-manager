@@ -10,11 +10,12 @@ from tornado.gen import Callback, Wait, engine
 from tornado.options import options
 from tornado.httpclient import HTTPRequest
 from common.helper import _retrieve_userName_passwd
+from backup_utils.backup_evl_score import BackupEvlScore
 import urllib, urllib2
 
 
 class BaseBackupWorker(object):
-    
+
     def __init__(self):
         '''
         Constructor
@@ -36,13 +37,13 @@ class BaseBackupWorker(object):
             return response_message
         finally:
             http_client.close()
-    
-    
+
+
     @engine
     def _dispatch_request(self, online_node_list, get_or_post_type, url_post, params={}):
         adminUser, adminPasswd = _retrieve_userName_passwd()
         params = urllib.urlencode(params)
-        
+
         http_client = tornado.httpclient.AsyncHTTPClient()
         key_sets = set()
         try:
@@ -66,42 +67,14 @@ class BaseBackupWorker(object):
         finally:
             http_client.close()
 
-    
+
     @property
     def _get_response_message(self):
         return self.response_message
-    
+
     def _set_response_message(self, val=None):
         self.response_message = val
-        
+
     def _analysis_usable_backup_node(self, system_loads, free_spaces, free_memory):
-        backupevlscore = Retrive_Node_Score()
-        _class = backupevlscore._retrive_node_info()
-        
-        host_ip = _class._analysis_usable_backup_node(system_loads, free_spaces, free_memory)
+        host_ip = BackupEvlScore()._analysis_usable_backup_node(system_loads, free_spaces, free_memory)
         return host_ip
-
-
-class Retrive_Node_Score():
-    '''
-    classdocs
-    '''
-
-    def __init__(self):
-        '''
-        Constructor
-        '''
-    def _retrive_node_info(self):
-  
-        #module_path = 'backup_evl_score'
-        #cls_name = 'BackupEvlScore'
-        #module_obj = importlib.import_module(module_path)
-        #score_class = getattr(module_obj, cls_name)()
-        try:
-            from backup_utils.backup_evl_score import BackupEvlScore
-        except ImportError:
-            logging.info('no BackupEvlScore module')
-        
-        score_class = BackupEvlScore()
-        
-        return score_class      
