@@ -17,8 +17,78 @@ import re
 
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
+class esOpers(object):
+    MONITOR_TYPE_AND_KEY = \
+     {
+       'db'  : [ 'existed_db_anti_item',
+                 'wsrep_status',
+                 'cur_user_conns',
+                 'cur_conns',
+                 'write_read_available'
+               ],
+       'node': [ 'log_health',
+                 'log_error',
+                 'started'
+               ]
+     }
+    NODE_NAME = Scheduler_ZkOpers().getclustername()
+    def __init__(self):
+        self.es_oper = es_res_oper
+
+    def record_status_to_es(self, monitor_type, monitor_key,
+                            doc, alarm_level):
+        dt = datetime.datetime.now()
+        doc.update({"alarm": alarm_level})
+        doc.update({"ctime": dt.strftime(TIME_FORMAT)})
+        index = 'mcl_status_%s' % monitor_type
+        self.es_oper.record_resource(index, self.NODE_NAME,
+                            monitor_key, doc)
+
+    def get_monitor_type(self):
+        return self.MONITOR_TYPE_AND_KEY.keys()
+
+    def get_monitor_status_list(self, monitor_type):
+        if self.MONITOR_TYPE_AND_KEY.has_key(monitor_type):
+            mon = self.MONITOR_TYPE_AND_KEY[monitor_type]
+            return mon
+
+    def _no_monitor_got(self):
+        dt = datetime.datetime.now()
+        return dict(alarm = options.alarm_serious,
+                    message = 'monitor exit',
+                    node_name = self.NODE_NAME,
+                    error_record = '',
+                    ctime = dt.strftime(TIME_FORMAT))
+
+    def _get_distinct(self, docs):
+        serious = filter(lambda x:x['alarm'] == options.alarm_serious,
+                  docs)
+        general = filter(lambda x:x['alarm'] == options.alarm_general,
+                  docs)
+        nothing = filter(lambda x:x['alarm'] == options.alarm_nothing,
+                  docs)
+        if len(serious)* 100 > len(docs):
+            serious.sort(key = lambda x: x['ctime'])
+            return serious[-1]
+        if len(general) * 20 > len(docs):
+            general.sort(key = lambda x: x['ctime'])
+            return general[-1]
+        nothing.sort(key = lambda x: x['ctime'])
+        return nothing[-1]
+
+    def get_monitor_status_value(self, monitor_type,
+                                      monitor_key):
+        index = 'mcl_status_%s' % monitor_type
+        ret = self.es_oper.retireve_resource(
+                   index, self.NODE_NAME, monitor_key)
+        if len(ret) == 0:
+            return self._no_monitor_got()
+        return self._get_distinct(ret)
+
+record_es = esOpers()
+
 class Check_Status_Base(object):
-    
+   
     def __init__(self):
         
         if self.__class__ == Check_Status_Base:
@@ -75,7 +145,7 @@ class Check_Status_Base(object):
 
     @tornado.gen.engine
     def _check_node_status(self, data_node_info_list, url_post,
-                           monitor_type, monitor_key, status_detail):
+                           monitor_type, monitor_key):
         success_count, failed_count, error_record_dict = 0, 0, {}
         error_record_msg = ''
         error_record_ip_list = []
@@ -108,25 +178,14 @@ class Check_Status_Base(object):
         if (error_record_msg != '' or error_record_ip_list != []):
             error_record_dict.setdefault("msg",error_record_msg)
             error_record_dict.setdefault("ip", error_record_ip_list)
-        status_detail['success_count'] = success_count
-        status_detail['failed_count'] = failed_count
-        status_detail['error_record_dict'] = error_record_dict
+        self._record_status(data_node_info_list, url_post,
+                    monitor_type, monitor_key, success_count,
+                    failed_count, error_record_dict)
 
-    @tornado.gen.engine
-    def check_status(self, data_node_info_list, url_post,
-                    monitor_type, monitor_key):
+    def _record_status(self, data_node_info_list, url_post,
+                    monitor_type, monitor_key, success_count,
+                    failed_count, error_record_dict):
         zk_data_node_count = len(data_node_info_list)
-        
-        zkOper = Scheduler_ZkOpers()
-        self._check_cluster_status(zk_data_node_count)
-        status_detail = {'success_count':0, 'failed_count':0,
-                         'error_record_dict':{}}
-        self. _check_node_status(data_node_info_list, url_post,
-                                 monitor_type, monitor_key,
-                                 status_detail)       
-        success_count = status_detail['success_count']
-        failed_count = status_detail['failed_count']
-        error_record_dict = status_detail['error_record_dict']
         alarm_level = self.retrieve_alarm_level(zk_data_node_count,
                             success_count, failed_count)
         if monitor_key == "backup":
@@ -138,9 +197,20 @@ class Check_Status_Base(object):
         self.write_status(zk_data_node_count, success_count,
                     failed_count, alarm_level, error_record_dict,
                     monitor_type, monitor_key) 
-        self.write_status_to_es(data_node_info_list, zk_data_node_count,
+        self.write_status_to_es(zk_data_node_count,
                 success_count, failed_count, alarm_level,
                 error_record_dict, monitor_type, monitor_key)
+
+
+    @tornado.gen.engine
+    def check_status(self, data_node_info_list, url_post,
+                    monitor_type, monitor_key):
+        zk_data_node_count = len(data_node_info_list)
+        
+        zkOper = Scheduler_ZkOpers()
+        self._check_cluster_status(zk_data_node_count)
+        self._check_node_status(data_node_info_list, url_post,
+                                 monitor_type, monitor_key)
 
     def _get_timeout_respones(self, error_record_dict):
         include_timeout_num_from_response = 0
@@ -151,23 +221,19 @@ class Check_Status_Base(object):
             include_timeout_num_from_response = len(_include_timeout_list)
         return include_timeout_num_from_response
 
-    def write_status_to_es(self, node_list, total_count, success_count,
+    def write_status_to_es(self, total_count, success_count,
                         failed_count, alarm_level, error_record_dict, 
                         monitor_type, monitor_key, timeout_num_threshold=3):
-        dt = datetime.datetime.now()
         timeout_num = self._get_timeout_respones(error_record_dict)
-        node_name = ','.join(node_list)
+        message = "total=%s, success count=%s, failed count=%s" % (
+                    total_count, success_count, failed_count)
         result_dict = {
-            "total": total_count,
-            "success": success_count,
-            "fail": failed_count,
+            "message": message,
             "error_record": error_record_dict,
-            "ctime": dt.strftime(TIME_FORMAT),
             "timeout_num": timeout_num
         }
-        index = 'mcl_status_%s' % monitor_type
-        es_res_oper.record_resource(index, node_name, monitor_key,
-                                     result_dict)
+        record_es.record_status_to_es(monitor_type, monitor_key,
+                                        result_dict, alarm_level)
 
     def write_status(self, total_count, success_count, failed_count, alarm_level, error_record_dict, 
                      monitor_type, monitor_key, timeout_num_threshold=3):
@@ -244,7 +310,6 @@ class Check_Cluster_Available(Check_Status_Base):
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if success_count == 0:
             return options.alarm_serious
-        
         return options.alarm_nothing
     
 class Check_Node_Size(Check_Status_Base):
@@ -386,7 +451,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
         super(Check_DB_Anti_Item, self).write_status(anti_item_count, 0,
                              failed_count, alarm_level, error_record,
                              monitor_type, monitor_key)
-        super(Check_DB_Anti_Item, self).write_status_to_es(data_node_info_list,
+        super(Check_DB_Anti_Item, self).write_status_to_es(
                              anti_item_count, 0, failed_count,
                              alarm_level, error_record,
                              monitor_type, monitor_key)
@@ -480,8 +545,7 @@ class Check_Node_Active(Check_Status_Base):
                                                     failed_count,
                                                     alarm_level, error_record, monitor_type,
                                                     monitor_key)
-        super(Check_DB_Anti_Item, self).write_status_to_es(
-                                        data_node_info_list,
+        super(Check_Node_Active, self).write_status_to_es(
                                         total_count, success_count,
                                         failed_count,alarm_level,
                                         error_record, monitor_type,
@@ -595,8 +659,7 @@ class Check_Database_User(Check_Status_Base):
                                                       failed_count, alarm_level,
                                                       error_record, monitor_type,
                                                       monitor_key)
-        super(Check_DB_Anti_Item, self).write_status_to_es(
-                                        data_node_info_list,
+        super(Check_Database_User, self).write_status_to_es(
                                         total_count, success_count,
                                         failed_count,alarm_level,
                                         error_record, monitor_type,
