@@ -7,6 +7,7 @@ from tornado.options import options
 from abc import abstractmethod
 from common.helper import check_leader, is_monitoring, get_localhost_ip
 from common.utils.mail import send_email
+from common.utils import getclustername
 from common.configFileOpers import ConfigFileOpers
 from  es_pack.resource import CommResource as es_res_oper
 import logging
@@ -31,7 +32,7 @@ class esOpers(object):
                  'started'
                ]
      }
-    NODE_NAME = Scheduler_ZkOpers().getclustername()
+    NODE_NAME = getclustername()
     def __init__(self):
         self.es_oper = es_res_oper
 
