@@ -25,7 +25,7 @@ class esOpers(object):
                  'wsrep_status',
                  'cur_user_conns',
                  'cur_conns',
-                 'write_read_available'
+                 'write_read_avaliable'
                ],
        'node': [ 'log_health',
                  'log_error',
