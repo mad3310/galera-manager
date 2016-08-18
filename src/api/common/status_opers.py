@@ -55,7 +55,7 @@ class esOpers(object):
 
     def _no_monitor_got(self):
         dt = datetime.datetime.now()
-        return dict(alarm = options.alarm_serious,
+        return dict(alarm = options.alarm_nothing,
                     message = 'monitor exit',
                     node_name = self.NODE_NAME,
                     error_record = '',
