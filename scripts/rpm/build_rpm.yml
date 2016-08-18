@@ -28,6 +28,7 @@ dependencies:
     - python-tornado
     - zope.interface
     - mcluster-mysql-libs
+    - es_pack-0.0.1-1
 
 # 安装位置，无需再写软件包名. 已默认安装至 /opt/letv
 # prefix: /opt/letv
