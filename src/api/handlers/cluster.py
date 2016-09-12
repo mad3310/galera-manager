@@ -31,7 +31,10 @@ class CreateMCluster(APIHandler):
         zkOper = self.retrieve_zkOper()
         existCluster = zkOper.existCluster()
         if existCluster:
-            raise HTTPAPIErrorException("server has belong to a cluster,should be not create new cluster!", status_code=417)
+            if zkOper.judgeClusterStatus("remove"):
+                zkOper.remove_zk_info(zkOper.getclustername())
+            else:
+                raise HTTPAPIErrorException("server has belong to a cluster,should be not create new cluster!", status_code=417)
         
         requestParam = {}
         args = self.request.arguments
@@ -200,9 +203,9 @@ class ClusterStatus(APIHandler):
     def get(self):
         try:
             zkOper = self.retrieve_zkOper()
-            existCluster = zkOper.existCluster()
-            cluster_status = zkOper.retrieveClusterStatus()
-            cluster_started_nodes = zkOper.retrieve_started_nodes()
+            if zkOper.existCluster():
+                cluster_status = zkOper.retrieveClusterStatus()
+                cluster_started_nodes = zkOper.retrieve_started_nodes()
         except kazoo.exceptions.LockTimeout:
             raise HTTPAPIErrorException("current operation is using by other people, please wait a moment to try again!", 
                                         status_code=578)
@@ -235,12 +238,9 @@ class ClusterStop(APIHandler):
         status_dict['_status'] = 'stopping'
         
         zkOper = self.retrieve_zkOper()
-        existCluster = zkOper.existCluster()
-
-        zkOper.writeClusterStatus(status_dict)
-        
+        if zkOper.existCluster():
+            zkOper.writeClusterStatus(status_dict)
         result = {}
-        #dict.setdefault("code", '000000')
         result.setdefault("message", "due to stop cluster need a large of times, please wait to finished and email to you, when cluster have stoped!")
         self.finish(result)
 
@@ -252,11 +252,14 @@ class ClusterZkRemove(APIHandler):
     
     @asynchronous
     def get(self):
-        zkOper = self.retrieve_zkOper()
-        clustername = zkOper.getclustername()
-        zkOper.remove_zk_info(clustername)
+        status_dict = {}
+        status_dict['_status'] = 'remove'
         
+        zkOper = self.retrieve_zkOper()
+
+        if zkOper.existCluster():  
+            zkOper.writeClusterStatus(status_dict)
         result = {}
         result.setdefault("message", "del zk info success")
         self.finish(result)
-  
+

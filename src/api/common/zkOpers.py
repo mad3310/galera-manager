@@ -167,6 +167,8 @@ class ZkOpers(object):
         self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(clusterProps))#vesion need to write
         
     def writeClusterStatus(self, clusterProps):
+        if self.judgeClusterStatus("remove"):
+            return False
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/cluster_status"
         self.zk.ensure_path(path)
@@ -476,6 +478,10 @@ class ZkOpers(object):
         local_data = data.replace("'", "\"").replace("[u\"", "[\"").replace(" u\"", " \"")
         formatted_data = json.loads(local_data)
         return formatted_data
+
+    def judgeClusterStatus(self,status):
+        return self.retrieveClusterStatus == status
+
 
 
 @singleton
