@@ -293,7 +293,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
         if _path_value != {}:
             failed_count = int(re.findall(r'failed count=(\d)', _path_value['message'])[0])
             
-        if conn == None:
+        if not conn:
             failed_count += 1
             if failed_count > 4:
                 anti_item_count = 500
@@ -302,14 +302,15 @@ class Check_DB_Anti_Item(Check_Status_Base):
             try:
                 failed_count = 0
                 anti_item_count = 0
+                anti_item_detail = []
                 msg = ""
                 anti_item_myisam_count = self.dba_opers.check_existed_myisam_table(conn)
                 anti_item_procedure_count = self.dba_opers.check_existed_stored_procedure(conn)
                 anti_item_trigger_count = self.dba_opers.check_triggers(conn)
-                anti_item_nopk_count = self.dba_opers.check_existed_nopk(conn)
+                anti_item_nopk_count, anti_item_nopk_detail = self.dba_opers.check_existed_nopk(conn)
                 anti_item_fulltext_and_spatial_count = self.dba_opers.check_existed_fulltext_and_spatial(conn)
                 
-                if anti_item_myisam_count :
+                if anti_item_myisam_count:
                     anti_item_count += anti_item_myisam_count
                     msg += " Myisam,"
                     
@@ -318,13 +319,15 @@ class Check_DB_Anti_Item(Check_Status_Base):
                     anti_item_message = "check db status, existed stored procedure. Item's count:%s"%(str(anti_item_procedure_count))
                     self._send_monitor_email(anti_item_message)
                     
-                if anti_item_trigger_count :
+                if anti_item_trigger_count:
                     anti_item_count += anti_item_trigger_count
                     msg += " Trigger,"
                     
-                if anti_item_nopk_count :
+                if anti_item_nopk_count:
                     anti_item_count += anti_item_nopk_count
+                    anti_item_detail += anti_item_nopk_detail
                     msg += " NOPK,"
+
                     
                 if anti_item_fulltext_and_spatial_count:
                     anti_item_count += anti_item_fulltext_and_spatial_count
@@ -334,6 +337,7 @@ class Check_DB_Anti_Item(Check_Status_Base):
         
             if anti_item_count > 0:
                 error_record.setdefault("msg", "mcluster existed on %s please check which db right now." % (msg) )
+                error_record.setdefault("detail", anti_item_detail)
                 logging.info(error_record)
     
        
