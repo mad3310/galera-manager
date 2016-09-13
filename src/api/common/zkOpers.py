@@ -9,6 +9,7 @@ Created on 2013-7-11
 import json
 import threading
 import logging
+import time
 
 from tornado.options import options
 from kazoo.client import KazooClient, KazooState
@@ -441,9 +442,13 @@ class ZkOpers(object):
             
     def _lock_base_action(self, lock_name):
         clusterUUID = self.getClusterUUID()
-        path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_name) 
+        path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_name)
         lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
         isLock = lock.acquire(blocking=True, timeout=5)
+        # TODO:
+        if (int(time.time()*1000)-self.zk.get(path)[-1].ctime) >= 200:
+            self._unLock_base_action()
+            return False, None
         return (isLock,lock)
         
     def _unLock_base_action(self, lock):
