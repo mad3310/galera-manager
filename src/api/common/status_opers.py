@@ -1,5 +1,5 @@
 from common.invokeCommand import InvokeCommand
-from common.helper import retrieve_kv_from_db_rows 
+from common.helper import retrieve_kv_from_db_rows
 from common.dba_opers import DBAOpers
 from common.zkOpers import Scheduler_ZkOpers
 from tornado.gen import Callback, Wait
@@ -14,34 +14,33 @@ import tornado.httpclient
 import datetime
 import re
 
-
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
+
 class Check_Status_Base(object):
-    
     def __init__(self):
-        
+
         if self.__class__ == Check_Status_Base:
             raise NotImplementedError, \
-            "Cannot create object of class Check_Status_Base"
-    
+                "Cannot create object of class Check_Status_Base"
+
     @abstractmethod
     def check(self, data_node_info_list):
         raise NotImplementedError, "Cannot call abstract method"
-    
+
     @abstractmethod
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         raise NotImplementedError, "Cannot call abstract method"
-    
+
     @tornado.gen.engine
     def check_status(self, data_node_info_list, url_post, monitor_type, monitor_key):
         zk_data_node_count = len(data_node_info_list)
-        
+
         zkOper = Scheduler_ZkOpers()
-#         leader_flag = check_leader(zkOper)
-#         if leader_flag == False:
-#             return
-        
+        #         leader_flag = check_leader(zkOper)
+        #         if leader_flag == False:
+        #             return
+
         pre_stat = zkOper.retrieveClusterStatus()
         ''' The following logic expression means 
             1. if we don't have the cluster_status node in zookeeper we will get pre_stat as {}, we will create the path in the following process.
@@ -50,45 +49,44 @@ class Check_Status_Base(object):
         if pre_stat.has_key('_status') and pre_stat['_status'] != 'initializing' or pre_stat == {}:
             online_node_list = zkOper.retrieve_started_nodes()
             result = {}
-        
+
             online_num = len(online_node_list)
             if zk_data_node_count == online_num:
-                result['_status'] = 'running'   
+                result['_status'] = 'running'
             elif zk_data_node_count / 2 + 1 <= online_num < zk_data_node_count:
                 result['_status'] = 'sub-health'
-            else :
-                result['_status'] = 'failed' 
+            else:
+                result['_status'] = 'failed'
             zkOper.writeClusterStatus(result)
-            
-            
+
         success_count = 0
         failed_count = 0
-        
+
         http_client = tornado.httpclient.AsyncHTTPClient()
         key_sets = set()
-        
+
         try:
             for data_node_address in data_node_info_list:
                 requesturi = "http://%s:%s%s" % (data_node_address, str(options.port), url_post)
-                callback_key = "%s_%s_%s" % (monitor_type,monitor_key,data_node_address)
+                callback_key = "%s_%s_%s" % (monitor_type, monitor_key, data_node_address)
                 key_sets.add(callback_key)
                 http_client.fetch(requesturi, callback=(yield Callback(callback_key)))
-                
+
             error_record_dict = {}
             error_record_msg = ''
             error_record_ip_list = []
             for i in range(len(key_sets)):
                 callback_key = key_sets.pop()
                 response = yield Wait(callback_key)
-                
+
                 if response.error:
                     return_result = False
-                    message = "remote access,the key:%s,error message:%s" % (callback_key,response.error)
+                    message = "remote access,the key:%s,error message:%s" % (callback_key, response.error)
                     error_record_msg += message + "|"
                 else:
                     return_result = response.body.strip()
-                
-                if cmp('true',return_result) == 0:
+
+                if cmp('true', return_result) == 0:
                     success_count += 1
                 else:
                     callback_key_ip = callback_key.split("_")[-1]
@@ -96,33 +94,31 @@ class Check_Status_Base(object):
                     failed_count += 1
         finally:
             http_client.close()
-        
-           
+
         if (error_record_msg != '' or error_record_ip_list != []):
-            error_record_dict.setdefault("msg",error_record_msg)
+            error_record_dict.setdefault("msg", error_record_msg)
             error_record_dict.setdefault("ip", error_record_ip_list)
-        
-        
+
         alarm_level = self.retrieve_alarm_level(zk_data_node_count, success_count, failed_count)
         if monitor_key == "backup":
             if failed_count >= 1:
-                error_record_dict['msg']= "expired"
+                error_record_dict['msg'] = "expired"
             else:
                 error_record_dict['msg'] = "expected"
-        
-        self.write_status(zk_data_node_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type, monitor_key)
 
+        self.write_status(zk_data_node_count, success_count, failed_count, alarm_level, error_record_dict, monitor_type,
+                          monitor_key)
 
-    def write_status(self, total_count, success_count, failed_count, alarm_level, error_record_dict, 
+    def write_status(self, total_count, success_count, failed_count, alarm_level, error_record_dict,
                      monitor_type, monitor_key, timeout_num_threshold=3):
-        
+
         dt = datetime.datetime.now()
         _include_timeout_num_from_response = 0
         if {} != error_record_dict:
             _error_record_message = error_record_dict.get('msg')
             _include_timeout_list = re.findall(r'HTTP 599:', str(_error_record_message))
             _include_timeout_num_from_response = len(_include_timeout_list)
-        
+
         _timeout_num_from_zk = 0
         zkOper = Scheduler_ZkOpers()
         if _include_timeout_num_from_response > 0:
@@ -130,9 +126,9 @@ class Check_Status_Base(object):
             _timeout_num = _monitor_value_dict.get("timeout_num")
             if _timeout_num is not None:
                 _timeout_num_from_zk = _timeout_num
-                
+
             _timeout_num_from_zk += 1
-                
+
         if _timeout_num_from_zk <= timeout_num_threshold and _include_timeout_num_from_response > 0:
             success_count = total_count
             failed_count = 0
@@ -140,7 +136,7 @@ class Check_Status_Base(object):
             error_record_dict = {}
         else:
             _timeout_num_from_zk = 0
-    
+
         result_dict = {
             "message": "total=%s, success count=%s, failed count=%s" % (total_count, success_count, failed_count),
             "alarm": alarm_level,
@@ -148,11 +144,11 @@ class Check_Status_Base(object):
             "ctime": dt.strftime(TIME_FORMAT),
             "timeout_num": _timeout_num_from_zk
         }
-        
+
         zkOper.write_monitor_status(monitor_type, monitor_key, result_dict)
 
-class Check_Cluster_Available(Check_Status_Base):
 
+class Check_Cluster_Available(Check_Status_Base):
     dba_opers = DBAOpers()
     confOpers = ConfigFileOpers()
 
@@ -160,7 +156,7 @@ class Check_Cluster_Available(Check_Status_Base):
         success_nodes, value, _password = [], {}, ''
         value = self.confOpers.getValue(options.mysql_cnf_file_name)["wsrep_sst_auth"]
         _password = value.split(":")[1][:-1]
-        
+
         for data_node_ip in data_node_info_list:
             try:
                 conn = self.dba_opers.get_mysql_connection(data_node_ip, user="monitor", passwd=_password)
@@ -169,39 +165,39 @@ class Check_Cluster_Available(Check_Status_Base):
             finally:
                 if conn is not None:
                     conn.close()
-        
+
         message = "no avaliable data node"
         if len(success_nodes) >= 1:
             message = 'ok'
-            
+
         total_count = len(data_node_info_list)
         success_count = len(success_nodes)
         failed_count = total_count - success_count
         alarm_result = self.retrieve_alarm_level(total_count, success_count, failed_count)
 
-        cluster_available_dict = {}  
+        cluster_available_dict = {}
         cluster_available_dict.setdefault("message", message)
         cluster_available_dict.setdefault("alarm", alarm_result)
 
         return cluster_available_dict
-    
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if success_count == 0:
             return options.alarm_serious
-        
+
         return options.alarm_nothing
-    
+
+
 class Check_Node_Size(Check_Status_Base):
-    
     dba_opers = DBAOpers()
-    
+
     def check(self, data_node_info_list):
         confOpers = ConfigFileOpers()
-        
-        false_nodes, value, _password =[], {}, ''
+
+        false_nodes, value, _password = [], {}, ''
         value = confOpers.getValue(options.mysql_cnf_file_name)["wsrep_sst_auth"]
         _password = value.split(":")[1][:-1]
-        
+
         for data_node_ip in data_node_info_list:
             conn = self.dba_opers.get_mysql_connection(data_node_ip, user="monitor", passwd=_password)
             if conn == None:
@@ -211,16 +207,16 @@ class Check_Node_Size(Check_Status_Base):
                     rows = self.dba_opers.show_status(conn)
                 finally:
                     conn.close()
-                key_value = retrieve_kv_from_db_rows(rows,['wsrep_incoming_addresses','wsrep_cluster_size'])
+                key_value = retrieve_kv_from_db_rows(rows, ['wsrep_incoming_addresses', 'wsrep_cluster_size'])
                 node_size_dict = self._check_wsrep_incoming_addresses(key_value, data_node_info_list)
                 return node_size_dict
-                        
-        if(len(false_nodes)==3):
+
+        if (len(false_nodes) == 3):
             exception_dict = {}
             exception_dict.setdefault("message", "no way to connect to db")
             exception_dict.setdefault("alarm", options.alarm_serious)
             return exception_dict
-        
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:
             return options.alarm_nothing
@@ -228,24 +224,24 @@ class Check_Node_Size(Check_Status_Base):
             return options.alarm_general
         else:
             return options.alarm_serious
-        
+
     def _check_wsrep_incoming_addresses(self, key_value, data_node_info_list):
         if key_value == {}:
             return False
-        
-        lost_ip_list = [] 
+
+        lost_ip_list = []
         wsrep_incoming_addresses_value = key_value.get('wsrep_incoming_addresses')
-        logging.info("[compare Mcluster the count of data node] incoming address(show status):" + 
+        logging.info("[compare Mcluster the count of data node] incoming address(show status):" +
                      wsrep_incoming_addresses_value)
         wsrep_incoming_addresses_list = wsrep_incoming_addresses_value.split(',')
-        
+
         address_count = 0
         zk_data_node_count = len(data_node_info_list)
         for i in range(zk_data_node_count):
             zk_incoming_address_port = data_node_info_list[i] + ':3306'
-            logging.info("[compare Mcluster the count of data node] address list(zk store):" + 
+            logging.info("[compare Mcluster the count of data node] address list(zk store):" +
                          zk_incoming_address_port)
-            
+
             if zk_incoming_address_port in wsrep_incoming_addresses_list:
                 address_count = address_count + 1
             else:
@@ -253,9 +249,9 @@ class Check_Node_Size(Check_Status_Base):
         total = zk_data_node_count
         exist = address_count
         lost = zk_data_node_count - address_count
-                
+
         alarm_level = self.retrieve_alarm_level(total, exist, lost)
-                
+
         node_size_dict = {}
         lost_count = zk_data_node_count - address_count
         format_str = "total=%s, exist=%s, lost=%s"
@@ -264,35 +260,34 @@ class Check_Node_Size(Check_Status_Base):
         node_size_dict.setdefault("lost_ip", lost_ip_list)
         node_size_dict.setdefault("message", message)
         node_size_dict.setdefault("alarm", alarm_level)
-        
+
         return node_size_dict
-    
+
 
 class Check_DB_Anti_Item(Check_Status_Base):
-    
     dba_opers = DBAOpers()
-    
+
     def check(self, data_node_info_list):
-        
+
         zkOper = Scheduler_ZkOpers()
         if not is_monitoring(get_localhost_ip(), zkOper):
             return
-        
+
         conn = self.dba_opers.get_mysql_connection()
-       
+
         monitor_type = "db"
         monitor_key = "existed_db_anti_item"
         error_record = {}
-        
+
         anti_item_count = 0
         failed_count = 0
         _path_value = {}
-        
+
         _path_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_key)
-        
+
         if _path_value != {}:
             failed_count = int(re.findall(r'failed count=(\d)', _path_value['message'])[0])
-            
+
         if not conn:
             failed_count += 1
             if failed_count > 4:
@@ -309,76 +304,73 @@ class Check_DB_Anti_Item(Check_Status_Base):
                 anti_item_trigger_count = self.dba_opers.check_triggers(conn)
                 anti_item_nopk_count, anti_item_nopk_detail = self.dba_opers.check_existed_nopk(conn)
                 anti_item_fulltext_and_spatial_count = self.dba_opers.check_existed_fulltext_and_spatial(conn)
-                
+
                 if anti_item_myisam_count:
                     anti_item_count += anti_item_myisam_count
                     msg += " Myisam,"
-                    
+
                 on_check_storedprocedure = options.on_check_storedprocedure
                 if anti_item_procedure_count and on_check_storedprocedure:
-                    anti_item_message = "check db status, existed stored procedure. Item's count:%s"%(str(anti_item_procedure_count))
+                    anti_item_message = "check db status, existed stored procedure. Item's count:%s" % (
+                    str(anti_item_procedure_count))
                     self._send_monitor_email(anti_item_message)
-                    
+
                 if anti_item_trigger_count:
                     anti_item_count += anti_item_trigger_count
                     msg += " Trigger,"
-                    
+
                 if anti_item_nopk_count:
                     anti_item_count += anti_item_nopk_count
                     anti_item_detail += anti_item_nopk_detail
                     msg += " NOPK,"
 
-                    
                 if anti_item_fulltext_and_spatial_count:
                     anti_item_count += anti_item_fulltext_and_spatial_count
                     msg += " FullText, SPATIAL,"
             finally:
                 conn.close()
-        
+
             if anti_item_count > 0:
-                error_record.setdefault("msg", "mcluster existed on %s please check which db right now." % (msg) )
+                error_record.setdefault("msg", "mcluster existed on %s please check which db right now." % (msg))
                 error_record.setdefault("detail", anti_item_detail)
                 logging.info(error_record)
-    
-       
+
         alarm_level = self.retrieve_alarm_level(anti_item_count, 0, 0)
-        logging.info("existed anti_item alarm_level :%s" %(alarm_level))
+        logging.info("existed anti_item alarm_level :%s" % (alarm_level))
         super(Check_DB_Anti_Item, self).write_status(anti_item_count, 0, \
-                                                    failed_count, \
-                                                    alarm_level, error_record, monitor_type, \
-                                                    monitor_key)
-        
-        
+                                                     failed_count, \
+                                                     alarm_level, error_record, monitor_type, \
+                                                     monitor_key)
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if total_count == 0:
             return options.alarm_nothing
-        
+
         return options.alarm_serious
-    
+
     def _send_monitor_email(self, anti_item_content):
         local_ip = get_localhost_ip()
         # send email
         subject = "[%s] Auti-Item existed in MySQL according to Galera way" % options.sitename
-#         body = self.render_string("errors/500_email.html", exception=anti_item_content)
-        
+        #         body = self.render_string("errors/500_email.html", exception=anti_item_content)
+
         body = anti_item_content + "\nip:" + local_ip
-        
+
         if options.send_email_switch:
             send_email(options.admins, subject, body)
 
-            
+
 class Check_DB_WR_Available(Check_Status_Base):
-    
     def __init__(self):
         super(Check_DB_WR_Available, self).__init__()
-        
+
     @tornado.gen.engine
     def check(self, data_node_info_list):
         url_post = "/inner/db/check/wr"
         monitor_type = "db"
         monitor_key = "write_read_avaliable"
         super(Check_DB_WR_Available, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
-        
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:
             return options.alarm_nothing
@@ -386,65 +378,63 @@ class Check_DB_WR_Available(Check_Status_Base):
             return options.alarm_general
         else:
             return options.alarm_serious
-        
-        
+
+
 class Check_DB_Wsrep_Status(Check_Status_Base):
-    
     def __init__(self):
         super(Check_DB_Wsrep_Status, self).__init__()
-        
+
     @tornado.gen.engine
     def check(self, data_node_info_list):
         url_post = "/inner/db/check/wsrep_status"
         monitor_type = "db"
         monitor_key = "wsrep_status"
         super(Check_DB_Wsrep_Status, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
-        
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
-#         message = "processing method: Check_DB_Wsrep_Status,the total count:%s,the succes count:%s,the failed count:%s"
-#         logging.info(message%(total_count, success_count, failed_count))
+        #         message = "processing method: Check_DB_Wsrep_Status,the total count:%s,the succes count:%s,the failed count:%s"
+        #         logging.info(message%(total_count, success_count, failed_count))
         if failed_count == 0:
             return options.alarm_nothing
         elif failed_count == 1:
             return options.alarm_general
         else:
             return options.alarm_serious
-        
-        
+
+
 class Check_DB_Cur_Conns(Check_Status_Base):
-    
     def __init__(self):
         super(Check_DB_Cur_Conns, self).__init__()
-    
+
     @tornado.gen.engine
     def check(self, data_node_info_list):
         url_post = "/inner/db/check/cur_conns"
         monitor_type = "db"
         monitor_key = "cur_conns"
         super(Check_DB_Cur_Conns, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
-        
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
-#         message = "processing method: Check_DB_Cur_Conns,the total count:%s,the succes count:%s,the failed count:%s"
-#         logging.info(message%(total_count, success_count, failed_count))
+        #         message = "processing method: Check_DB_Cur_Conns,the total count:%s,the succes count:%s,the failed count:%s"
+        #         logging.info(message%(total_count, success_count, failed_count))
         if failed_count == 0:
             return options.alarm_nothing
         elif failed_count == 1:
             return options.alarm_general
         else:
             return options.alarm_serious
-     
+
+
 class Check_DB_User_Cur_Conns(Check_Status_Base):
-    
     def __init__(self):
         super(Check_DB_User_Cur_Conns, self).__init__()
-    
+
     @tornado.gen.engine
     def check(self, data_node_info_list):
         url_post = "/inner/db/check/cur_user_conns"
         monitor_type = "db"
         monitor_key = "cur_user_conns"
         super(Check_DB_User_Cur_Conns, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
-        
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
 
         if failed_count == 0:
@@ -453,22 +443,22 @@ class Check_DB_User_Cur_Conns(Check_Status_Base):
             return options.alarm_general
         else:
             return options.alarm_serious
-        
+
+
 class Check_Node_Active(Check_Status_Base):
-    
     def __init__(self):
         super(Check_Node_Active, self).__init__()
-    
+
     @tornado.gen.engine
     def check(self, data_node_info_list):
         zkOper = Scheduler_ZkOpers()
         started_nodes_list = zkOper.retrieve_started_nodes()
-        
+
         error_record = {}
         ip = []
         for data_node_ip in started_nodes_list:
             ip.append(data_node_ip)
-            
+
         error_record.setdefault("online_ip", ip)
         total_count = len(data_node_info_list)
         success_count = len(started_nodes_list)
@@ -476,12 +466,12 @@ class Check_Node_Active(Check_Status_Base):
         monitor_type = "node"
         monitor_key = "started"
         alarm_level = self.retrieve_alarm_level(total_count, success_count, failed_count)
-        
+
         super(Check_Node_Active, self).write_status(total_count, success_count, \
                                                     failed_count, \
                                                     alarm_level, error_record, monitor_type, \
                                                     monitor_key)
-        
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:
             return options.alarm_nothing
@@ -489,35 +479,34 @@ class Check_Node_Active(Check_Status_Base):
             return options.alarm_general
         else:
             return options.alarm_serious
-        
+
+
 class Check_Node_Log_Health(Check_Status_Base):
-    
     def __init__(self):
         super(Check_Node_Log_Health, self).__init__()
-      
-    @tornado.gen.engine  
+
+    @tornado.gen.engine
     def check(self, data_node_info_list):
         url_post = "/inner/node/check/log/health"
         monitor_type = "node"
         monitor_key = "log_health"
         super(Check_Node_Log_Health, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
-        
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
-#         message = "processing method: Check_Node_Log_Health,the total count:%s,the succes count:%s,the failed count:%s"
-#         logging.info(message%(total_count, success_count, failed_count))
+        #         message = "processing method: Check_Node_Log_Health,the total count:%s,the succes count:%s,the failed count:%s"
+        #         logging.info(message%(total_count, success_count, failed_count))
         if failed_count == 0:
             return options.alarm_nothing
         elif failed_count == 1:
             return options.alarm_general
         else:
             return options.alarm_serious
-        
-        
+
+
 class Check_Node_Log_Error(Check_Status_Base):
-    
     def __init__(self):
         super(Check_Node_Log_Error, self).__init__()
-    
+
     @tornado.gen.engine
     def check(self, data_node_info_list):
         url_post = "/inner/node/check/log/error"
@@ -532,20 +521,20 @@ class Check_Node_Log_Error(Check_Status_Base):
             return options.alarm_general
         else:
             return options.alarm_serious
-        
-#eq curl  "http://localhost:8888/backup/inner/check" backup data by full dose.
+
+
+# eq curl  "http://localhost:8888/backup/inner/check" backup data by full dose.
 class Check_Backup_Status(Check_Status_Base):
-    
     def __init__(self):
         super(Check_Backup_Status, self).__init__()
-        
-    @tornado.gen.engine  
+
+    @tornado.gen.engine
     def check(self, data_node_info_list):
         url_post = "/backup/inner/check"
         monitor_type = "db"
         monitor_key = "backup"
         super(Check_Backup_Status, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
-        
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:
             return options.alarm_nothing
@@ -554,31 +543,32 @@ class Check_Backup_Status(Check_Status_Base):
         else:
             return options.alarm_serious
 
+
 class Check_Database_User(Check_Status_Base):
     dba_opers = DBAOpers()
-   
+
     def __init__(self):
         super(Check_Database_User, self).__init__()
 
     @tornado.gen.engine
     def check(self, data_node_info_list):
-        #url_post = "/dbuser/inner/check"
+        # url_post = "/dbuser/inner/check"
         zkOper = Scheduler_ZkOpers()
         if not is_monitoring(get_localhost_ip(), zkOper):
             return
-        
+
         monitor_type = "db"
         monitor_key = "dbuser"
-        
+
         conn = self.dba_opers.get_mysql_connection()
         user_tuple = self.dba_opers.get_db_users(conn)
-        
+
         user_mysql_src_dict = {}
 
-# We convert origin tuple grabbed from mysql into list, then  combine the elements subscripted 0 ,1 as key of dict and combine the elements subscripted -3, -4 ,-5, -6 as the value of the dict.Finally we append the dict into list.
-        
+        # We convert origin tuple grabbed from mysql into list, then  combine the elements subscripted 0 ,1 as key of dict and combine the elements subscripted -3, -4 ,-5, -6 as the value of the dict.Finally we append the dict into list.
+
         for t in user_tuple:
-            inner_value_list =  []
+            inner_value_list = []
             dict_key_str = (list(t)[1] + "|" + list(t)[0])
             inner_value_list.append(list(t)[-3])
             inner_value_list.append(list(t)[-4])
@@ -586,9 +576,8 @@ class Check_Database_User(Check_Status_Base):
             inner_value_list.append(list(t)[-6])
             user_mysql_src_dict.setdefault(dict_key_str, inner_value_list)
 
-          
         db_list = zkOper.retrieve_db_list()
-    
+
         user_zk_src_list = []
         for db_name in db_list:
             db_user_list = zkOper.retrieve_db_user_list(db_name)
@@ -599,52 +588,55 @@ class Check_Database_User(Check_Status_Base):
                 prop = zkOper.get_db_user_prop(db_name, db_user)
                 inner_list.append(prop)
                 user_zk_src_list.append(inner_list)
-        
+
         differ_dict_set = {}
         count_dict_set = {}
         error_record = {}
         if len(user_zk_src_list) == 0 and len(user_mysql_src_dict) == 0:
             count_dict_set.setdefault("total", 0)
             count_dict_set.setdefault("failed", 0)
-            count_dict_set.setdefault("success", 0) 
+            count_dict_set.setdefault("success", 0)
             error_record.setdefault("msg", "no database users in zk neither in mysql")
-            differ_dict_set.setdefault("Empty","" )
+            differ_dict_set.setdefault("Empty", "")
 
-            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
-            
-        else: 
-            count_dict_set.setdefault("total" , 0)
-            count_dict_set.setdefault("failed" , 0)
-            count_dict_set.setdefault("success" , 0)
-         
-            self.compare_center(user_mysql_src_dict, user_zk_src_list, differ_dict_set ,count_dict_set)
-            count_dict_set["total"] = count_dict_set["success"]  + count_dict_set["failed"]
-            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"], count_dict_set["failed"])
-        
+            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"],
+                                                    count_dict_set["failed"])
+
+        else:
+            count_dict_set.setdefault("total", 0)
+            count_dict_set.setdefault("failed", 0)
+            count_dict_set.setdefault("success", 0)
+
+            self.compare_center(user_mysql_src_dict, user_zk_src_list, differ_dict_set, count_dict_set)
+            count_dict_set["total"] = count_dict_set["success"] + count_dict_set["failed"]
+            alarm_level = self.retrieve_alarm_level(count_dict_set["total"], count_dict_set["success"],
+                                                    count_dict_set["failed"])
+
         total_count = count_dict_set["total"]
         failed_count = count_dict_set["failed"]
         success_count = count_dict_set["success"]
         if differ_dict_set:
             error_record.setdefault("dif", differ_dict_set)
-       
-        #logging.info("Check_db_user -----> error_record" + str(error_record))
-        #logging.info("Check_db_user <------> " + str(count_dict_set))
-        super(Check_Database_User, self).write_status(total_count, success_count, \
-                                                    failed_count, \
-                                                    alarm_level, error_record, monitor_type, \
-                                                    monitor_key)
 
-    def compare_center(self, _user_mysql_src_dict, _user_zk_src_list, _differ_dict_set ,_count_dict):
+        # logging.info("Check_db_user -----> error_record" + str(error_record))
+        # logging.info("Check_db_user <------> " + str(count_dict_set))
+        super(Check_Database_User, self).write_status(total_count, success_count, \
+                                                      failed_count, \
+                                                      alarm_level, error_record, monitor_type, \
+                                                      monitor_key)
+
+    def compare_center(self, _user_mysql_src_dict, _user_zk_src_list, _differ_dict_set, _count_dict):
         _user_mysql_src_dict_keys = _user_mysql_src_dict.keys()
         logging.info("_user_mysql_src_dict_keys" + str(_user_mysql_src_dict_keys))
         logging.info("_user_mysql_src_dict ::::" + str(_user_mysql_src_dict))
         logging.info("_user_zk_src_list: " + str(_user_zk_src_list))
         for list_iter in _user_zk_src_list:
             if list_iter[0] in _user_mysql_src_dict_keys:
-                if long(list_iter[1]["max_user_connections"]) == _user_mysql_src_dict[list_iter[0]][0] and  \
-                       long(list_iter[1]["max_connections_per_hour"])==  _user_mysql_src_dict[list_iter[0]][1] and \
-                           long(list_iter[1]["max_updates_per_hour"]) ==  _user_mysql_src_dict[list_iter[0]][2] and \
-                               long(list_iter[1]["max_queries_per_hour"]) == _user_mysql_src_dict[list_iter[0]][3] :
+                if long(list_iter[1]["max_user_connections"]) == _user_mysql_src_dict[list_iter[0]][0] and \
+                                long(list_iter[1]["max_connections_per_hour"]) == _user_mysql_src_dict[list_iter[0]][
+                            1] and \
+                                long(list_iter[1]["max_updates_per_hour"]) == _user_mysql_src_dict[list_iter[0]][2] and \
+                                long(list_iter[1]["max_queries_per_hour"]) == _user_mysql_src_dict[list_iter[0]][3]:
                     _count_dict["success"] = _count_dict["success"] + 1
                     continue
                 else:
@@ -653,44 +645,42 @@ class Check_Database_User(Check_Status_Base):
                     logging.info("list_iter[0] :" + str(list_iter[0]))
                     _differ_dict_set.setdefault(list_iter[0], inner_dict)
                     _count_dict["failed"] = _count_dict["failed"] + 1
-            else: 
+            else:
                 inner_dict = {}
                 inner_dict.setdefault("message", "unknown")
                 logging.info("list_iter[0] :" + str(list_iter[0]))
                 _differ_dict_set.setdefault(list_iter[0], inner_dict)
                 _count_dict["failed"] = _count_dict["failed"] + 1
-        
-        _user_zk_src_keys_list  = []
+
+        _user_zk_src_keys_list = []
         for i in range(len(_user_zk_src_list)):
             _user_zk_src_keys_list.append(_user_zk_src_list[i][0])
-        logging.info("_user_zk_src_keys_list :" + str(_user_zk_src_keys_list))    
+        logging.info("_user_zk_src_keys_list :" + str(_user_zk_src_keys_list))
         for _user_mysql_list_iter in _user_mysql_src_dict_keys:
             if _user_mysql_list_iter not in _user_zk_src_keys_list:
                 inner_dict = {}
-                inner_dict.setdefault("message" , "lost")
+                inner_dict.setdefault("message", "lost")
                 _differ_dict_set.setdefault(_user_mysql_list_iter, inner_dict)
                 _count_dict["failed"] = _count_dict["failed"] + 1
-         
-                  
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:
             return options.alarm_nothing
         else:
             return options.alarm_general
- 
-           
+
+
 class Check_Node_Log_Warning(Check_Status_Base):
-    
     def __init__(self):
         super(Check_Node_Log_Warning, self).__init__()
-    
-    @tornado.gen.engine    
+
+    @tornado.gen.engine
     def check(self, data_node_info_list):
         url_post = "/inner/node/check/log/warning"
         monitor_type = "node"
         monitor_key = "log_warning"
         super(Check_Node_Log_Warning, self).check_status(data_node_info_list, url_post, monitor_type, monitor_key)
-        
+
     def retrieve_alarm_level(self, total_count, success_count, failed_count):
         if failed_count == 0:
             return options.alarm_nothing
