@@ -168,8 +168,6 @@ class ZkOpers(object):
         self.DEFAULT_RETRY_POLICY(self.zk.set, path, str(clusterProps))#vesion need to write
         
     def writeClusterStatus(self, clusterProps):
-        if self.judgeClusterStatus("remove"):
-            return False
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/cluster_status"
         self.zk.ensure_path(path)
@@ -331,6 +329,9 @@ class ZkOpers(object):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + userName + "|" + ipAddress
         resultValue = self._retrieveSpecialPathProp(path)
         return resultValue
+
+    def judgeClusterStatus(self,status):
+        return self.retrieveClusterStatus == status
             
 #     def check_concurrent_initing(self):
 #         clusterUUID = self.getClusterUUID()
@@ -439,18 +440,17 @@ class ZkOpers(object):
         
     def unLock_init_node_action(self, lock):
         self._unLock_base_action(lock)
-            
+
     def _lock_base_action(self, lock_name):
         clusterUUID = self.getClusterUUID()
-        path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_name)
+        path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_name) 
         lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
         isLock = lock.acquire(blocking=True, timeout=5)
-        # TODO:
-        if (int(time.time()*1000)-self.zk.get(path)[-1].ctime) >= 5*60:
-            self._unLock_base_action()
+        if (int(time.time()) - int(self.zk.get(path)[-1].ctime/1000)) >= 5 * 60:
+            lock.release()
             return False, None
-        return (isLock,lock)
-        
+        return (isLock, lock)
+
     def _unLock_base_action(self, lock):
         if lock is not None:
             lock.release()
@@ -483,10 +483,6 @@ class ZkOpers(object):
         local_data = data.replace("'", "\"").replace("[u\"", "[\"").replace(" u\"", " \"")
         formatted_data = json.loads(local_data)
         return formatted_data
-
-    def judgeClusterStatus(self,status):
-        return self.retrieveClusterStatus == status
-
 
 
 @singleton
