@@ -330,8 +330,8 @@ class ZkOpers(object):
         resultValue = self._retrieveSpecialPathProp(path)
         return resultValue
 
-    def judgeClusterStatus(self,status):
-        return self.retrieveClusterStatus == status
+    def judgeClusterStatus(self, status):
+        return self.retrieveClusterStatus().get('_status', None) == status
             
 #     def check_concurrent_initing(self):
 #         clusterUUID = self.getClusterUUID()
