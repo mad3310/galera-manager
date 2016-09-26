@@ -4,6 +4,8 @@ Created on 2013-7-21
 
 @author: asus
 '''
+import os
+from os.path import join, getsize
 import logging
 from tornado.options import options
 from common.abstract_stat_service import Abstract_Stat_Service
@@ -151,3 +153,37 @@ class NodeStatOpers(Abstract_Stat_Service):
             values = f.read().strip().split()
         loadavg = dict(zip(names, values))
         return loadavg
+
+    def stat_diskspace_enough_for_backup(self):
+        """以磁盘空间判断当前节点是否可以称为备份节点的基本条件。与根据磁盘
+        用量作为打分因素不冲突。
+
+        '/data/mcluster_data': 远程备份目录
+        '/srv/mcluster': 本地备份目录
+        '/srv/mcluster/mysql': mysql数据目录
+
+        (本地备份目录剩余空间 >= mysql数据目录大小*2  &&
+         远程备份目录剩余空间 >= mysql数据目录大小*2)
+
+        满足上述条件方可成为备份节点
+        """
+        backup_dir_local =  '/srv/mcluster'
+        backup_dir_remote = '/data/mcluster_data'
+        mysql_data_dir = '/srv/mcluster/mysql'
+
+        def _getdirsize(dir):
+            size = 0
+            for root, dirs, files in os.walk(dir):
+                size += sum([getsize(join(root, name)) for name in files])
+            return size
+
+        mysql_data_size = _getdirsize(mysql_data_dir)
+        stat_local = os.statvfs(backup_dir_local)
+        local_dir_avail = stat_local.f_bfree*stat_local.f_bsize
+        stat_remote = os.statvfs(backup_dir_remote)
+        remote_dir_avail = stat_remote.f_bfree*stat_remote.f_bsize
+
+        can_backup = (local_dir_avail >= mysql_data_size*2 and
+                      remote_dir_avail >= mysql_data_size*2)
+        return {'diskspace_enough': can_backup}
+
