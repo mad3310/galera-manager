@@ -75,6 +75,6 @@ class BaseBackupWorker(object):
     def _set_response_message(self, val=None):
         self.response_message = val
 
-    def _analysis_usable_backup_node(self, system_loads, free_spaces, free_memory):
-        host_ip = BackupEvlScore()._analysis_usable_backup_node(system_loads, free_spaces, free_memory)
+    def _analysis_usable_backup_node(self, system_loads, free_spaces, free_memory, disk_enough):
+        host_ip = BackupEvlScore()._analysis_usable_backup_node(system_loads, free_spaces, free_memory, disk_enough)
         return host_ip

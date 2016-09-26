@@ -23,13 +23,15 @@ class BackupWorkerMethod(BaseBackupWorker):
         url_system_path = "/node/stat/workload"
         url_disk_path = "/node/stat/disk/available"
         url_memory_path = "/node/stat/memory/available"
+        url_diskenough_path = "/node/stat/disk/enough"
 
         try:
             system_loads = self._retrieve_nodes_load(online_node_list, url_system_path)
             available_spaces = self._retrieve_nodes_load(online_node_list, url_disk_path)
             available_memory = self._retrieve_nodes_load(online_node_list, url_memory_path)
+            disk_enough = self._retrieve_nodes_load(online_node_list, url_diskenough_path)
 
-            usable_ips = self._analysis_usable_backup_node(system_loads, available_spaces, available_memory)
+            usable_ips = self._analysis_usable_backup_node(system_loads, available_spaces, available_memory, disk_enough)
 
         except Exception, e:
             self.zkOper.write_backup_backup_info({'error': traceback.format_exc()})
