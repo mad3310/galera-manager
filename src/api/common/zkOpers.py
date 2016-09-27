@@ -448,7 +448,8 @@ class ZkOpers(object):
         isLock = lock.acquire(blocking=True, timeout=5)
         if (int(time.time()) - int(self.zk.get(path)[-1].ctime/1000)) >= 5 * 60:
             lock.release()
-            return False, None
+            lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
+            isLock = lock.acquire(blocking=True, timeout=5)
         return (isLock, lock)
 
     def _unLock_base_action(self, lock):
