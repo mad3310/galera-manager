@@ -19,7 +19,7 @@ from kazoo.retry import KazooRetry
 from common.utils.exceptions import CommonException
 from common.my_logging import debug_log
 from common.utils.decorators import singleton, timeout_handler
-from common.utils import local_get_zk_address
+from common.utils import local_get_zk_address, getclustername
 from common.configFileOpers import ConfigFileOpers
 from common.helper import getDictFromText
 
@@ -59,14 +59,7 @@ class ZkOpers(object):
             logging.info("instance zk client (%s:%s)" % (self.zkaddress, self.zkport))
 
     def getclustername(self):
-        try:
-            f = open('/etc/hostname','r')
-            res_str = f.readline().replace('d-mcl-','')
-            return res_str[0:res_str.find('-n-')]
-        except Exception:
-            raise 'hostname is wrong! please check it %s' %f.readline()
-        finally:
-            f.close()
+        return getclustername()
 
     def command(self, cmd):
         return self.zk.command(cmd)
