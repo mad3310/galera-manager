@@ -5,6 +5,7 @@ Created on 2016-01-11
 @author: xu
 '''
 import logging
+from tornado.escape import json_decode
 
 
 class BackupEvlScore(object):
@@ -39,13 +40,12 @@ class BackupEvlScore(object):
         # 计算每个节点的总分
         nodes_score = {}
         for node_ip in disk_values:
-            if not disk_enough.get(node_ip, {}).get('diskspace_enough'):
-                continue
-            nodes_score[node_ip] = sum([loadavg_values_1[node_ip],
-                                        loadavg_values_5[node_ip],
-                                        loadavg_values_15[node_ip],
-                                        memory_values[node_ip],
-                                        disk_values[node_ip]])
+            if json_decode(disk_enough.get(node_ip, {}).get('diskspace_enough')):
+                nodes_score[node_ip] = sum([loadavg_values_1[node_ip],
+                                            loadavg_values_5[node_ip],
+                                            loadavg_values_15[node_ip],
+                                            memory_values[node_ip],
+                                            disk_values[node_ip]])
         # 按总分倒序排列后的节点IP列表
         nodes_sorted_by_score = sorted(nodes_score, key=nodes_score.get, reverse=True)
         logging.info('selected backup nodes:%s' % str(nodes_sorted_by_score))
