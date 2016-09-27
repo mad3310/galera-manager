@@ -389,10 +389,11 @@ class Check_DB_Anti_Item(Check_Status_Base):
     def _anti_item_check(self, conn):
         anti_item_count = 0
         msg = ""
+        anti_item_detail = []
         anti_item_myisam_count = self.dba_opers.check_existed_myisam_table(conn)
         anti_item_procedure_count = self.dba_opers.check_existed_stored_procedure(conn)
         anti_item_trigger_count = self.dba_opers.check_triggers(conn)
-        anti_item_nopk_count = self.dba_opers.check_existed_nopk(conn)
+        anti_item_nopk_count, anti_item_nopk_detail = self.dba_opers.check_existed_nopk(conn)
         anti_item_fulltext_and_spatial_count = self.dba_opers.check_existed_fulltext_and_spatial(conn)
 
         if anti_item_myisam_count :
@@ -411,12 +412,13 @@ class Check_DB_Anti_Item(Check_Status_Base):
 
         if anti_item_nopk_count :
             anti_item_count += anti_item_nopk_count
+            anti_item_detail += anti_item_nopk_detail
             msg += " NOPK,"
 
         if anti_item_fulltext_and_spatial_count:
             anti_item_count += anti_item_fulltext_and_spatial_count
             msg += " FullText, SPATIAL,"
-        return anti_item_count, msg
+        return anti_item_count, msg, anti_item_detail
 
     def check(self, data_node_info_list):
         zkOper = Scheduler_ZkOpers()
@@ -439,15 +441,13 @@ class Check_DB_Anti_Item(Check_Status_Base):
                 error_record.setdefault("msg", "no way to connect to db")
         else:
             try:
-                anti_item_count, msg = self._anti_item_check(conn)
+                anti_item_count, msg, anti_item_detail= self._anti_item_check(conn)
             finally:
                 conn.close()
-
             if anti_item_count > 0:
-                error_record.setdefault("msg",
-                        "mcluster existed on %s please check which db right now." % (msg))
+                error_record.setdefault("msg", "mcluster existed on %s please check which db right now." % (msg) )
+                error_record.setdefault("detail", anti_item_detail)
                 logging.info(error_record)
-
         alarm_level = self.retrieve_alarm_level(anti_item_count, 0, 0)
         logging.info("existed anti_item alarm_level :%s" %(alarm_level))
         super(Check_DB_Anti_Item, self).write_status(anti_item_count, 0,

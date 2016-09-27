@@ -9,6 +9,7 @@ Created on 2013-7-11
 import json
 import threading
 import logging
+import time
 
 from tornado.options import options
 from kazoo.client import KazooClient, KazooState
@@ -321,6 +322,9 @@ class ZkOpers(object):
         path = self.rootPath + "/" + clusterUUID + "/db/" + dbName + "/" + userName + "|" + ipAddress
         resultValue = self._retrieveSpecialPathProp(path)
         return resultValue
+
+    def judgeClusterStatus(self, status):
+        return self.retrieveClusterStatus().get('_status', None) == status
             
 #     def check_concurrent_initing(self):
 #         clusterUUID = self.getClusterUUID()
@@ -429,14 +433,18 @@ class ZkOpers(object):
         
     def unLock_init_node_action(self, lock):
         self._unLock_base_action(lock)
-            
+
     def _lock_base_action(self, lock_name):
         clusterUUID = self.getClusterUUID()
         path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_name) 
         lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
         isLock = lock.acquire(blocking=True, timeout=5)
-        return (isLock,lock)
-        
+        if (int(time.time()) - int(self.zk.get(path)[-1].ctime/1000)) >= 5 * 60:
+            lock.release()
+            lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
+            isLock = lock.acquire(blocking=True, timeout=5)
+        return (isLock, lock)
+
     def _unLock_base_action(self, lock):
         if lock is not None:
             lock.release()
