@@ -389,18 +389,11 @@ class Check_DB_Anti_Item(Check_Status_Base):
     def _anti_item_check(self, conn):
         anti_item_count = 0
         msg = ""
-<<<<<<< HEAD
         anti_item_detail = []
         anti_item_myisam_count = self.dba_opers.check_existed_myisam_table(conn)
         anti_item_procedure_count = self.dba_opers.check_existed_stored_procedure(conn)
         anti_item_trigger_count = self.dba_opers.check_triggers(conn)
         anti_item_nopk_count, anti_item_nopk_detail = self.dba_opers.check_existed_nopk(conn)
-=======
-        anti_item_myisam_count = self.dba_opers.check_existed_myisam_table(conn)
-        anti_item_procedure_count = self.dba_opers.check_existed_stored_procedure(conn)
-        anti_item_trigger_count = self.dba_opers.check_triggers(conn)
-        anti_item_nopk_count = self.dba_opers.check_existed_nopk(conn)
->>>>>>> 5587d6e04fff720c3a50978d1277f1f688454020
         anti_item_fulltext_and_spatial_count = self.dba_opers.check_existed_fulltext_and_spatial(conn)
 
         if anti_item_myisam_count :
@@ -419,20 +412,13 @@ class Check_DB_Anti_Item(Check_Status_Base):
 
         if anti_item_nopk_count :
             anti_item_count += anti_item_nopk_count
-<<<<<<< HEAD
             anti_item_detail += anti_item_nopk_detail
-=======
->>>>>>> 5587d6e04fff720c3a50978d1277f1f688454020
             msg += " NOPK,"
 
         if anti_item_fulltext_and_spatial_count:
             anti_item_count += anti_item_fulltext_and_spatial_count
             msg += " FullText, SPATIAL,"
-<<<<<<< HEAD
         return anti_item_count, msg, anti_item_detail
-=======
-        return anti_item_count, msg
->>>>>>> 5587d6e04fff720c3a50978d1277f1f688454020
 
     def check(self, data_node_info_list):
         zkOper = Scheduler_ZkOpers()
@@ -455,52 +441,13 @@ class Check_DB_Anti_Item(Check_Status_Base):
                 error_record.setdefault("msg", "no way to connect to db")
         else:
             try:
-<<<<<<< HEAD
                 anti_item_count, msg, anti_item_detail= self._anti_item_check(conn)
             finally:
                 conn.close()
-=======
-                failed_count = 0
-                anti_item_count = 0
-                anti_item_detail = []
-                msg = ""
-                anti_item_myisam_count = self.dba_opers.check_existed_myisam_table(conn)
-                anti_item_procedure_count = self.dba_opers.check_existed_stored_procedure(conn)
-                anti_item_trigger_count = self.dba_opers.check_triggers(conn)
-                anti_item_nopk_count, anti_item_nopk_detail = self.dba_opers.check_existed_nopk(conn)
-                anti_item_fulltext_and_spatial_count = self.dba_opers.check_existed_fulltext_and_spatial(conn)
-                
-                if anti_item_myisam_count :
-                    anti_item_count += anti_item_myisam_count
-                    msg += " Myisam,"
-                    
-                on_check_storedprocedure = options.on_check_storedprocedure
-                if anti_item_procedure_count and on_check_storedprocedure:
-                    anti_item_message = "check db status, existed stored procedure. Item's count:%s"%(str(anti_item_procedure_count))
-                    self._send_monitor_email(anti_item_message)
-                    
-                if anti_item_trigger_count :
-                    anti_item_count += anti_item_trigger_count
-                    msg += " Trigger,"
-                    
-                if anti_item_nopk_count :
-                    anti_item_count += anti_item_nopk_count
-                    anti_item_detail += anti_item_nopk_detail
-                    msg += " NOPK,"
-                    
-                if anti_item_fulltext_and_spatial_count:
-                    anti_item_count += anti_item_fulltext_and_spatial_count
-                    msg += " FullText, SPATIAL,"
-                anti_item_count, msg = self._anti_item_check(conn)
-            finally:
-                conn.close()
-
->>>>>>> 5587d6e04fff720c3a50978d1277f1f688454020
             if anti_item_count > 0:
                 error_record.setdefault("msg", "mcluster existed on %s please check which db right now." % (msg) )
                 error_record.setdefault("detail", anti_item_detail)
                 logging.info(error_record)
-
         alarm_level = self.retrieve_alarm_level(anti_item_count, 0, 0)
         logging.info("existed anti_item alarm_level :%s" %(alarm_level))
         super(Check_DB_Anti_Item, self).write_status(anti_item_count, 0,
