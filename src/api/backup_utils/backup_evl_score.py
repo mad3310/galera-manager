@@ -5,13 +5,14 @@ Created on 2016-01-11
 @author: xu
 '''
 import logging
+from tornado.escape import json_decode
 
 
 class BackupEvlScore(object):
 
     item_weight = {'memory': 20.0, 'disk': 30.0, 'load1': 20.0, 'load5': 20.0, 'load15': 10.0}
 
-    def _analysis_usable_backup_node(self, system_loads, free_spaces, free_memory):
+    def _analysis_usable_backup_node(self, system_loads, free_spaces, free_memory, disk_enough):
         # 获取各项指标的最大值，作为打分的参考标准
         loadavg_1_max = max([float(n['loadavg_1']) for n in system_loads.itervalues()])
         loadavg_5_max = max([float(n['loadavg_5']) for n in system_loads.itervalues()])
@@ -39,11 +40,12 @@ class BackupEvlScore(object):
         # 计算每个节点的总分
         nodes_score = {}
         for node_ip in disk_values:
-            nodes_score[node_ip] = sum([loadavg_values_1[node_ip],
-                                        loadavg_values_5[node_ip],
-                                        loadavg_values_15[node_ip],
-                                        memory_values[node_ip],
-                                        disk_values[node_ip]])
+            if json_decode(disk_enough.get(node_ip, {}).get('diskspace_enough')):
+                nodes_score[node_ip] = sum([loadavg_values_1[node_ip],
+                                            loadavg_values_5[node_ip],
+                                            loadavg_values_15[node_ip],
+                                            memory_values[node_ip],
+                                            disk_values[node_ip]])
         # 按总分倒序排列后的节点IP列表
         nodes_sorted_by_score = sorted(nodes_score, key=nodes_score.get, reverse=True)
         logging.info('selected backup nodes:%s' % str(nodes_sorted_by_score))

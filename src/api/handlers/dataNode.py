@@ -403,10 +403,29 @@ class StatNodeMemorySize(APIHandler):
         return return_dict
 
 
+# retrieve the node stat can be backup or not
+# eg. curl "http://localhost:8888/node/stat/disk/enough"
+class StatNodeDiskEnough(APIHandler):
+    stat_opers = NodeStatOpers()
+
+    @asynchronous
+    @engine
+    def get(self):
+        result = yield self.do()
+        self.finish(result)
+
+    @run_on_executor()
+    @run_callback
+    def do(self):
+        return_dict = self.stat_opers.stat_diskspace_enough_for_backup()
+        return return_dict
+
+
 # retrieve the port of the node.
 # eg. curl "http://localhost:8888/inner/node_port/check"
 class PortCheck(APIHandler):
     invokeCommand = InvokeCommand()
+
     def get(self):
         check_port_shell = 'netstat -anutlp | grep 3306|grep -w LISTEN'
         result = self.invokeCommand.run_check_shell(check_port_shell)
