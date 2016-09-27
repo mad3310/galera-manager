@@ -16,7 +16,7 @@ define('domain', default="letv.com", help='domain name')
 define('send_email_switch', default=True, type=bool, help='the flag of if send error email')
 define('admins', default=("zhoubingzheng <zhoubingzheng@letv.com>", "gaoqiang3 <gaoqiang3@letv.com>",
                           "zhangchengqiang <zhangchengqiang@le.com>", "dengliangju <dengliangju@le.com>",
-                          "liujinliu <liujinliu@le.com>"), help='admin email address')
+                          "liujinliu <liujinliu@le.com>","chenwenquan <chenwenquan@le.com>"), help='admin email address')
 define('smtp_host', default="10.205.91.22", help='smtp host')
 define('smtp_port', default=587, help='smtp port')
 define('smtp_user', default="mcluster", help='smtp user')
@@ -73,5 +73,5 @@ define("new_count_times", default=60, type=int, help="if it is new cluster, we u
 define("old_count_times", default=300, type=int, help="Others we use this value.")
 define("full_back_sh", default=join(base_dir, "shell", "mcluster_backup_full.sh"), help="full backup")
 define("on_check_storedprocedure", default=False, type=bool, help='the flag of checking stored procedure')
-define("es_hosts", default='10.140.65.12:9200,10.140.65.13:9200,10.140.65.14:9200', help='elasticsearch hosts')
+define("es_hosts", default='10.140.67.117:9200,10.140.67.85:9200,10.140.67.86:9200', help='elasticsearch hosts')
 

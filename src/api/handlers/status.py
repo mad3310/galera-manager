@@ -42,6 +42,12 @@ class MclusterStatus(APIHandler):
         result = yield self.do()
         self.finish(result)
 
+    def _del_extra_key(self, monitor_status_value):
+        if monitor_status_value.has_key('timestamp'):
+            del monitor_status_value['timestamp']
+        if monitor_status_value.has_key('node_name'):
+            del monitor_status_value['node_name'] 
+
     @run_on_executor()
     @run_callback
     def do(self):
@@ -54,7 +60,8 @@ class MclusterStatus(APIHandler):
             for monitor_status_key in monitor_status_list:
                 monitor_status_value = record_es.get_monitor_status_value(
                                                 monitor_type, monitor_status_key)
-                monitor_type_sub_dict.setdefault(monitor_status_key, monitor_status_value)            
+                self._del_extra_key(monitor_status_value)
+                monitor_type_sub_dict.setdefault(monitor_status_key, monitor_status_value)
             result.setdefault(monitor_type,monitor_type_sub_dict)
         return result
 
