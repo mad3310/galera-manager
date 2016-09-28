@@ -9,7 +9,7 @@ Created on 2013-7-21
 import urllib2
 import json
 
-MCLUSTER_VIP = '10.185.81.181'
+MCLUSTER_VIP = 'localhost'
 
 
 def check_monitor_main(serious_dict, general_dict, nothing_dict):
