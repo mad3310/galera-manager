@@ -58,10 +58,7 @@ class esOpers(object):
             return mon
 
     def _no_monitor_got(self, monitor_type, monitor_key):
-        try:
-            return self.LATEST_DOCS[monitor_type][monitor_key]
-        except:
-            return {}
+        return self.LATEST_DOCS.get(monitor_type, {}).get(monitor_key, {})
 
     def _get_distinct(self, docs):
         serious = filter(lambda x:x['alarm'] == options.alarm_serious,
