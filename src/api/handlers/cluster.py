@@ -31,8 +31,12 @@ class CreateMCluster(APIHandler):
         zkOper = self.retrieve_zkOper()
         existCluster = zkOper.existCluster()
         if existCluster:
-            raise HTTPAPIErrorException("server has belong to a cluster,should be not create new cluster!", status_code=417)
-        
+            if zkOper.judgeClusterStatus("remove"):
+                zkOper.remove_zk_info(zkOper.getclustername())
+            else:
+                raise HTTPAPIErrorException("server has belong to a cluster,should be not create new cluster!", status_code=417)
+
+
         requestParam = {}
         args = self.request.arguments
         logging.info("args :" + str(args))
@@ -252,10 +256,13 @@ class ClusterZkRemove(APIHandler):
     
     @asynchronous
     def get(self):
-        zkOper = self.retrieve_zkOper()
-        clustername = zkOper.getclustername()
-        zkOper.remove_zk_info(clustername)
+        status_dict = {}
+        status_dict['_status'] = 'remove'
         
+        zkOper = self.retrieve_zkOper()
+
+        if zkOper.existCluster():  
+            zkOper.writeClusterStatus(status_dict)
         result = {}
         result.setdefault("message", "del zk info success")
         self.finish(result)

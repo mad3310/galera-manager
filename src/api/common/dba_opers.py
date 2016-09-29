@@ -413,14 +413,31 @@ class DBAOpers(object):
 
     def check_existed_nopk(self, conn):
         cursor = conn.cursor()
-        cursor.execute("""select count(1)
-                from information_schema.tables AS t LEFT JOIN information_schema.key_column_usage AS c
-                ON (t.table_schema = c.constraint_schema AND t.table_name = c.table_name)
-                where t.table_schema NOT IN ('information_schema','performance_schema','mysql', 'monitor')
-                AND t.table_type = 'BASE TABLE' and c.constraint_name IS NULL""")
-        rows = cursor.fetchall()
-        c = rows[0][0]
-        return c
+        cursor.execute("""SELECT DISTINCT CONCAT(t.table_schema,'.',t.table_name) as tbl,
+                         t.engine,
+                         IF(ISNULL(c.constraint_name),'NOPK','') AS nopk,
+                         IF(s.index_type = 'FULLTEXT','FULLTEXT','') as ftidx,
+                         IF(s.index_type = 'SPATIAL','SPATIAL','') as gisidx
+                         FROM information_schema.tables AS t
+                         LEFT JOIN information_schema.key_column_usage AS c ON (t.table_schema = c.constraint_schema AND t.table_name = c.table_name AND c.constraint_name = 'PRIMARY')
+                         LEFT JOIN information_schema.statistics AS s ON (t.table_schema = s.table_schema AND t.table_name = s.table_name   AND s.index_type IN ('FULLTEXT','SPATIAL'))
+                         WHERE t.table_schema NOT IN ('information_schema','performance_schema','mysql')
+                         AND t.table_type = 'BASE TABLE'
+                         AND (t.engine <> 'InnoDB' OR c.constraint_name IS NULL OR s.index_type IN ('FULLTEXT','SPATIAL'))
+                         ORDER BY t.table_schema,t.table_name; """)
+        count = cursor.rowcount
+        details = cursor.fetchall()
+        details = map(list, details)
+        details_list = []
+        for detail in details:
+            detail_dic = {}
+            detail_dic["tb"] = detail[0]
+            detail_dic["engine"] = detail[1]
+            detail_dic["nopk"] = detail[2]
+            detail_dic["ftidx"] = detail[3]
+            detail_dic["gisidx"] = detail[4]
+            details_list.append(detail_dic)
+        return count, details_list
 
     def check_existed_fulltext_and_spatial(self, conn):
         cursor = conn.cursor()

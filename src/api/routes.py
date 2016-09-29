@@ -13,7 +13,7 @@ from handlers.dataNode import (DataNodeToMCluster, SyncDataNode,
                                PortCheck, StatDiskAvailable, StatMemAvailable,
                                StatMysqlCpuPartion, StatMysqlMemoryPartion,
                                StatNodeMemorySize, StatNodeWorkLoad,
-                               DataNodeMonitorLogError)
+                               StatNodeDiskEnough, DataNodeMonitorLogError)
 from handlers.database import (BinLogNodestat, BinlogPos, DBOnMCluster, DBStat,
                                Inner_DB_Check_CurConns, Inner_DB_Check_User_CurConns,
                                Inner_DB_Check_WR, Inner_DB_Check_WsrepStatus,
@@ -50,6 +50,7 @@ handlers = [
     (r"/node/stat", DataNodeStat),
     (r"/node/stat/datadir/size", StatDataDirSize),
     (r"/node/stat/disk/available", StatDiskAvailable),
+    (r"/node/stat/disk/enough", StatNodeDiskEnough),
     (r"/node/stat/memory/available", StatMemAvailable),
     (r"/node/stat/workload", StatNodeWorkLoad),
     (r"/node/stat/mysqlcpu/partion", StatMysqlCpuPartion),
