@@ -58,7 +58,7 @@ class esOpers(object):
             return mon
 
     def _no_monitor_got(self, monitor_type, monitor_key):
-        return self.LATEST_DOCS[monitor_type][monitor_key]
+        return self.LATEST_DOCS.get(monitor_type, {}).get(monitor_key, {})
 
     def _get_distinct(self, docs):
         serious = filter(lambda x:x['alarm'] == options.alarm_serious,
@@ -82,7 +82,7 @@ class esOpers(object):
         ret = self.es_oper.retireve_latests_resource(
                    index, self.NODE_NAME, monitor_key)
         if len(ret) == 0:
-            return self._no_monitor_got()
+            return self._no_monitor_got(monitor_type, monitor_key)
         ret.sort(key = lambda x: x['ctime'])
         return self._get_distinct(ret)
 
