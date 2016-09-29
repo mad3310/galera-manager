@@ -67,6 +67,9 @@ class esOpers(object):
                   docs)
         nothing = filter(lambda x:x['alarm'] == options.alarm_nothing,
                   docs)
+
+        # when 25 percent of alarm is serious, then claim a serious alarm
+        # happend, same logic for the general alarm level
         if len(serious) * 4 > len(docs):
             serious.sort(key = lambda x: x['ctime'])
             return serious[-1]
