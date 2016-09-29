@@ -6,8 +6,11 @@ Created on Sep 28, 2015
 '''
 import threading
 import logging
+
 from common.utils.exceptions import UserVisiableException
 from backup_utils.backup_worker_method import BackupWorkerMethod
+
+from .consts import BACKUP_TYPE
 
 
 class DispatchBackupWorker(threading.Thread, BackupWorkerMethod):
@@ -28,12 +31,12 @@ class DispatchBackupWorker(threading.Thread, BackupWorkerMethod):
             self.data['incr_basedir'] = self.incr_basedir
         self.data['backup_type'] = self.backup_type
         try:
-            if self.backup_type == 'full':
+            if self.backup_type == BACKUP_TYPE.FULL:
                 action_ips = self._get_usable_ips()
                 if not action_ips:
                     raise UserVisiableException('no available node, usually disk is not enough!')
                 self._dispatch_request([action_ips[0]], 'POST', url_path, self.data)
-            elif self.backup_type == 'incr':
+            elif self.backup_type == BACKUP_TYPE.INCR:
                 key_value = self.zkOper.retrieve_type_backup_status_info('full')
                 action_ips = key_value['full_backup_ip:']
                 if not action_ips:
