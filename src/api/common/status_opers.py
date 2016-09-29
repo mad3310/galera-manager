@@ -34,6 +34,7 @@ class esOpers(object):
                ]
      }
     NODE_NAME = getclustername()
+    LATEST_DOCS = {'db':{}, 'node':{}}
     def __init__(self):
         self.es_oper = es_res_oper
 
@@ -43,6 +44,8 @@ class esOpers(object):
         doc.update({"alarm": alarm_level})
         doc.update({"ctime": dt.strftime(TIME_FORMAT)})
         index = 'mcl_status_%s' % monitor_type
+        self.LATEST_DOCS[monitor_type] = {}
+        self.LATEST_DOCS[monitor_type][monitor_key] = doc
         self.es_oper.record_resource(index, self.NODE_NAME,
                             monitor_key, doc)
 
@@ -54,13 +57,8 @@ class esOpers(object):
             mon = self.MONITOR_TYPE_AND_KEY[monitor_type]
             return mon
 
-    def _no_monitor_got(self):
-        dt = datetime.datetime.now()
-        return dict(alarm = options.alarm_nothing,
-                    message = 'monitor exit',
-                    node_name = self.NODE_NAME,
-                    error_record = '',
-                    ctime = dt.strftime(TIME_FORMAT))
+    def _no_monitor_got(self, monitor_type, monitor_key):
+        return self.LATEST_DOCS[monitor_type][monitor_key]
 
     def _get_distinct(self, docs):
         serious = filter(lambda x:x['alarm'] == options.alarm_serious,
@@ -69,22 +67,23 @@ class esOpers(object):
                   docs)
         nothing = filter(lambda x:x['alarm'] == options.alarm_nothing,
                   docs)
-        if len(serious)* 100 > len(docs):
-            serious.sort(key = lambda x: x['ctime'])
+
+        # when 25 percent of alarm is serious, then claim a serious alarm
+        # happend, same logic for the general alarm level
+        if len(serious) * 4 > len(docs):
             return serious[-1]
-        if len(general) * 20 > len(docs):
-            general.sort(key = lambda x: x['ctime'])
+        if len(general) * 4 > len(docs):
             return general[-1]
-        nothing.sort(key = lambda x: x['ctime'])
         return nothing[-1]
 
     def get_monitor_status_value(self, monitor_type,
                                       monitor_key):
         index = 'mcl_status_%s' % monitor_type
-        ret = self.es_oper.retireve_resource(
+        ret = self.es_oper.retireve_latests_resource(
                    index, self.NODE_NAME, monitor_key)
         if len(ret) == 0:
             return self._no_monitor_got()
+        ret.sort(key = lambda x: x['ctime'])
         return self._get_distinct(ret)
 
 record_es = esOpers()

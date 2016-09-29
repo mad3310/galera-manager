@@ -28,7 +28,7 @@ class Application(tornado.web.Application):
 
 def main():
     tornado.options.parse_command_line()
-    es_res_oper.connect(options.es_hosts)
+    es_res_oper.connect(options.es_hosts, options.es_version)
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(options.port)
      
