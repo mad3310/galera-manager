@@ -71,12 +71,9 @@ class esOpers(object):
         # when 25 percent of alarm is serious, then claim a serious alarm
         # happend, same logic for the general alarm level
         if len(serious) * 4 > len(docs):
-            serious.sort(key = lambda x: x['ctime'])
             return serious[-1]
         if len(general) * 4 > len(docs):
-            general.sort(key = lambda x: x['ctime'])
             return general[-1]
-        nothing.sort(key = lambda x: x['ctime'])
         return nothing[-1]
 
     def get_monitor_status_value(self, monitor_type,
@@ -86,6 +83,7 @@ class esOpers(object):
                    index, self.NODE_NAME, monitor_key)
         if len(ret) == 0:
             return self._no_monitor_got()
+        ret.sort(key = lambda x: x['ctime'])
         return self._get_distinct(ret)
 
 record_es = esOpers()
