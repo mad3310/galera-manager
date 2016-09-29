@@ -74,4 +74,5 @@ define("old_count_times", default=300, type=int, help="Others we use this value.
 define("full_back_sh", default=join(base_dir, "shell", "mcluster_backup_full.sh"), help="full backup")
 define("on_check_storedprocedure", default=False, type=bool, help='the flag of checking stored procedure')
 define("es_hosts", default='10.140.67.117:9200,10.140.67.85:9200,10.140.67.86:9200', help='elasticsearch hosts')
+define("es_version", default=2, help='elasticsearch hosts')
 
