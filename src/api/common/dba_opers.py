@@ -426,9 +426,18 @@ class DBAOpers(object):
                          AND (t.engine <> 'InnoDB' OR c.constraint_name IS NULL OR s.index_type IN ('FULLTEXT','SPATIAL'))
                          ORDER BY t.table_schema,t.table_name; """)
         count = cursor.rowcount
-        detail = cursor.fetchall()
-        detail = map(list, detail)
-        return count, detail
+        details = cursor.fetchall()
+        details = map(list, details)
+        details_list = []
+        for detail in details:
+            detail_dic = {}
+            detail_dic["tb"] = detail[0]
+            detail_dic["engine"] = detail[1]
+            detail_dic["nopk"] = detail[2]
+            detail_dic["ftidx"] = detail[3]
+            detail_dic["gisidx"] = detail[4]
+            details_list.append(detail_dic)
+        return count, details_list
 
     def check_existed_fulltext_and_spatial(self, conn):
         cursor = conn.cursor()
