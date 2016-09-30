@@ -44,7 +44,7 @@ def check_monitor_detail(serious_dict, general_dict, nothing_dict):
 #            print str(check_time)
             diff = (check_time-create_time).seconds
 #            print diff
-            
+
             if diff > WARNING_TIME_DIFF:
                 serious_dict.setdefault(monitor_type_item,"please check async api, the data is out of date!")
             elif return_code == 'tel:sms:email':

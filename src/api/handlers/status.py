@@ -53,14 +53,15 @@ class MclusterStatus(APIHandler):
     def do(self):
         result = {} 
         monitor_types = record_es.get_monitor_type()
-        
+        zkOper = self.retrieve_zkOper()
         for monitor_type in monitor_types:
             monitor_status_list = record_es.get_monitor_status_list(monitor_type)
             monitor_type_sub_dict = {}
             for monitor_status_key in monitor_status_list:
-                monitor_status_value = record_es.get_monitor_status_value(
-                                                monitor_type, monitor_status_key)
-                self._del_extra_key(monitor_status_value)
+                #monitor_status_value = record_es.get_monitor_status_value(
+                #                                monitor_type, monitor_status_key)
+                #self._del_extra_key(monitor_status_value)
+                monitor_status_value = zkOper.retrieve_monitor_status_value(monitor_type, monitor_status_key)
                 monitor_type_sub_dict.setdefault(monitor_status_key, monitor_status_value)
             result.setdefault(monitor_type,monitor_type_sub_dict)
         return result

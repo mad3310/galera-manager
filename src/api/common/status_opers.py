@@ -222,9 +222,13 @@ class Check_Status_Base(object):
             include_timeout_num_from_response = len(_include_timeout_list)
         return include_timeout_num_from_response
 
+    # TODO
+    # write to es, now seem it will take a bench of extra time
+    # the problem should be review
     def write_status_to_es(self, total_count, success_count,
                         failed_count, alarm_level, error_record_dict,
                         monitor_type, monitor_key, timeout_num_threshold=3):
+        return
         timeout_num = self._get_timeout_respones(error_record_dict)
         message = "total=%s, success count=%s, failed count=%s" % (
                     total_count, success_count, failed_count)
