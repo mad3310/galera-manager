@@ -44,13 +44,8 @@ def check_monitor_detail(serious_dict, general_dict, nothing_dict):
 #            print str(check_time)
             diff = (check_time-create_time).seconds
 #            print diff
-            if  monitor_type_item == 'db.write_read_avaliable' or \
-                monitor_type_item == 'db.existed_db_anti_item':
-                warn_threshhold = 600
-            else:
-                warn_threshhold = WARNING_TIME_DIFF
 
-            if diff > warn_threshhold:
+            if diff > WARNING_TIME_DIFF:
                 serious_dict.setdefault(monitor_type_item,"please check async api, the data is out of date!")
             elif return_code == 'tel:sms:email':
                 serious_dict.setdefault(monitor_type_item,return_message)
