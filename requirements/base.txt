@@ -1,0 +1,6 @@
+MySQL-python
+kazoo
+futures
+simplejson
+tornado
+zope.interface
