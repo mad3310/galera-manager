@@ -1,0 +1,4 @@
+flake8==2.2.5
+flake8-immediate
+pep8==1.5.7
+pytest

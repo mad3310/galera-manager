@@ -1,0 +1,7 @@
+# 当前项目依赖包
+tornado==2.2.1
+MySQL-python==1.2.3
+kazoo==1.2.1
+futures==2.2.0
+simplejson==2.0.9
+zope.interface==4.0.5    # via kazoo
