@@ -9,8 +9,7 @@ from base import APIHandler
 from tornado.web import asynchronous
 from tornado.gen import engine
 from common.utils.asyc_utils import run_on_executor, run_callback
-
-from api.common.consts import MONITOR_TYPE
+from common.consts import MONITOR_TYPE
 
 
 # retrieve the status value of special monitor type, the monitor type include cluster,node,db.

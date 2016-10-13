@@ -1,7 +1,7 @@
 import re
 import traceback
 import logging
-from datetime import datetime
+import datetime
 
 import tornado.httpclient
 from tornado.gen import Callback, Wait
@@ -15,11 +15,11 @@ from common.helper import is_monitoring, get_localhost_ip
 from common.utils.mail import send_email
 from common.utils import CLUSTER_NAME
 from common.configFileOpers import ConfigFileOpers
-from api.libs.es.store import es
+from libs.es.store import es
 
 
 def add_to_es(monitor_type, monitor_key, doc, alarm_level):
-        timestamp = datetime.utcnow()
+        timestamp = datetime.datetime.utcnow()
 
         doc.update({
             "node_name": CLUSTER_NAME.lower(),
