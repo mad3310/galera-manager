@@ -10,6 +10,33 @@ from tornado import escape
 from tornado.web import HTTPError
 
 
+#params are not passed to throw 400 error, other visible error throw 417 error.
+_error_types = {400: "param_error",
+                401: "invalid_auth",
+                403: "not_authorized",
+                404: "endpoint_error",
+                405: "method_not_allowed",
+                417: "user_visible_error",
+                500: "server_error",
+                578: "conncurrency_error"
+                }
+
+
+class CommonException(Exception):
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+
+class UserVisiableException(CommonException):
+
+    def __init__(self, value):
+        super(UserVisiableException, self).__init__(value)
+
+
 class HTTPAPIError(HTTPError):
     """API error handling exception
 
@@ -42,62 +69,10 @@ class HTTPAPIError(HTTPError):
             if v:
                 err[name] = v
 
-                
+
 class HTTPAPIErrorException(HTTPAPIError):
-    
+
     def __init__(self, value, status_code=400):
-        super(HTTPAPIErrorException, self).__init__(status_code=status_code, error_detail=value, 
-                                                    notification="direct", response=value, 
+        super(HTTPAPIErrorException, self).__init__(status_code=status_code, error_detail=value,
+                                                    notification="direct", response=value,
                                                     log_message=value)
-#params are not passed to throw 400 error, other visible error throw 417 error. 
-_error_types = {400: "param_error",
-                401: "invalid_auth",
-                403: "not_authorized",
-                404: "endpoint_error",
-                405: "method_not_allowed",
-                417: "user_visible_error",
-                500: "server_error",
-                578: "conncurrency_error"
-                }
-
-
-class CommonException(Exception):
-    
-    def __init__(self, value):
-        self.value = value
-    
-    def __str__(self):
-        return repr(self.value)
-    
-class HTTPAPIErrorException(HTTPAPIError):
-    
-    def __init__(self, value, status_code=400):
-        super(HTTPAPIErrorException, self).__init__(status_code=status_code, error_detail=value, 
-                                                    notification="direct", response=value, 
-                                                    log_message=value)
-#params are not passed to throw 400 error, other visible error throw 417 error. 
-_error_types = {400: "param_error",
-                401: "invalid_auth",
-                403: "not_authorized",
-                404: "endpoint_error",
-                405: "method_not_allowed",
-                417: "user_visible_error",
-                500: "server_error",
-                578: "conncurrency_error"
-                }
-    
-class UserVisiableException(CommonException):
-    
-    def __init__(self, value):
-        super(UserVisiableException, self).__init__(value)
-
-
-_error_types = {400: "param_error",
-                401: "invalid_auth",
-                403: "not_authorized",
-                404: "endpoint_error",
-                405: "method_not_allowed",
-                417: "user_visible_error",
-                500: "server_error",
-                578: "conncurrency_error"
-                }
