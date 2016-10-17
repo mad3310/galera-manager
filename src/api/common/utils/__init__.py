@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import random
 import string
 
@@ -25,17 +26,15 @@ def local_get_zk_address():
     if "" == zk_port:
         zk_port = "2181"
 
-    return zk_address ,zk_port
+    return zk_address, zk_port
 
 
-def getclustername():
-    try:
-        f = open('/etc/hostname','r')
-        res_str = f.readline().replace('d-mcl-','')
-        return res_str[0:res_str.find('-n-')]
-    except Exception:
-        raise 'hostname is wrong! please check it %s' %f.readline()
-    finally:
-        f.close()
+def cluster_name():
+    cluster_name = ''
+    if os.path.exists('/etc/hostname'):
+        with open('/etc/hostname', 'r') as f:
+            res_str = f.readline().replace('d-mcl-', '')
+            cluster_name = res_str[0:res_str.find('-n-')]
+    return cluster_name
 
-CLUSTER_NAME = getclustername()
+CLUSTER_NAME = cluster_name()
