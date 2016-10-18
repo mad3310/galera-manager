@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import os
 import stat
 import base64
@@ -6,7 +6,7 @@ import shutil
 import logging
 
 from common.configFileOpers import ConfigFileOpers
-from base import BaseHandler, APIHandler
+from base import APIHandler
 from tornado.options import options
 from common.utils.exceptions import HTTPAPIErrorException
 from configuration.adminOpers import AdminOpers
@@ -81,8 +81,6 @@ class AdminReset(APIHandler):
         self.finish(result)
 
 
-
-
 # create admin user
 # eg. curl -d "adminUser=root&adminPassword=root" "http://localhost:8888/admin/user"
 class AdminUser(APIHandler):
@@ -108,15 +106,6 @@ class AdminUser(APIHandler):
         self.confOpers.setValue(options.cluster_property, requestParam)
 
         result = {}
-        #dict.setdefault("code", '000000')
+        # dict.setdefault("code", '000000')
         result.setdefault("message", "creating admin user successful!")
         self.finish(result)
-#
-# no used
-# download cnf and property file, this is inner-API
-class DownloadFile(BaseHandler):
-    def get(self,filename):
-        ifile  = open(filename, "r")
-        self.set_header ('Content-Type', 'text/cnf')
-        self.set_header ('Content-Disposition', 'attachment; filename='+filename+'')
-        self.write (ifile.read())
