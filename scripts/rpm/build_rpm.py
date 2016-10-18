@@ -24,7 +24,7 @@ def build_source():
             local("python2.6 -m compileall .")
             local('find . -name "*.py"  | xargs rm -f')
             local("cp -R * ../build/{0}".format(code_path))
-        local("mv etc build")
+        local("mv scripts/etc build")
     print(green("Building completed!"))
 
 
