@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-from handlers.admin import (GenerateConfigFileHandler, AdminConf, AdminUser,
-                            DownloadFile, AdminReset)
+from handlers.admin import (AdminConf, AdminUser, AdminReset)
 from handlers.cluster import (CreateMCluster, InitMCluster, SyncMCluster, ClusterStart,
                               ClusterStop, ClusterStatus, ClusterZkRemove)
 from handlers.dataNode import (DataNodeToMCluster, SyncDataNode,
@@ -28,17 +27,14 @@ from handlers.databaseUser import DBUser
 from handlers.monitor import Mcluster_Monitor_Async, Mcluster_Monitor_Sync
 from handlers.status import MclusterHealth, MclusterStatus, MclusterStatusDetail
 from handlers.backup import BackUpCheck, BackUp_Checker, Backup, Inner_Backup_Action
-from handlers.arbitrator import ArbitratorIP, ArbitratorStart
 
 
 handlers = [
-    (r"/generateConfigFile", GenerateConfigFileHandler),
     (r"/admin/conf", AdminConf),
     (r"/admin/user", AdminUser),
     (r"/cluster", CreateMCluster),
     (r"/cluster/init", InitMCluster),
     (r"/cluster/sync", SyncMCluster),
-    (r"/inner/admin/file/{filename}", DownloadFile),
     (r"/cluster/node", DataNodeToMCluster),
     (r"/cluster/start", ClusterStart),
     (r"/cluster/stop", ClusterStop),
@@ -94,7 +90,5 @@ handlers = [
     (r"/backup", Backup),
     (r"/inner/backup", Inner_Backup_Action),
     (r"/backup/check", BackUpCheck),
-    (r"/backup/checker", BackUp_Checker),
-    (r"/arbitrator/node/start", ArbitratorStart),
-    (r"/inner/arbitrator/ip", ArbitratorIP)
+    (r"/backup/checker", BackUp_Checker)
 ]
