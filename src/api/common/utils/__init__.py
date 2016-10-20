@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import os
 import random
 import string
 
 from tornado.options import options
+
 from common.configFileOpers import ConfigFileOpers
 
 confOpers = ConfigFileOpers()
@@ -31,10 +31,9 @@ def local_get_zk_address():
 
 def cluster_name():
     cluster_name = ''
-    if os.path.exists('/etc/hostname'):
-        with open('/etc/hostname', 'r') as f:
-            res_str = f.readline().replace('d-mcl-', '')
-            cluster_name = res_str[0:res_str.find('-n-')]
+    with open('/etc/hostname', 'r') as f:
+        res_str = f.readline().replace('d-mcl-', '')
+        cluster_name = res_str[0:res_str.find('-n-')]
     return cluster_name
 
 CLUSTER_NAME = cluster_name()
