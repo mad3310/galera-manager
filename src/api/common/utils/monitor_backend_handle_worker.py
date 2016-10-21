@@ -1,10 +1,14 @@
+# -*- coding: utf-8 -*-
+
 import sys
 import logging
 import kazoo
 import time
+
 from common.zkOpers import Scheduler_ZkOpers
 from common.abstract_mysql_service_action_thread import Abstract_Mysql_Service_Action_Thread
 from handlers.monitor import Node_Info_Async_Handler, DB_Info_Async_Handler, Check_DB_Anti_Item, Check_DB_WR_Available
+
 
 class Monitor_Backend_Handle_Worker(Abstract_Mysql_Service_Action_Thread):
 
@@ -17,7 +21,7 @@ class Monitor_Backend_Handle_Worker(Abstract_Mysql_Service_Action_Thread):
     check_db_wr_available = Check_DB_WR_Available()
 
     def __init__(self, timeout, monitor_type):
-        super(Monitor_Backend_Handle_Worker,self).__init__()
+        super(Monitor_Backend_Handle_Worker, self).__init__()
         self.timeout = timeout
         self.monitor_type = monitor_type
 

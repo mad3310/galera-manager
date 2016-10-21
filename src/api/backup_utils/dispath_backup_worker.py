@@ -1,9 +1,5 @@
-# coding=utf8
-'''
-Created on Sep 28, 2015
+# -*- coding: utf-8 -*-
 
-@author: root
-'''
 import threading
 import logging
 

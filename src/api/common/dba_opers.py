@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 '''
 Created on 2013-7-21
 
@@ -7,22 +9,19 @@ import MySQLdb
 import logging
 
 from tornado.options import options
+
 from common.helper import retrieve_kv_from_db_rows
 from common.utils.exceptions import CommonException
 from common.utils.exceptions import UserVisiableException
 from common.utils.asyc_utils import run_on_executor, run_callback
 
-class DBAOpers(object):
-    '''
-    classdocs
-    '''
 
+class DBAOpers(object):
 
     def __init__(self):
         '''
         Constructor
         '''
-
 
     def __unicode__(self):
         return self.name
@@ -73,7 +72,7 @@ class DBAOpers(object):
         try:
             cursor.execute(sql)
 
-        except Exception,e:
+        except Exception, e:
             logging.exception(e)
         conn.commit()
         logging.info('write record_time successfully')
@@ -85,7 +84,7 @@ class DBAOpers(object):
         try:
             sql = "SELECT count(*) from `%s`" % (tb_name)
             cursor.execute(sql)
-        except Exception,e:
+        except Exception, e:
             logging.exception(e)
 
         rows = cursor.fetchall()
@@ -120,22 +119,21 @@ class DBAOpers(object):
     def check_tb_data(self, conn, tb_name, db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
-        try :
+        try:
             sql = "select count(*) from `%s`" % (tb_name)
             cursor.execute(sql)
             rows = cursor.fetchall()
             num = rows[0][0]
 
-        except Exception, e :
+        except Exception, e:
             logging.error(e)
         return num
-
 
     def count_tb_table(self, conn, db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
 
-        try :
+        try:
             sql = "SHOW TABLES"
             cursor.execute(sql)
             _tuples = cursor.fetchall()
@@ -145,41 +143,41 @@ class DBAOpers(object):
             logging.exception(e)
         return count
 
-    def drop_table(self, conn, tb_name, db_name ):
+    def drop_table(self, conn, tb_name, db_name):
         conn.select_db(db_name)
         cursor = conn.cursor()
 
         try:
-            sql = "DROP table `%s`" %(tb_name)
+            sql = "DROP table `%s`" % (tb_name)
             cursor.execute(sql)
         except Exception, e:
             logging.exception(e)
         logging.info('drop ' + tb_name + 'success')
 
-    def create_user(self, conn, username, passwd, ip_address='%',dbName = None):
+    def create_user(self, conn, username, passwd, ip_address='%', dbName=None):
         cursor = conn.cursor()
         cursor.execute("""select count(*) as c from mysql.user where user='{username}' and host='{ip_address}'"""
-                       .format(username=username,ip_address=ip_address))
+                       .format(username=username, ip_address=ip_address))
         rows = cursor.fetchall()
         c = rows[0][0]
 
-        if c and dbName == None:
+        if c and dbName==None:
             logging.info("user has existed, so you should be provide db name to grant privileges!")
             return
 
         if c:
             cursor.execute("""grant usage on `{dbName}`.* to `{username}`@'{ip_address}' identified by '{passwd}'"""
-                           .format(dbName=dbName,username=username,passwd=passwd,ip_address=ip_address))
+                           .format(dbName=dbName, username=username, passwd=passwd, ip_address=ip_address))
         else:
             cursor.execute("""CREATE USER `{username}`@'{ip_address}' IDENTIFIED BY '{passwd}'"""
-                           .format(username=username,passwd=passwd,ip_address=ip_address))
+                           .format(username=username, passwd=passwd, ip_address=ip_address))
 
 
     def grant_wr_privileges(self, conn, username, passwd, database, ipAddress='%',
-                                max_queries_per_hour=0,
-                                max_updates_per_hour=0,
-                                max_connections_per_hour=0,
-                                max_user_connections=200):
+                            max_queries_per_hour=0,
+                            max_updates_per_hour=0,
+                            max_connections_per_hour=0,
+                            max_user_connections=200):
         sql = """grant select, insert, update, delete, index, create temporary tables, execute, show view
         on `{database}`.* to `{username}`@'{ipAddress}' identified
         by '{passwd}' with
@@ -242,10 +240,10 @@ class DBAOpers(object):
                                              ))
 
     def grant_resource_limit(self, conn, username, database, ip_address, role,
-                                           max_queries_per_hour=None,
-                                           max_updates_per_hour=None,
-                                           max_connections_per_hour=None,
-                                           max_user_connections=None):
+                             max_queries_per_hour=None,
+                             max_updates_per_hour=None,
+                             max_connections_per_hour=None,
+                             max_user_connections=None):
         resource_password_sql = 'select password, host from mysql.user where user="{user}"'.format(user=username)
         cursor = conn.cursor()
         cursor.execute(resource_password_sql)
@@ -258,13 +256,13 @@ class DBAOpers(object):
         try:
             resource_limit_sql = """REVOKE all ON `{database}`.*
             from `{username}`@'{ip_address}'""".format(database=database,
-                                            username=username,
-                                            ip_address=ip_address)
+                                                       username=username,
+                                                       ip_address=ip_address)
             cursor.execute(resource_limit_sql)
         except Exception, e:
             pass
 
-        if 'manager' ==  role:
+        if 'manager' == role:
             grant_sql = """grant
             all privileges on `{database}`.*
             to `{username}`@'{ipAddress}'
@@ -273,14 +271,14 @@ class DBAOpers(object):
             MAX_UPDATES_PER_HOUR {muph}
             MAX_CONNECTIONS_PER_HOUR {mcph}
             MAX_USER_CONNECTIONS {muc}""".format(database=database,
-                                             username=username,
-                                             ipAddress=ip_address,
-                                             passwd=passwd,
-                                             mqph=max_queries_per_hour,
-                                             muph=max_updates_per_hour,
-                                             mcph=max_connections_per_hour,
-                                             muc=max_user_connections
-                                             )
+                                                 username=username,
+                                                 ipAddress=ip_address,
+                                                 passwd=passwd,
+                                                 mqph=max_queries_per_hour,
+                                                 muph=max_updates_per_hour,
+                                                 mcph=max_connections_per_hour,
+                                                 muc=max_user_connections
+                                                 )
 
         elif 'wr' == role:
             grant_sql = """grant
@@ -292,13 +290,13 @@ class DBAOpers(object):
             MAX_UPDATES_PER_HOUR {muph}
             MAX_CONNECTIONS_PER_HOUR {mcph}
             MAX_USER_CONNECTIONS {muc}""".format(database=database,
-                                             username=username,
-                                             ipAddress=ip_address,
-                                             passwd=passwd,
-                                             mqph=max_queries_per_hour,
-                                             muph=max_updates_per_hour,
-                                             mcph=max_connections_per_hour,
-                                             muc=max_user_connections)
+                                                 username=username,
+                                                 ipAddress=ip_address,
+                                                 passwd=passwd,
+                                                 mqph=max_queries_per_hour,
+                                                 muph=max_updates_per_hour,
+                                                 mcph=max_connections_per_hour,
+                                                 muc=max_user_connections)
 
         elif 'ro' == role:
             grant_sql = """grant select, execute, show view on
@@ -308,13 +306,13 @@ class DBAOpers(object):
             MAX_UPDATES_PER_HOUR {muph}
             MAX_CONNECTIONS_PER_HOUR {mcph}
             MAX_USER_CONNECTIONS {muc}""".format(database=database,
-                                             username=username,
-                                             ipAddress=ip_address,
-                                             passwd=passwd,
-                                             mqph=max_queries_per_hour,
-                                             muph=max_updates_per_hour,
-                                             mcph=max_connections_per_hour,
-                                             muc=max_user_connections)
+                                                 username=username,
+                                                 ipAddress=ip_address,
+                                                 passwd=passwd,
+                                                 mqph=max_queries_per_hour,
+                                                 muph=max_updates_per_hour,
+                                                 mcph=max_connections_per_hour,
+                                                 muc=max_user_connections)
 
         cursor.execute(grant_sql)
 
@@ -322,20 +320,19 @@ class DBAOpers(object):
         cursor = conn.cursor()
         cursor.execute("flush privileges")
 
-
     def craete_database(self, conn, databaseName):
         cursor = conn.cursor()
-        cursor.execute("create database if not exists `%s`" %databaseName)
+        cursor.execute("create database if not exists `%s`" % databaseName)
 
     def drop_database(self, conn, databaseName):
         cursor = conn.cursor()
-        cursor.execute("drop database if exists `%s`" %databaseName)
+        cursor.execute("drop database if exists `%s`" % databaseName)
 
     def master_name(self):
-        return "sa_%s"%(self.name)
+        return "sa_%s" % (self.name)
 
     def readonly_name(self):
-        return "sa_%s_ro"%(self.name)
+        return "sa_%s_ro" % (self.name)
 
     def account_info(self):
         return """
@@ -344,11 +341,11 @@ class DBAOpers(object):
         master_password: %s<br />
         readonly_username: %s<br />
         readonly_password: %s
-        """%(self.database,
-             self.master_name(),
-             self.master_passwd,
-             self.readonly_name(),
-             self.readonly_passwd)
+        """ % (self.database,
+               self.master_name(),
+               self.master_passwd,
+               self.readonly_name(),
+               self.readonly_passwd)
 
     def show_status(self, conn):
         cursor = conn.cursor()
@@ -474,11 +471,11 @@ class DBAOpers(object):
         rows = cursor.fetchall()
         return rows
 
-    def get_mysql_connection(self, host ='127.0.0.1', user="root", passwd='Mcluster', autocommit = True):
+    def get_mysql_connection(self, host='127.0.0.1', user="root", passwd='Mcluster', autocommit=True):
         conn = None
 
         try:
-            conn=MySQLdb.Connect(host, user, passwd, port=options.mysql_port)
+            conn = MySQLdb.Connect(host, user, passwd, port=options.mysql_port)
             conn.autocommit(autocommit)
         except Exception,e:
             logging.exception(e)
@@ -494,7 +491,7 @@ class DBAOpers(object):
         for row in rows:
             db = row[0]
             if not db in ["mysql", "information_schema", "performance_schema"]:
-                yield (dbs,db)
+                yield (dbs, db)
 
     def retrieve_wsrep_status(self):
         conn = self.get_mysql_connection()
@@ -519,7 +516,7 @@ class DBAOpers(object):
         check_result = self._check_wsrep_ready(key_value)
         return check_result
 
-    def _check_wsrep_ready(self,key_value):
+    def _check_wsrep_ready(self, key_value):
         if key_value == {}:
             raise CommonException("the param should be not null")
 
@@ -544,7 +541,6 @@ class DBAOpers(object):
             return False
 
         return True
-
 
     def retrieve_stat_wsrep_status_command(self, conn, key, value, _dict):
         dbsqlstr = 'show status like "wsrep_cluster_status"'
@@ -676,10 +672,10 @@ class DBAOpers(object):
         cursor = conn.cursor()
         cursor.execute("set names 'utf8'")
         cursor.execute('select table_name, table_comment, (data_length+index_length)/1024 as total_kb from information_schema.tables where table_schema="{0}"'.format(value))
-        rows=cursor.fetchall()
+        rows = cursor.fetchall()
         row_dict = {}
         if rows == ():
-            raise UserVisiableException('%s param given is wrong!' % str(key+'='+value))
+            raise UserVisiableException('%s param given is wrong!' % str(key + '=' + value))
         for row in rows:
             __dict = {}
             __dict.setdefault('table_comment', row[1])
@@ -730,7 +726,7 @@ class DBAOpers(object):
     def retrieve_stat_database_size_command(self, conn, key, value, _dict):
         cursor = conn.cursor()
         cursor.execute('select (sum(DATA_LENGTH)+sum(INDEX_LENGTH))/1024 FROM information_schema.TABLES where TABLE_SCHEMA="{0}"'.format(value))
-        rows=cursor.fetchall()
+        rows = cursor.fetchall()
         if rows[0][0] == None:
             raise UserVisiableException('%s param given is wrong!' % key)
         _dict.setdefault(key, str(rows[0][0]))
@@ -738,7 +734,7 @@ class DBAOpers(object):
     def retrieve_stat_version_command(self, conn, key, value, _dict):
         cursor = conn.cursor()
         cursor.execute('select version()')
-        rows=cursor.fetchall()
+        rows = cursor.fetchall()
         _dict.setdefault(key, rows[0][0])
 
     @run_on_executor()
@@ -747,7 +743,7 @@ class DBAOpers(object):
         if not params:
             raise UserVisiableException('params are not given')
         _dict = {}
-        conn=self.get_mysql_connection()
+        conn = self.get_mysql_connection()
         if conn==None:
             raise UserVisiableException("Can\'t connect to mysql server")
         try:
@@ -762,5 +758,5 @@ class DBAOpers(object):
     def base_db_fecth_info(self, conn, key, dbsqlstr, _dict):
         cursor = conn.cursor()
         cursor.execute(dbsqlstr)
-        rows=cursor.fetchall()
+        rows = cursor.fetchall()
         _dict.setdefault(key, rows[0][1])

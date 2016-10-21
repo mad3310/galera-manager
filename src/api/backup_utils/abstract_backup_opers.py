@@ -1,71 +1,62 @@
-'''
-Created on Sep 28, 2015
+# -*- coding: utf-8 -*-
 
-@author: root
-'''
-import os, glob, time
-import logging
+import os
 import subprocess
 import datetime
-from abc import abstractmethod
-from common.appdefine.backupDefine import *
-import shutil
 
+from abc import abstractmethod
+
+from common.appdefine.backupDefine import *
 
 
 class AbstractBackupOpers(object):
-    '''
-    classdocs
-    '''
-
 
     def __init__(self, params):
         '''
         '''
-        
-    @abstractmethod  
+
+    @abstractmethod
     def remove_expired_backup_file(self):
         raise NotImplementedError, "Cannot call abstract method"
-    
-    @abstractmethod  
+
+    @abstractmethod
     def create_backup_directory(self):
         raise NotImplementedError, "Cannot call abstract method"
-    
-    @abstractmethod  
+
+    @abstractmethod
     def backup_action(self):
         raise NotImplementedError, "Cannot call abstract method"
-    
-    @abstractmethod  
+
+    @abstractmethod
     def trans_backup_file(self):
         raise NotImplementedError, "Cannot call abstract method"
 
-    
     def _run_comm_call(self, cmdStr):
         return_code = subprocess.call(cmdStr, shell=True)
         return str(return_code)
-    
+
     def _fb_update_index(self, file_name):
         remove_remote_file = 'rm -rf ' + REMOTE_BACKUPDIR + '/full'
-        ln_sym = 'ln -s ' + REMOTE_BACKUPDIR +'/' + file_name + ' ' + REMOTE_BACKUPDIR + '/full'
+        ln_sym = 'ln -s ' + REMOTE_BACKUPDIR + '/' + file_name + ' ' + REMOTE_BACKUPDIR + '/full'
         remove_local_file = 'rm -rf ' + BACKUPDIR + file_name
-        
+
         [self._run_comm_call(cmdStr) for cmdStr in (remove_remote_file, ln_sym, remove_local_file)]
-        
+
     def _log_create_time(self):
         log_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
         return log_time
-    
+
     def _write_info_to_local(self, path, filename, key_value):
         if os.path.exists(path) is False:
             os.mkdir(path)
-        
+
         with open(path + filename, 'a') as f_obj:
-            if type(key_value) == dict: 
+            if type(key_value) == dict:
                 for key, value in key_value.items():
-                    f_obj.write(str(key)+': ' + str(value))
+                    f_obj.write(str(key) + ': ' + str(value))
             else:
                 f_obj.write(key_value + '\n')
-        
+
     def _write_info_to_zk(self, zkOpers, key_value):
         time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
         key_value['time'] = time
@@ -75,7 +66,7 @@ class AbstractBackupOpers(object):
         xDate = self.get_day_of_day(days_count)
         expDate = xDate.strftime('%Y%m%d%H%M%S')
         romote_files = os.listdir(backup_path)
-        
+
         for file_name in romote_files:
             if file_name != 'full' and file_name != 'incr':
                 if file_name.find('-') == -1:
@@ -90,4 +81,3 @@ class AbstractBackupOpers(object):
             return datetime.datetime.today() - datetime.timedelta(days=n)
 
         return datetime.datetime.today() + datetime.timedelta(days=abs(n))
-

@@ -7,14 +7,14 @@ Created on 2013-7-21
 import os
 from os.path import join, getsize
 import logging
+
 from tornado.options import options
+
 from common.abstract_stat_service import Abstract_Stat_Service
 from common.helper import is_monitoring, get_localhost_ip, retrieve_directory_available, retrieve_directory_capacity
 
+
 class NodeStatOpers(Abstract_Stat_Service):
-    '''
-    classdocs
-    '''
     def __init__(self):
         '''
         Constructor
@@ -33,7 +33,7 @@ class NodeStatOpers(Abstract_Stat_Service):
         return result
 
     def stat_data_dir_size(self):
-        result = {'/var':'0', '/srv/mcluster':'0', '/':'0'}
+        result = {'/var': '0', '/srv/mcluster': '0', '/': '0'}
 
         #return_result = self.invokeCommand.run_check_shell(options.stat_dir_size)
         #df_output_lines = [s.split() for s in return_result.splitlines()]
@@ -122,15 +122,15 @@ class NodeStatOpers(Abstract_Stat_Service):
         _data_directory_available = retrieve_directory_available('/data')
 
         result = {
-            "srv_mcluster_available" : _srv_mcluster_available,
-            "srv_mcluster_total" : _srv_mcluster_total,
-            "data_directory_available" : _data_directory_available
+            "srv_mcluster_available": _srv_mcluster_available,
+            "srv_mcluster_total": _srv_mcluster_total,
+            "data_directory_available": _data_directory_available
         }
         return result
 
     def stat_data_mem_available(self):
         mem_stat = {}
-        with open("/proc/meminfo",'r') as f:
+        with open("/proc/meminfo", 'r') as f:
             con = f.readlines()
 
         mem_stat['MemTotal'] = con[0].split()[1]
@@ -149,7 +149,7 @@ class NodeStatOpers(Abstract_Stat_Service):
         一个字段表示最近运行的进程ID。
         """
         names = ('loadavg_1', 'loadavg_5', 'loadavg_15', 'nr', 'last_pid')
-        with open("/proc/loadavg",'r') as f:
+        with open("/proc/loadavg", 'r') as f:
             values = f.read().strip().split()
         loadavg = dict(zip(names, values))
         return loadavg
@@ -167,7 +167,7 @@ class NodeStatOpers(Abstract_Stat_Service):
 
         满足上述条件方可成为备份节点
         """
-        backup_dir_local =  '/srv/mcluster'
+        backup_dir_local = '/srv/mcluster'
         backup_dir_remote = '/data/mcluster_data'
         mysql_data_dir = '/srv/mcluster/mysql'
 
@@ -179,11 +179,10 @@ class NodeStatOpers(Abstract_Stat_Service):
 
         mysql_data_size = _getdirsize(mysql_data_dir)
         stat_local = os.statvfs(backup_dir_local)
-        local_dir_avail = stat_local.f_bfree*stat_local.f_bsize
+        local_dir_avail = stat_local.f_bfree * stat_local.f_bsize
         stat_remote = os.statvfs(backup_dir_remote)
-        remote_dir_avail = stat_remote.f_bfree*stat_remote.f_bsize
+        remote_dir_avail = stat_remote.f_bfree * stat_remote.f_bsize
 
-        can_backup = (local_dir_avail >= mysql_data_size*2 and
-                      remote_dir_avail >= mysql_data_size*2)
+        can_backup = (local_dir_avail >= mysql_data_size * 2 and
+                      remote_dir_avail >= mysql_data_size * 2)
         return {'diskspace_enough': can_backup}
-

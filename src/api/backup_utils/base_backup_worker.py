@@ -1,17 +1,16 @@
-'''
-Created on 01.07, 2016
+# -*- coding: utf-8 -*-
 
-@author: xu
-'''
+import urllib
 import logging
 import json
+
 import tornado.httpclient
 from tornado.gen import Callback, Wait, engine
 from tornado.options import options
 from tornado.httpclient import HTTPRequest
+
 from common.helper import _retrieve_userName_passwd
 from backup_utils.backup_evl_score import BackupEvlScore
-import urllib, urllib2
 
 
 class BaseBackupWorker(object):
@@ -22,7 +21,6 @@ class BaseBackupWorker(object):
         '''
         self.response_message = None
 
-
     def _dispatch_request_sync(self, online_node_list, get_or_post_type, url_post):
         http_client = tornado.httpclient.HTTPClient()
 
@@ -30,14 +28,13 @@ class BaseBackupWorker(object):
         try:
             response_message = {}
             for node_ip in online_node_list:
-                requesturi = "http://" + node_ip + ":"+ str(options.port) + url_post
+                requesturi = "http://" + node_ip + ":" + str(options.port) + url_post
                 request = HTTPRequest(url=requesturi, method=get_or_post_type, auth_username=adminUser, auth_password=adminPasswd)
                 response = http_client.fetch(request)
                 response_message.setdefault(node_ip, json.loads(response.body.strip()))
             return response_message
         finally:
             http_client.close()
-
 
     @engine
     def _dispatch_request(self, online_node_list, get_or_post_type, url_post, params={}):
@@ -48,7 +45,7 @@ class BaseBackupWorker(object):
         key_sets = set()
         try:
             for node_ip in online_node_list:
-                requesturi = "http://"+ node_ip +":"+str(options.port)+ url_post
+                requesturi = "http://" + node_ip + ":" + str(options.port) + url_post
                 callback_key = str(node_ip)
                 key_sets.add(callback_key)
                 request = HTTPRequest(url=requesturi, method=get_or_post_type, body=params, auth_username=adminUser, auth_password=adminPasswd)
@@ -66,7 +63,6 @@ class BaseBackupWorker(object):
 
         finally:
             http_client.close()
-
 
     @property
     def _get_response_message(self):
