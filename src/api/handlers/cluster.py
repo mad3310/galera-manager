@@ -16,12 +16,6 @@ from common.utils import CLUSTER_NAME
 from base import APIHandler
 
 
-'''
-Created on 2013-7-21
-
-@author: asus
-'''
-
 # create mcluster
 # eg. curl --user root:root -d "clusterName=letv_mcluster_test_1&dataNodeIp=192.168.0.10&dataNodeName=letv_mcluster_test_1_node_1" "http://localhost:8888/cluster"
 @require_basic_auth
@@ -115,14 +109,14 @@ class InitMCluster(APIHandler):
             #check if cluster has odd data node
             if not forceInit:
                 dataNodeNumber = zkOper.getDataNodeNumber(clusterUUID)
-                if dataNodeNumber/2 == 0:
+                if dataNodeNumber / 2 == 0:
                     raise HTTPAPIErrorException("the number should be not odd number,please add 1 or 3 data node into cluster!",
                                                 status_code=417)
 
             clusterName = clusterProKeyValue['clusterName']
             clusterAddress = 'gcomm://%s' % (data_node_ip)
 
-            requestParam = {'wsrep_cluster_name':clusterName, 'wsrep_node_address':data_node_ip, 'wsrep_cluster_address':clusterAddress, 'wsrep_node_name':data_node_name}
+            requestParam = {'wsrep_cluster_name': clusterName, 'wsrep_node_address': data_node_ip, 'wsrep_cluster_address':clusterAddress, 'wsrep_node_name':data_node_name}
             self.confOpers.setValue(options.mysql_cnf_file_name, requestParam)
 
             sst_user_password = self.invokeCommand.runBootstrapScript()
@@ -137,7 +131,6 @@ class InitMCluster(APIHandler):
         finally:
             if isLock:
                 zkOper.unLock_init_node_action(lock)
-
 
         result = {}
 #        dict.setdefault("code", '000000')
@@ -166,7 +159,6 @@ class SyncMCluster(APIHandler):
         self.finish(result)
 
 
-
 # start mysqld service on every data node for entity cluster
 # eg. curl --user root:root -d "cluster_flag=new" "http://localhost:8888/cluster/start"
 @require_basic_auth
@@ -180,7 +172,7 @@ class ClusterStart(APIHandler):
 
         requestParam = {}
         for key in args:
-            requestParam.setdefault(key,args[key][0])
+            requestParam.setdefault(key, args[key][0])
 
         cluster_flag = requestParam.get('cluster_flag')
 
@@ -197,6 +189,7 @@ class ClusterStart(APIHandler):
 #       dict.setdefault("code", '000000')
         result.setdefault("message", "due to start cluster need a large of times, please wait to finished and email to you, when cluster have started!")
         self.finish(result)
+
 
 # cluster status. Return information about the cluster status.
 #eq curl --user root:root "http://localhost:8888/cluster/check/online_node"
@@ -220,7 +213,6 @@ class ClusterStatus(APIHandler):
         result['nodelist'] = cluster_started_nodes
 
         self.finish(result)
-
 
 
 # stop mysqld service on every data node for entity cluster
@@ -252,7 +244,6 @@ class ClusterStop(APIHandler):
         self.finish(result)
 
 
-
 # eg. curl --user root:root "http://localhost:8888/cluster/zk/remove"
 @require_basic_auth
 class ClusterZkRemove(APIHandler):
@@ -269,4 +260,3 @@ class ClusterZkRemove(APIHandler):
         result = {}
         result.setdefault("message", "del zk info success")
         self.finish(result)
-

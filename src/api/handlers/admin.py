@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
+
 import os
 import stat
 import base64
 import shutil
 import logging
 
-from common.configFileOpers import ConfigFileOpers
-from base import APIHandler
 from tornado.options import options
+
+from base import APIHandler
+from common.configFileOpers import ConfigFileOpers
 from common.utils.exceptions import HTTPAPIErrorException
 from configuration.adminOpers import AdminOpers
 
@@ -24,7 +26,7 @@ class AdminConf(APIHandler):
         requestParam = {}
         args = self.request.arguments
         for key in args:
-            requestParam.setdefault(key,args[key][0])
+            requestParam.setdefault(key, args[key][0])
 
         if not requestParam:
             raise HTTPAPIErrorException("params is empty")
@@ -39,7 +41,6 @@ class AdminConf(APIHandler):
         if self.confOpers.ipFormatChk(requestParam['zkAddress']):
             raise HTTPAPIErrorException("zkaddress is illegal", status_code=417)
 
-
         self.confOpers.setValue(options.mcluster_manager_cnf, requestParam)
         self.adminOpers.sync_info_from_zk(requestParam['zkAddress'][0])
 
@@ -49,23 +50,22 @@ class AdminConf(APIHandler):
         self.finish(result)
 
 
-
 # admin reset
 # eg. curl --user root:root "http://localhost:8888/admin/reset"
 class AdminReset(APIHandler):
 
     def get(self):
-        template_path=os.path.join(options.base_dir, "templates")
+        template_path = os.path.join(options.base_dir, "templates")
         config_path = os.path.join(options.base_dir, "config")
 
-        clusterPropTemFileName = os.path.join(template_path,"cluster.property.template")
-        dataNodePropTemFileName = os.path.join(template_path,"dataNode.property.template")
-        mclusterManagerCnfTemFileName = os.path.join(template_path,"mclusterManager.cnf.template")
+        clusterPropTemFileName = os.path.join(template_path, "cluster.property.template")
+        dataNodePropTemFileName = os.path.join(template_path, "dataNode.property.template")
+        mclusterManagerCnfTemFileName = os.path.join(template_path, "mclusterManager.cnf.template")
 
-        clusterPropFileName = os.path.join(config_path,"cluster.property")
-        dataNodePropFileName = os.path.join(config_path,"dataNode.property")
-        mclusterManagerCnfFileName = os.path.join(config_path,"mclusterManager.cnf")
-        fileNameList = [clusterPropFileName,dataNodePropFileName,mclusterManagerCnfFileName]
+        clusterPropFileName = os.path.join(config_path, "cluster.property")
+        dataNodePropFileName = os.path.join(config_path, "dataNode.property")
+        mclusterManagerCnfFileName = os.path.join(config_path, "mclusterManager.cnf")
+        fileNameList = [clusterPropFileName, dataNodePropFileName, mclusterManagerCnfFileName]
 
         for fileName in fileNameList:
             if os.path.exists(fileName):
@@ -90,7 +90,7 @@ class AdminUser(APIHandler):
     def post(self):
         requestParam = {}
         args = self.request.arguments
-        logging.info("args :"+ str(args))
+        logging.info("args :" + str(args))
         if not args:
             raise HTTPAPIErrorException("params is empty")
 
@@ -98,7 +98,7 @@ class AdminUser(APIHandler):
             value = args[key][0]
             if key == 'adminPassword':
                 value = base64.encodestring(value).strip('\n')
-            requestParam.setdefault(key,value)
+            requestParam.setdefault(key, value)
 
         if "adminUser" not in requestParam or 'adminPassword' not in requestParam:
             raise HTTPAPIErrorException("admin user or password is empty, please check it!")

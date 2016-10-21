@@ -1,4 +1,7 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+
+import logging
+import traceback
 
 from tornado.web import RequestHandler,HTTPError
 from tornado import escape
@@ -8,22 +11,21 @@ from common.utils.exceptions import HTTPAPIError, UserVisiableException
 from common.utils.mail import send_email
 from common.helper.version import __version__, __app__
 from common.helper import get_localhost_ip
-from common.zkOpers import Requests_ZkOpers,Watch_ZkOpers
-import logging
-import traceback
+from common.zkOpers import Requests_ZkOpers, Watch_ZkOpers
 
 
 class BaseHandler(RequestHandler):
-    
+
     @property
     def db(self):
         return self.application.db
 
     def get_current_user(self):
         user_id = self.get_secure_cookie("blogdemo_user")
-        if not user_id: return None
+        if not user_id:
+            return None
         return self.db.get("SELECT * FROM authors WHERE id = %s", int(user_id))
-    
+
     def get_all_arguments(self):
         request_param = {}
         args = self.request.arguments
@@ -31,32 +33,29 @@ class BaseHandler(RequestHandler):
             request_param.setdefault(key, args[key][0])
         return request_param
 
-    
+
 class APIHandler(BaseHandler):
-    
+
     zkOper = None
-    
+
     def retrieve_zkOper(self):
         if None == self.zkOper:
             self.zkOper = Requests_ZkOpers()
-            
         return self.zkOper
-    
+
     def retrieve_watch_zkOper(self):
         if None == self.zkOper:
             self.zkOper = Watch_ZkOpers()
-            
         return self.zkOper
-        
-    
+
     def finish(self, chunk=None, notification=None):
         if chunk is None:
             chunk = {}
-        
+
         if self.request.connection.stream.closed():
             return
-        
-        if isinstance(chunk, dict) : 
+
+        if isinstance(chunk, dict):
             if 'error_code' not in chunk.keys():
                 chunk = {"meta": {"code": 200}, "response": chunk}
             else:
@@ -71,7 +70,7 @@ class APIHandler(BaseHandler):
 
             if isinstance(chunk, dict):
                 chunk = escape.json_encode(chunk)
-                
+
             self._write_buffer = [callback, "(", chunk, ")"] if chunk else []
             super(APIHandler, self).finish()
         else:
@@ -116,15 +115,15 @@ class APIHandler(BaseHandler):
     def _send_error_email(self, exception):
         try:
             local_ip = get_localhost_ip()
-            version_str = '{0}-{1}'.format(__app__,__version__)
-            logging.info("version_str :" + str(version_str)) 
+            version_str = '{0}-{1}'.format(__app__, __version__)
+            logging.info("version_str :" + str(version_str))
             # send email
             subject = "[%s]Internal Server Error " % options.sitename
             body = self.render_string("errors/500_email.html",
                                       exception=exception)
-            
+
             body += "\n" + version_str + "\nip:" + local_ip
-            
+
 #            email_from = "%s <noreply@%s>" % (options.sitename, options.domain)
             if options.send_email_switch:
                 send_email(options.admins, subject, body)
@@ -144,5 +143,3 @@ class APIErrorHandler(APIHandler):
     def prepare(self):
         super(APIErrorHandler, self).prepare()
         raise HTTPAPIError(404)
-    
-    

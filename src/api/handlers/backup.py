@@ -1,19 +1,19 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import logging
 import datetime
 
-from os import listdir
+from tornado.web import asynchronous
+from tornado.gen import engine
+
 from base import APIHandler
 from common.utils.exceptions import HTTPAPIErrorException
 from common.tornado_basic_auth import require_basic_auth
+from common.utils.asyc_utils import run_on_executor, run_callback
+from common.zkOpers import Requests_ZkOpers
 from backup_utils.dispath_backup_worker import DispatchBackupWorker
 from backup_utils.backup_worker import BackupWorkers
 from backup_utils.base_backup_check import get_response_request, get_local_backup_status
-from tornado.web import asynchronous
-from tornado.gen import engine
-from common.utils.asyc_utils import run_on_executor, run_callback
-from common.zkOpers import Requests_ZkOpers
 
 
 @require_basic_auth
@@ -89,14 +89,14 @@ class BackUpCheck(APIHandler):
 
         last_backup_ip = backup_info['recently_backup_ip: ']
         last_backup_time = backup_info['time: ']
-        last_backup_type = {'backup_type' : backup_info['backup_type: ']}
+        last_backup_type = {'backup_type': backup_info['backup_type: ']}
 
         time = long(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
         backup_time = long(datetime.datetime.strptime(last_backup_time, "%Y-%m-%d %H:%M:%S").strftime('%Y%m%d%H%M%S'))
 
         url_post = "/backup/checker"
 
-        if (time - backup_time)/10000 > 30:
+        if (time - backup_time) / 10000 > 30:
             result.setdefault("message", "last backup expired")
 
         else:
