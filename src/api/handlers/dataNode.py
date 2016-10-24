@@ -1,18 +1,22 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import logging
 import kazoo
+
+from tornado.options import options
+from tornado.web import asynchronous
+from tornado.gen import engine
+
 from common.configFileOpers import ConfigFileOpers
 from common.tornado_basic_auth import require_basic_auth
-from base import APIHandler
-from tornado.options import options
 from common.invokeCommand import InvokeCommand
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.utils.exceptions import HTTPAPIErrorException
 from common.node_stat_opers import NodeStatOpers
-from tornado.web import asynchronous
-from tornado.gen import engine
 from common.utils.asyc_utils import run_on_executor, run_callback
+
+from base import APIHandler
+
 
 # add data node into mcluster
 # eg. curl --user root:root -d "dataNodeIp=192.168.0.20&dataNodeName=letv_mcluster_test_1_node_2" "http://localhost:8888/cluster/node"
@@ -31,7 +35,7 @@ class DataNodeToMCluster(APIHandler):
 
         for key in args:
             value = args[key][0]
-            requestParam.setdefault(key,value)
+            requestParam.setdefault(key, value)
 
         if "dataNodeName" not in requestParam or "dataNodeIp" not in requestParam:
             raise HTTPAPIErrorException("dataNodeName or dataNodeIp is empty, please check it!")
@@ -47,10 +51,10 @@ class DataNodeToMCluster(APIHandler):
         clusterUUID = zkOper.getClusterUUID()
         zkOper.writeDataNodeInfo(clusterUUID, dataNodeProprs)
 
-        data,_ = zkOper.retrieveClusterProp(clusterUUID)
+        data, _ = zkOper.retrieveClusterProp(clusterUUID)
         self.confOpers.setValue(options.cluster_property, eval(data))
 
-        fullText,_ = zkOper.retrieveMysqlProp(clusterUUID)
+        fullText, _ = zkOper.retrieveMysqlProp(clusterUUID)
         self.confOpers.writeFullText(options.mysql_cnf_file_name, fullText)
 
         data_node_ip = requestParam.get('dataNodeIp')
@@ -59,7 +63,7 @@ class DataNodeToMCluster(APIHandler):
 
         index = orginal_cluster_address.find("//")
 
-        ip_str = orginal_cluster_address[index + 2 :]
+        ip_str = orginal_cluster_address[index + 2:]
         ip_lists = ip_str.rstrip().split(",")
 
         if data_node_ip in ip_lists:
@@ -70,13 +74,13 @@ class DataNodeToMCluster(APIHandler):
 
         data_node_name = requestParam.get('dataNodeName')
 
-        #mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
-        #self.confOpers.writeFullText(options.mysql_cnf_file_name, mysql_cnf_full_text)
+        # mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
+        # self.confOpers.writeFullText(options.mysql_cnf_file_name, mysql_cnf_full_text)
 
         keyValueMap = {}
         keyValueMap.setdefault('wsrep_cluster_address', new_cluster_address)
         keyValueMap.setdefault('wsrep_node_name', str(data_node_name))
-        keyValueMap.setdefault('wsrep_node_address' ,str(data_node_ip))
+        keyValueMap.setdefault('wsrep_node_address', str(data_node_ip))
         self.confOpers.setValue(options.mysql_cnf_file_name, keyValueMap)
 
         mysql_cnf_full_text = self.confOpers.retrieveFullText(options.mysql_cnf_file_name)
@@ -86,7 +90,6 @@ class DataNodeToMCluster(APIHandler):
 #        dict.setdefault("code", "000000")
         result.setdefault("message", "add data node into cluster successful!")
         self.finish(result)
-
 
     def delete(self):
         mysql_service_opers = Node_Mysql_Service_Opers()
@@ -126,7 +129,7 @@ class SyncDataNode(APIHandler):
 
     confOpers = ConfigFileOpers()
 
-    def get(self,ip_address):
+    def get(self, ip_address):
         if ip_address is None:
             error_message = "you should specify the ip address need to sync"
             raise HTTPAPIErrorException(error_message, status_code=417)
@@ -158,6 +161,7 @@ class DataNodeMonitorLogError(APIHandler):
     def do(self):
         return_dict = self.node_mysql_service_oper.retrieve_log_for_error()
         return return_dict
+
 
 # check data node if there are some warnings in log
 # eg. curl "http://localhost:8888/inner/node/check/log/warning"
@@ -231,6 +235,7 @@ class DataNodeMonitorLogHealth(APIHandler):
         return_dict = 'true'
         return return_dict
 
+
 # start mysqld service on data node
 # eg. curl --user root:root "http://localhost:8888/node/start"   start one node which has configed the all node ip list on my.cnf
 # eg. curl --user root:root -d "isNewCluster=True" "http://localhost:8888/node/start"   start new cluster on this node
@@ -265,6 +270,7 @@ class DataNodeStart(APIHandler):
             raise HTTPAPIErrorException("current operation is using by other people, please wait a moment to try again!",
                                         status_code=417)
 
+
 # stop mysqld service on data node
 # eg. curl --user root:root "http://localhost:8888/node/stop"
 @require_basic_auth
@@ -281,6 +287,7 @@ class DataNodeStop(APIHandler):
         result.setdefault("message", "due to stop data node need a large of times, please wait to finished and email to you, when data node has stoped!")
 
         self.finish(result)
+
 
 # retrieve node stat
 # eg. curl "http://localhost:8888/node/stat"
