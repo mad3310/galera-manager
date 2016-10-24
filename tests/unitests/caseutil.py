@@ -1,22 +1,30 @@
- 
-import sys, time, json, traceback, commands, logging 
-#import containerManager, global_varies, mailutil
-import re
-#conf_ini = global_varies.conf_ini
-import unicodedata
+# -*- coding: utf-8 -*-
 
-logging.basicConfig(filename= 'test_case.log', level =logging.INFO)
+import sys
+import json
+import traceback
+import commands
+import logging
+# import containerManager, global_varies, mailutil
+import re
+# conf_ini = global_varies.conf_ini
+
+logging.basicConfig(filename='test_case.log', level=logging.INFO)
+
+
 def get_case(file_path):
     f = open(file_path)
     content = f.read()
     cases = json.loads(content)
     return cases
 
+
 def _get_case_result(curl):
     curl = ' %s 2>/dev/null' % curl
     ret = commands.getoutput(curl)
-    print '_get_case_result result:',str(ret)
+    print '_get_case_result result:', str(ret)
     return json.loads(ret)
+
 
 def compare_result(result, expect_result):
     if result == True:
@@ -33,12 +41,13 @@ def compare_result(result, expect_result):
             break
     return rst
 
+
 def run_one_case(case):
     error_detail = ''
     if not isinstance(case, dict):
         error_detail = 'get a wrong case, please check!'
         return error_detail
-    try: 
+    try:
         curl = case.get('curl')
         expect_result = case.get('expect_result')
         print expect_result, type(expect_result), 22222
@@ -47,11 +56,11 @@ def run_one_case(case):
         logging.info('test: %s' % str(curl))
         print 'test: %s' % str(curl)
         ret = _get_case_result(curl)
-        logging.info('test result : %s' % str(ret) )
+        logging.info('test result : %s' % str(ret))
         logging.info('expect result: %s' % str(expect_result))
         #com_ret = compare_result(ret, expect_result)
         #logging.info('compare reslut: %s' % str(com_ret))
-        #print 'compare reslut: %s' % str(com_ret)
+        # print 'compare reslut: %s' % str(com_ret)
   #      if not com_ret:
   #          error_detail = r'interface: %s: \n test result: %s, expect result: %s' % (curl, str(ret),  str(expect_result) )
   #          logging.error(error_detail)
@@ -60,11 +69,12 @@ def run_one_case(case):
         logging.error(str(traceback.format_exc()))
         return str(traceback.format_exc())
 
+
 def get_key_via_value(pattern_str, expect_result_dict):
     response_dict = expect_result_dict.get("response")
     target_key = None
     reg_expression = None
-    for key , value in response_dict.items():
+    for key, value in response_dict.items():
         if pattern_str in value:
             target_key = key
             reg_expression = value.replace(pattern_str, "")
@@ -74,28 +84,29 @@ def get_key_via_value(pattern_str, expect_result_dict):
     tem_list = []
     tem_list.append(target_key)
     tem_list.append(reg_expression)
-    return tem_list 
+    return tem_list
+
 
 def m_run_one_case(case):
     error_detail = ''
-    pattern_str = "regular_expression:" 
+    pattern_str = "regular_expression:"
     if not isinstance(case, dict):
         error_detail = 'get a wrong case, please check!'
         return error_detail
-    try: 
+    try:
         curl = case.get('curl')
         expect_result = case.get('expect_result')
         print expect_result, type(expect_result), 22222
         #expect_result = eval(expect_result)
-        ret_list = [] 
+        ret_list = []
         ret_list = get_key_via_value(pattern_str, expect_result)
         #init = case.get('init')
         logging.info('test: %s' % str(curl))
         print 'test: %s' % str(curl)
         ret = _get_case_result(curl)
         logging.info(str(ret))
-       #  reg_pattern = expect_result.get("response").get("reg_exp_pattern") 
-        if  ret_list != None:
+       #  reg_pattern = expect_result.get("response").get("reg_exp_pattern")
+        if ret_list != None:
             reg_pattern = ret_list[1]
             reg_instance = str(ret.get("response").get(ret_list[0]))
             logging.info("reg_instance : %s", reg_instance)
@@ -104,12 +115,12 @@ def m_run_one_case(case):
             logging.info(str(ret_list))
             logging.info((reg_pattern))
             logging.info(str(ret_list[0]))
-       
-        logging.info('test result : %s' % str(ret) )
+
+        logging.info('test result : %s' % str(ret))
         logging.info('expect result: %s' % str(expect_result))
         com_ret = compare_result(ret, expect_result)
         logging.info('compare reslut: %s' % str(com_ret))
-        #print 'compare reslut: %s' % str(com_ret)
+        # print 'compare reslut: %s' % str(com_ret)
   #      if not com_ret:
   #          error_detail = r'interface: %s: \n test result: %s, expect result: %s' % (curl, str(ret),  str(expect_result) )
   #          logging.error(error_detail)
@@ -119,7 +130,7 @@ def m_run_one_case(case):
         return str(traceback.format_exc())
 
 
-def run_cases(file_path, end_step = -1):
+def run_cases(file_path, end_step=-1):
     try:
         case_index_list = []
         cases = get_case(file_path)
@@ -127,7 +138,7 @@ def run_cases(file_path, end_step = -1):
             case_index_list.append(case_index)
         case_index_list.sort()
         count = 0
-        if end_step == -1: 
+        if end_step == -1:
             end_step = len(case_index_list)
         for case_index in case_index_list:
             case = cases.get(case_index)
@@ -141,19 +152,19 @@ def run_cases(file_path, end_step = -1):
       #  mailutil.sendMail('auto interface notice', 'pass')
         return True
     except:
-        logging.error( str(traceback.format_exc()) )
+        logging.error(str(traceback.format_exc()))
         print str(traceback.format_exc()), 11111
         return False
 
-#def check_vm_stat():
+# def check_vm_stat():
 #    node_ips = []
 #    node_ips = conf_ini.get('Vagrantfile').get('node_ips')
-#    
+#
 #    while True:
 #        stat = True
 #        succ = []
 #        for index, host_ip in enumerate(node_ips):
-#            print 'begin host_ip:%s' % host_ip  
+#            print 'begin host_ip:%s' % host_ip
 #            cm = containerManager.ContainerManager(host_ip)
 #            ret = cm.container_manager_status()
 #            logging.info('host_ip:%s, result: %s' % (host_ip, str(ret)) )
@@ -168,12 +179,12 @@ def run_cases(file_path, end_step = -1):
 #            logging.info('successfult, please test your server interface!')
 #            print 'successful, please test your server interface!'
 #            return True
-#        
+#
 #        for host_ip in succ:
 #            node_ips.remove(host_ip)
 #        time.sleep(3)
 #
-#def handleTimeout(func, timeout, *params, **paramMap):
+# def handleTimeout(func, timeout, *params, **paramMap):
 #    interval = 0.6
 #    if type(timeout) == tuple:
 #        timeout, interval = timeout
@@ -187,7 +198,7 @@ def run_cases(file_path, end_step = -1):
 #        timeout -= time.time() - t
 #    return rst
 #
-##def _isExcept(e, eType = Exception):
+# def _isExcept(e, eType = Exception):
 #    return isinstance(e, eType)
 
 if __name__ == '__main__':
@@ -200,4 +211,4 @@ if __name__ == '__main__':
         run_cases('test_a.json', end_step)
     else:
         print "Arguments Error"
-	#print get_case('test.json') 
+        # print get_case('test.json')
