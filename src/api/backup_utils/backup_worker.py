@@ -1,13 +1,15 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import threading
 import logging
 import datetime
 
 from backup_utils.full_backup_opers import FullBackupOpers
 from backup_utils.incr_backup_opers import IncrementBackupOpers
+
 from common.zkOpers import Requests_ZkOpers
 from common.dba_opers import DBAOpers
-from common.helper import retrieve_monitor_password, retrieve_directory_available, retrieve_directory_capacity
+from common.helper import retrieve_monitor_password
 from common.helper import get_localhost_ip
 from common.invokeCommand import InvokeCommand
 from common.utils.exceptions import UserVisiableException
@@ -16,6 +18,7 @@ from common.utils.exceptions import UserVisiableException
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 CHECK_DMP_DATA_CMD = 'df -hmP|grep "/data"|wc -l'
+
 
 class BackupWorkers(threading.Thread):
 
@@ -32,7 +35,6 @@ class BackupWorkers(threading.Thread):
         else:
             self.backupOpers = IncrementBackupOpers(incr_basedir)
 
-
     def run(self):
         isLock, lock = self.zkOpers.lock_backup_action()
         if not isLock:
@@ -47,13 +49,13 @@ class BackupWorkers(threading.Thread):
 
             db_status = self.dba_opers.show_status(conn)
             if 'Synced' != db_status[-14][1]:
-                self.backup_record['error: '] = 'Mcluster is not start %s' %datetime.datetime.now().strftime(TIME_FORMAT)
+                self.backup_record['error: '] = 'Mcluster is not start %s' % datetime.datetime.now().strftime(TIME_FORMAT)
                 self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
                 self.zkOpers.write_backup_backup_info(self.backup_record)
                 return
 
             if '0' == self.__run_comm(CHECK_DMP_DATA_CMD):
-                self.backup_record['error: '] = 'No have /data partition %s' %datetime.datetime.now().strftime(TIME_FORMAT)
+                self.backup_record['error: '] = 'No have /data partition %s' % datetime.datetime.now().strftime(TIME_FORMAT)
                 self.backupOpers._write_info_to_local(self.backupOpers.path, self.backupOpers.file_name, self.backup_record)
                 self.zkOpers.write_backup_backup_info(self.backup_record)
                 return
@@ -64,11 +66,11 @@ class BackupWorkers(threading.Thread):
             self.backupOpers.backup_action(self.zkOpers)
             self.backupOpers.trans_backup_file(self.zkOpers)
 
-            record = {"recently_backup_ip: " : str(get_localhost_ip()), 'time: ' : datetime.datetime.now().strftime(TIME_FORMAT), 'backup_type: ': self._backup_mode}
+            record = {"recently_backup_ip: ": str(get_localhost_ip()), 'time: ': datetime.datetime.now().strftime(TIME_FORMAT), 'backup_type: ': self._backup_mode}
             self.zkOpers.write_backup_backup_info(record)
 
         except Exception, e:
-            record = {"error: " : 'backup is wrong, please check it!', 'time:' : datetime.datetime.now().strftime(TIME_FORMAT), 'backup_type: ': self._backup_mode}
+            record = {"error: ": 'backup is wrong, please check it!', 'time:': datetime.datetime.now().strftime(TIME_FORMAT), 'backup_type: ': self._backup_mode}
             self.zkOpers.write_backup_backup_info(record)
             logging.info(e)
 
@@ -80,5 +82,3 @@ class BackupWorkers(threading.Thread):
         invokeCommand = InvokeCommand()
         return_result = invokeCommand._runSysCmd(cmdstr)
         return str(return_result[0])
-
-

@@ -1,13 +1,13 @@
-'''
-Created on 01.11, 2016
+# -*- coding: utf-8 -*-
 
-@author: xu
-'''
 import traceback
+
 from tornado import escape
+
 from backup_utils.base_backup_worker import BaseBackupWorker
 from common.zkOpers import Requests_ZkOpers
 from common.utils.exceptions import UserVisiableException
+
 
 class BackupWorkerMethod(BaseBackupWorker):
 

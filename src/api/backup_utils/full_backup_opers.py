@@ -1,23 +1,19 @@
-# coding=utf-8
-'''
-Created on jan 20, 2015
+# -*- coding: utf-8 -*-
 
-@author: yanwei xu&zhou bingzheng
-'''
 import os
 import datetime
-from backup_utils.abstract_backup_opers import AbstractBackupOpers
-from common.appdefine.backupDefine import *
+
 from tornado.options import options
+
+from common.appdefine.backupDefine import *
 from common.helper import get_localhost_ip
+from backup_utils.abstract_backup_opers import AbstractBackupOpers
 from backup_utils.status_enum import Status
 
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
+
 class FullBackupOpers(AbstractBackupOpers):
-    '''
-    classdocs
-    '''
 
     def __init__(self):
         self.time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
@@ -26,20 +22,18 @@ class FullBackupOpers(AbstractBackupOpers):
         self.file_name = self.time + '_script.log'
         self.status = {}
 
-
     def remove_expired_backup_file(self):
         self._delete_file(REMOTE_BACKUPDIR, days_count=4)
 
     def create_backup_directory(self):
-        [self._run_comm_call('mkdir -p %s' %path) for path in (BACKUPDIR, REMOTE_BACKUPDIR, LOG_FILE_PATH)]
-
+        [self._run_comm_call('mkdir -p %s' % path) for path in (BACKUPDIR, REMOTE_BACKUPDIR, LOG_FILE_PATH)]
 
     def backup_action(self, ZkOpers):
         now_time = datetime.datetime.now()
         self.time = now_time.strftime('%Y%m%d%H%M%S')
         self.file_name = self.time + '_script.log'
 
-        record = '%s  == Mysql backup  is starting  == ' %now_time.strftime(TIME_FORMAT)
+        record = '%s  == Mysql backup  is starting  == ' % now_time.strftime(TIME_FORMAT)
 
         self.status['backup_status:'] = Status.backup_starting
         self.status['backup_start_time:'] = now_time.strftime(TIME_FORMAT)
@@ -117,5 +111,3 @@ class FullBackupOpers(AbstractBackupOpers):
         self._write_info_to_local(self.path, self.file_name, record)
 
         self._delete_file(LOG_FILE_PATH)
-
-
