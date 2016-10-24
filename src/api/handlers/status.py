@@ -1,15 +1,12 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
-'''
-Created on 2013-7-21
-
-@author: asus
-'''
-from base import APIHandler
 from tornado.web import asynchronous
 from tornado.gen import engine
+
 from common.utils.asyc_utils import run_on_executor, run_callback
 from common.consts import MONITOR_TYPE
+
+from base import APIHandler
 
 
 # retrieve the status value of special monitor type, the monitor type include cluster,node,db.
@@ -31,7 +28,6 @@ class MclusterStatusDetail(APIHandler):
             result.setdefault(monitor_status_key, monitor_status_value)
 
         self.finish(result)
-
 
 
 # retrieve the status value of all monitor type
@@ -59,8 +55,9 @@ class MclusterStatus(APIHandler):
             result.setdefault(monitor_type, monitor_type_sub_dict)
         return result
 
+
 class MclusterHealth(APIHandler):
 
     def get(self):
-        result = {"status":"ok"}
+        result = {"status": "ok"}
         self.finish(result)
