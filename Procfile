@@ -1,1 +1,1 @@
-api: python src/api/mclusterManager.py --port=8888
+api: python manager.py --port=8888

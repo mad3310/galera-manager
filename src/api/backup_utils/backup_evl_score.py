@@ -1,9 +1,5 @@
-# coding:utf-8
-'''
-Created on 2016-01-11
+# -*- coding: utf-8 -*-
 
-@author: xu
-'''
 import logging
 
 

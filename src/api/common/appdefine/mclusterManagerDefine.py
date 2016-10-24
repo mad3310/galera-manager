@@ -3,10 +3,10 @@ import os
 
 from tornado.options import define
 
-join=os.path.join
-dirname=os.path.dirname
+join = os.path.join
+dirname = os.path.dirname
 
-base_dir=os.path.abspath(dirname(dirname(dirname(__file__))))
+base_dir = os.path.abspath(dirname(dirname(dirname(__file__))))
 
 define('port', default=8888, type=int, help='app listen port')
 define('debug', default=False, type=bool, help='is debuging?')
@@ -75,4 +75,3 @@ define("full_back_sh", default=join(base_dir, "shell", "mcluster_backup_full.sh"
 define("on_check_storedprocedure", default=False, type=bool, help='the flag of checking stored procedure')
 define("es_hosts", default='10.140.67.117:9200,10.140.67.85:9200,10.140.67.86:9200', help='elasticsearch hosts')
 define("es_version", default=2, help='elasticsearch hosts')
-

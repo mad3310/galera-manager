@@ -66,7 +66,7 @@ class CreateMCluster(APIHandler):
         if self.confOpers.ipFormatChk(requestParam['dataNodeIp']):
             raise HTTPAPIErrorException("dataNodeIp is illegal", status_code=417)
 
-        clusterUUID = CLUSTER_NAME + '/' + str(uuid.uuid1())
+        clusterUUID = cluster_name + '/' + str(uuid.uuid1())
         requestParam.setdefault("clusterUUID",clusterUUID)
 
         if requestParam != {}:

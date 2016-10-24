@@ -1,16 +1,9 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright (c) 2012 feilong.me. All rights reserved.
-#
-# @author: Felinx Lee <felinx.lee@gmail.com>
-# Created on  Jun 30, 2012
-#
 
 from tornado import escape
 from tornado.web import HTTPError
 
-
-#params are not passed to throw 400 error, other visible error throw 417 error.
+# params are not passed to throw 400 error, other visible error throw 417 error.
 _error_types = {400: "param_error",
                 401: "invalid_auth",
                 403: "not_authorized",

@@ -1,10 +1,4 @@
 ﻿# -*- coding: utf-8 -*-
-#
-# Copyright (c) 2012 feilong.me. All rights reserved.
-#
-# @author: Felinx Lee <felinx.lee@gmail.com>
-# Created on  Jun 30, 2012
-#
 
 import re
 import logging
@@ -37,7 +31,7 @@ def send_email(to, subject, body, html=None, attachments=[]):
     plain text and HTML parts. Attachments can be added by providing as a
     list of (filename, data) tuples.
     """
-    
+
     fr = options.smtp_from_address
     # convert EmailAddress to pure string
     if isinstance(fr, EmailAddress):
@@ -70,7 +64,7 @@ def send_email(to, subject, body, html=None, attachments=[]):
             part.set_payload(data)
             encoders.encode_base64(part)
             part.add_header("Content-Disposition", "attachment",
-                filename=filename)
+                            filename=filename)
             message.attach(part)
 
     message["Date"] = formatdate(time.time())
