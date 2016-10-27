@@ -39,12 +39,9 @@ def check_monitor_detail(serious_dict, general_dict, nothing_dict):
             create_time_str = monitor_return_json_value['response'][monitor_type][monitor_item]['ctime']
             t = time.strptime(create_time_str, TIME_FORMAT)
             create_time = datetime.datetime(*t[:6])
-#            print str(create_time)
 
             check_time = datetime.datetime.now()
-#            print str(check_time)
-            diff = (check_time - create_time).seconds
-#            print diff
+            diff = abs(check_time - create_time).seconds
 
             if diff > WARNING_TIME_DIFF:
                 serious_dict.setdefault(monitor_type_item, "please check async api, the data is out of date!")
