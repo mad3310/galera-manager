@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
-from src.api.utils.storify import storify
+from utils.storify import storify
 
 MONITOR_TYPE = {'db': ['existed_db_anti_item',
                        'wsrep_status',
