@@ -143,7 +143,6 @@ class Check_Status_Base(object):
                 success_count, failed_count, alarm_level,
                 error_record_dict, monitor_type, monitor_key)
 
-    @tornado.gen.engine
     def check_status(self, data_node_info_list, url_post,
                      monitor_type, monitor_key):
         zk_data_node_count = len(data_node_info_list)
