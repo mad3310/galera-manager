@@ -2,11 +2,13 @@
 import os
 
 from tornado.options import define
+from .consts import ADMIN_EMALS
 
 join = os.path.join
 dirname = os.path.dirname
 
 base_dir = os.path.abspath(dirname(dirname(dirname(__file__))))
+
 
 define('port', default=8888, type=int, help='app listen port')
 define('debug', default=False, type=bool, help='is debuging?')
@@ -14,9 +16,7 @@ define('sitename', default="mcluster manager", help='site name')
 define('domain', default="letv.com", help='domain name')
 
 define('send_email_switch', default=True, type=bool, help='the flag of if send error email')
-define('admins', default=("zhoubingzheng <zhoubingzheng@letv.com>", "gaoqiang3 <gaoqiang3@letv.com>",
-                          "zhangchengqiang <zhangchengqiang@le.com>", "dengliangju <dengliangju@le.com>",
-                          "liujinliu <liujinliu@le.com>","chenwenquan <chenwenquan@le.com>","wangyiyang <wangyiyang@le.com>"), help='admin email address')
+define('admins', default=ADMIN_EMALS, help='admin email address')
 define('smtp_host', default="10.205.91.22", help='smtp host')
 define('smtp_port', default=587, help='smtp port')
 define('smtp_user', default="mcluster", help='smtp user')

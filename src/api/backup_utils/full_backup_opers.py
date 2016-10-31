@@ -5,12 +5,14 @@ import datetime
 
 from tornado.options import options
 
-from common.appdefine.backupDefine import *
 from common.helper import get_localhost_ip
 from backup_utils.abstract_backup_opers import AbstractBackupOpers
 from backup_utils.status_enum import Status
 
+from .consts import BACKUP_CONFIG, BACKUP_SECRET
+
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+RSYNC = """rsync -azvr --include "full_backup-%s/" --exclude "/*" --bwlimit=18840 %s/* %s/"""
 
 
 class FullBackupOpers(AbstractBackupOpers):
@@ -23,10 +25,13 @@ class FullBackupOpers(AbstractBackupOpers):
         self.status = {}
 
     def remove_expired_backup_file(self):
-        self._delete_file(REMOTE_BACKUPDIR, days_count=4)
+        self._delete_file(BACKUP_CONFIG.FULL_REMOTE_DIR, days_count=4)
 
     def create_backup_directory(self):
-        [self._run_comm_call('mkdir -p %s' % path) for path in (BACKUPDIR, REMOTE_BACKUPDIR, LOG_FILE_PATH)]
+        dirs = (BACKUP_CONFIG.FULL_LOCAL_DIR,
+                BACKUP_CONFIG.FULL_REMOTE_DIR,
+                BACKUP_CONFIG.LOG_FILE_PATH)
+        [self._run_comm_call('mkdir -p %s' % path) for path in dirs]
 
     def backup_action(self, ZkOpers):
         now_time = datetime.datetime.now()
@@ -44,9 +49,12 @@ class FullBackupOpers(AbstractBackupOpers):
         bak_cmd = "innobackupex --user=%s --password=%s \
                     --defaults-file=%s --no-timestamp \
                     %s/full_backup-%s >> %s/%s_backup.log 2>&1" \
-                    % (BACKUP_USER, BACKUP_PASSWD, \
-                       options.mysql_cnf_file_name, \
-                       BACKUPDIR, self.time, LOG_FILE_PATH, \
+                    % (BACKUP_SECRET.USER,
+                       BACKUP_SECRET.PASSWD,
+                       options.mysql_cnf_file_name,
+                       BACKUP_CONFIG.FULL_LOCAL_DIR,
+                       self.time,
+                       BACKUP_CONFIG.LOG_FILE_PATH,
                        self.time)
 
         run_bak_result = os.system(bak_cmd)
@@ -56,7 +64,7 @@ class FullBackupOpers(AbstractBackupOpers):
         '''
         now_time = datetime.datetime.now()
         if 0 == run_bak_result:
-            record = '%s  == Backup All Data end == ' %now_time.strftime(TIME_FORMAT)
+            record = '%s  == Backup All Data end == ' % now_time.strftime(TIME_FORMAT)
 
             self.status['backup_status:'] = Status.backup_succecced
             self.status['backup_finish_time:'] = now_time.strftime(TIME_FORMAT)
@@ -65,7 +73,7 @@ class FullBackupOpers(AbstractBackupOpers):
             ZkOpers.write_backup_fullbackup_info(self.status)
 
         else:
-            record = '%s  == Backup All Data is ERROR == ' %now_time.strftime(TIME_FORMAT)
+            record = '%s  == Backup All Data is ERROR == ' % now_time.strftime(TIME_FORMAT)
             self.status['backup_status:'] = Status.backup_failed
             self.status['backup_finish_time:'] = now_time.strftime(TIME_FORMAT)
 
@@ -74,7 +82,7 @@ class FullBackupOpers(AbstractBackupOpers):
 
     def trans_backup_file(self, ZkOpers):
         now_time = datetime.datetime.now()
-        record = '%s  == cp backup_file is starting  == ' %now_time.strftime(TIME_FORMAT)
+        record = '%s  == cp backup_file is starting  == ' % now_time.strftime(TIME_FORMAT)
 
         self.status['cp_file_status:'] = Status.backup_transmit_starting
         self.status['cp_file_start_time:'] = now_time.strftime(TIME_FORMAT)
@@ -82,14 +90,14 @@ class FullBackupOpers(AbstractBackupOpers):
         self._write_info_to_local(self.path, self.file_name, record)
         ZkOpers.write_backup_fullbackup_info(self.status)
 
-        rsync_cmd = """rsync -azvr --include "full_backup-%s/" --exclude "/*" --bwlimit=18840 %s/* %s/""" % (self.time, BACKUPDIR, REMOTE_BACKUPDIR)
+        rsync_cmd = RSYNC % (self.time, BACKUP_CONFIG.FULL_LOCAL_DIR, BACKUP_CONFIG.FULL_REMOTE_DIR)
         run_rsync_result = os.system(rsync_cmd)
 
         now_time = datetime.datetime.now()
         if 0 == run_rsync_result:
             self._fb_update_index('/full_backup-' + self.time)
 
-            record = '%s  == Cp backup_file ok == ' %now_time.strftime(TIME_FORMAT)
+            record = '%s  == Cp backup_file ok == ' % now_time.strftime(TIME_FORMAT)
             self.status['cp_status:'] = Status.backup_transmit_succeed
             self.status['full_backup_ip:'] = str(get_localhost_ip())
             self.status['cp_finish_time:'] = now_time.strftime(TIME_FORMAT)
@@ -98,7 +106,7 @@ class FullBackupOpers(AbstractBackupOpers):
             ZkOpers.write_backup_fullbackup_info(self.status)
 
         else:
-            record = '%s  == backup_file is not cp /data == ' %now_time.strftime(TIME_FORMAT)
+            record = '%s  == backup_file is not cp /data == ' % now_time.strftime(TIME_FORMAT)
             self.status['cp_status:'] = Status.backup_transmit_faild
             self.status['backup_ip:'] = None
             self.status['cp_finish_time:'] = now_time.strftime(TIME_FORMAT)
@@ -107,7 +115,7 @@ class FullBackupOpers(AbstractBackupOpers):
             ZkOpers.write_backup_fullbackup_info(self.status)
             return
 
-        record = '%s  == the full backup is completed == ' %now_time.strftime(TIME_FORMAT)
+        record = '%s  == the full backup is completed == ' % now_time.strftime(TIME_FORMAT)
         self._write_info_to_local(self.path, self.file_name, record)
 
-        self._delete_file(LOG_FILE_PATH)
+        self._delete_file(BACKUP_CONFIG.LOG_FILE_PATH)
