@@ -75,3 +75,8 @@ define("full_back_sh", default=join(base_dir, "shell", "mcluster_backup_full.sh"
 define("on_check_storedprocedure", default=False, type=bool, help='the flag of checking stored procedure')
 define("es_hosts", default='10.140.67.117:9200,10.140.67.85:9200,10.140.67.86:9200', help='elasticsearch hosts')
 define("es_version", default=2, help='elasticsearch hosts')
+
+define("S3_ACCESS_KEY", default='EH18VA68TUPMOF4L5MK3')
+define("S3_ACCESS_SECRET", default='Y3KW8LAyVcTNS1cAnPEv847lUmtFXILVg+8gXaIo')
+define("S3_BUCKET_NAME", default='martrix')
+define("S3_PREFIX_URL", default='http://s3.lecloud.com/')
