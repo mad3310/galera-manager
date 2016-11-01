@@ -1,15 +1,17 @@
 FROM letv:centos6
 MAINTAINER bingzheng.zhou <zhoubingzheng@letv.com>
 
-RUN rpm -ivh http://pkg-repo.oss.letv.com/pkgs/centos6/letv-release.noarch.rpm
+#RUN rpm -ivh http://pkg-repo.oss.letv.com/pkgs/centos6/letv-release.noarch.rpm
 
 # set yum repo
-RUN rm -rf /etc/yum.repos.d/*
-ADD ./init/CentOS.repo /etc/yum.repos.d/CentOS.repo
+RUN rm -rf /etc/yum.repos.d/CentOS-Debuginfo.repo
+RUN rm -rf /etc/yum.repos.d/CentOS-Media.repo
+RUN rm -rf /etc/yum.repos.d/CentOS-Vault.repo
 ADD ./init/letv-pkgs.repo /etc/yum.repos.d/letv-pkgs.repo
+ADD ./init/add.repo /etc/yum.repos.d/add.repo
 ADD ./init/test.repo /etc/yum.repos.d/test.repo
-RUN chmod 755 /etc/yum.repos.d/CentOS.repo
 RUN chmod 755 /etc/yum.repos.d/letv-pkgs.repo
+RUN chmod 755 /etc/yum.repos.d/add.repo
 RUN chmod 755 /etc/yum.repos.d/test.repo
 RUN yum clean all
 
@@ -61,7 +63,6 @@ RUN chmod 755 /usr/share/mysql/mcluster-bootstrap
 #yum need software
 RUN yum install cronie -y
 RUN yum install vim -y
-RUN yum install java-1.7.0-openjdk-devel -y
 RUN yum update bash -y
 
 #set innotop
