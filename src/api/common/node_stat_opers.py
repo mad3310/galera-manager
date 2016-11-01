@@ -1,25 +1,12 @@
-# coding:utf-8
-'''
-Created on 2013-7-21
+# -*- coding: utf-8 -*-
 
-@author: asus
-'''
 import os
-from os.path import join, getsize
-import logging
-
-from tornado.options import options
 
 from common.abstract_stat_service import Abstract_Stat_Service
-from common.helper import is_monitoring, get_localhost_ip, retrieve_directory_available, retrieve_directory_capacity
+from common.utils import disk_available, disk_capacity, dir_size
 
 
 class NodeStatOpers(Abstract_Stat_Service):
-    def __init__(self):
-        '''
-        Constructor
-        '''
-
     def stat(self):
         mysql_dir_size_partion = self.stat_data_dir_size()
         mysql_top_partion = self._stat_mysql_top()
@@ -33,38 +20,39 @@ class NodeStatOpers(Abstract_Stat_Service):
         return result
 
     def stat_data_dir_size(self):
+        """这个方法目前已被不明人士注释，后续重构考虑删除  chenwenquan"""
         result = {'/var': '0', '/srv/mcluster': '0', '/': '0'}
 
-        #return_result = self.invokeCommand.run_check_shell(options.stat_dir_size)
-        #df_output_lines = [s.split() for s in return_result.splitlines()]
+        # return_result = self.invokeCommand.run_check_shell(options.stat_dir_size)
+        # df_output_lines = [s.split() for s in return_result.splitlines()]
 
-        #for df_output_line in df_output_lines:
-            #used = df_output_line[4]
-            #mounted_on = df_output_line[5]
-            #used = used.replace('%','')
-            #if mounted_on == '/var' or mounted_on == '/srv/mcluster' or mounted_on == '/':
-                #result.setdefault(mounted_on,used)
+        # for df_output_line in df_output_lines:
+        # used = df_output_line[4]
+        # mounted_on = df_output_line[5]
+        # used = used.replace('%','')
+        # if mounted_on == '/var' or mounted_on == '/srv/mcluster' or mounted_on == '/':
+        # result.setdefault(mounted_on,used)
 
         return result
 
     def _stat_mysql_top(self):
         result = {}
 
-        #zkOper = self.retrieve_zkOper()
+        # zkOper = self.retrieve_zkOper()
 
-        #if not is_monitoring(get_localhost_ip(), zkOper):
-            #result.setdefault('mysql_cpu_partion', 0.0)
-            #result.setdefault('mysql_mem_partion', 0.0)
-            #return result
+        # if not is_monitoring(get_localhost_ip(), zkOper):
+        # result.setdefault('mysql_cpu_partion', 0.0)
+        # result.setdefault('mysql_mem_partion', 0.0)
+        # return result
 
-        #return_result = self.invokeCommand.run_check_shell(options.stat_top_command)
-        #logging.info("return_result :" + str(return_result))
+        # return_result = self.invokeCommand.run_check_shell(options.stat_top_command)
+        # logging.info("return_result :" + str(return_result))
 
         mysql_info_list = []
-        #try:
-            #mysql_info_list = return_result.split('\n\n\n')[0].split('\n')[7].split()
-        #except IndexError:
-            #logging.info("mysql pid not found through top -umysql")
+        # try:
+        # mysql_info_list = return_result.split('\n\n\n')[0].split('\n')[7].split()
+        # except IndexError:
+        # logging.info("mysql pid not found through top -umysql")
         if mysql_info_list is None or mysql_info_list == []:
             mysql_cpu = 0.0
             mysql_mem = 0.0
@@ -89,8 +77,8 @@ class NodeStatOpers(Abstract_Stat_Service):
 
     def stat_node_memory(self):
 
-        #return_result = self.invokeCommand.run_check_shell(options.stat_mem_command)
-        #mysql_mem_list = return_result.split('\n\n\n')[0].split('\n')[2].split()
+        # return_result = self.invokeCommand.run_check_shell(options.stat_mem_command)
+        # mysql_mem_list = return_result.split('\n\n\n')[0].split('\n')[2].split()
         mysql_mem_list = []
 
         if mysql_mem_list is None or mysql_mem_list == []:
@@ -115,11 +103,9 @@ class NodeStatOpers(Abstract_Stat_Service):
         return result
 
     def stat_data_disk_available(self):
-        '''
-        '''
-        _srv_mcluster_available = retrieve_directory_available('/srv/mcluster')
-        _srv_mcluster_total = retrieve_directory_capacity('/srv/mcluster')
-        _data_directory_available = retrieve_directory_available('/data')
+        _srv_mcluster_available = disk_available('/srv/mcluster')
+        _srv_mcluster_total = disk_capacity('/srv/mcluster')
+        _data_directory_available = disk_available('/data')
 
         result = {
             "srv_mcluster_available": _srv_mcluster_available,
@@ -171,13 +157,7 @@ class NodeStatOpers(Abstract_Stat_Service):
         backup_dir_remote = '/data/mcluster_data'
         mysql_data_dir = '/srv/mcluster/mysql'
 
-        def _getdirsize(dir):
-            size = 0
-            for root, dirs, files in os.walk(dir):
-                size += sum([getsize(join(root, name)) for name in files])
-            return size
-
-        mysql_data_size = _getdirsize(mysql_data_dir)
+        mysql_data_size = dir_size(mysql_data_dir)
         stat_local = os.statvfs(backup_dir_local)
         local_dir_avail = stat_local.f_bfree * stat_local.f_bsize
         stat_remote = os.statvfs(backup_dir_remote)

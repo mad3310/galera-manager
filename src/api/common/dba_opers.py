@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-'''
-Created on 2013-7-21
-
-@author: asus
-'''
 import MySQLdb
 import logging
 
@@ -17,12 +12,6 @@ from common.utils.asyc_utils import run_on_executor, run_callback
 
 
 class DBAOpers(object):
-
-    def __init__(self):
-        '''
-        Constructor
-        '''
-
     def __unicode__(self):
         return self.name
 
@@ -46,11 +35,11 @@ class DBAOpers(object):
     def delete_user(self, conn, username, ip_address):
         cursor = conn.cursor()
         cursor.execute("""select count(*) as c from mysql.user where user='{username}' and host='{ip_address}'"""
-                       .format(username=username,ip_address=ip_address))
+                       .format(username=username, ip_address=ip_address))
         rows = cursor.fetchall()
         c = rows[0][0]
         if c:
-            sql = """drop user `{username}`@'{ip_address}'""".format(username=username,ip_address=ip_address)
+            sql = """drop user `{username}`@'{ip_address}'""".format(username=username, ip_address=ip_address)
             logging.info("drop user sql is:" + sql)
             cursor.execute(sql)
 
@@ -154,6 +143,17 @@ class DBAOpers(object):
             logging.exception(e)
         logging.info('drop ' + tb_name + 'success')
 
+    @classmethod
+    def get_table_size(cls, db_name, tb_name):
+        conn = cls.get_mysql_connection()
+        conn.select_db(db_name)
+        cursor = conn.cursor()
+        sql = (('select (data_length+index_length) from information_schema.tables '
+                'where table_schema={db_name} and table_name={tb_name}')
+               .format(db_name=db_name, tb_name=tb_name))
+        r = cursor.execute(sql)
+        return r if r else 0
+
     def create_user(self, conn, username, passwd, ip_address='%', dbName=None):
         cursor = conn.cursor()
         cursor.execute("""select count(*) as c from mysql.user where user='{username}' and host='{ip_address}'"""
@@ -171,7 +171,6 @@ class DBAOpers(object):
         else:
             cursor.execute("""CREATE USER `{username}`@'{ip_address}' IDENTIFIED BY '{passwd}'"""
                            .format(username=username, passwd=passwd, ip_address=ip_address))
-
 
     def grant_wr_privileges(self, conn, username, passwd, database, ipAddress='%',
                             max_queries_per_hour=0,
@@ -448,7 +447,6 @@ class DBAOpers(object):
         c = rows[0][0]
         return c
 
-
     def check_anti_item(self, conn):
         cursor = conn.cursor()
         cursor.execute("""SELECT DISTINCT
@@ -477,7 +475,7 @@ class DBAOpers(object):
         try:
             conn = MySQLdb.Connect(host, user, passwd, port=options.mysql_port)
             conn.autocommit(autocommit)
-        except Exception,e:
+        except Exception, e:
             logging.exception(e)
 
         return conn
@@ -561,7 +559,7 @@ class DBAOpers(object):
     def retrieve_stat_wating_count_command(self, conn, key, value, _dict):
         cursor = conn.cursor()
         cursor.execute('select concat("wait_num ",count(command)) from information_schema.PROCESSLIST  where command<>"Sleep" and time >2')
-        rows=cursor.fetchall()
+        rows = cursor.fetchall()
         _dict.setdefault(key, rows[0][0].lstrip('wait_num '))
 
     def retrieve_stat_net_send_command(self, conn, key, value, _dict):

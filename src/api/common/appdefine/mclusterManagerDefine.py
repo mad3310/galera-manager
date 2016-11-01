@@ -62,7 +62,6 @@ define("alarm_nothing", default="nothing", help="no alarm")
 define("stat_rows_oper", default="/usr/local/bin/innotop -h127.0.0.1 -uroot -pMcluster --nonint --count 1 --mode R", help="stat_rows_oper")
 define("stat_innodb_buffer", default="/usr/local/bin/innotop -h127.0.0.1 -uroot -pMcluster --nonint --count 1 --mode B", help="stat_innodb_buffer")
 define("stat_variable_status", default="/usr/local/bin/innotop -h127.0.0.1 -uroot -pMcluster --nonint --count 1 --mode S", help="stat_variable_status")
-define("stat_dir_size", default="df -Ph", help="stat_dir_size")
 define("stat_top_command", default='top -u mysql -bn 1', help='stat_top_command')
 define("stat_mem_command", default='free -g', help='stat_mem_command')
 
