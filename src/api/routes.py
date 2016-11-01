@@ -27,7 +27,7 @@ from handlers.databaseUser import DBUser
 from handlers.monitor import Mcluster_Monitor_Async, Mcluster_Monitor_Sync
 from handlers.status import MclusterHealth, MclusterStatus, MclusterStatusDetail
 from handlers.backup import BackUpCheck, BackUp_Checker, Backup, Inner_Backup_Action
-from handlers.dump import DBDump, TableDump, DumpCheck
+from handlers.dump import DBDump, DumpCheck
 
 
 handlers = [
@@ -74,8 +74,7 @@ handlers = [
     (r"/db/binlog/node/stat", BinLogNodestat),
     (r"/dbUser", DBUser),
     (r"/dbUser/([a-zA-Z\-\_0-9]+)/([a-zA-Z\-\_0-9]+)/([\.0-9\%]+|\%)", DBUser),
-    (r"/db/(P?<db_name>.*)/dump", DBDump),
-    (r"/db/(P?<db_name>.*)/table/(P?<table_name>.*/dump", TableDump),
+    (r"/db/dump", DBDump),
     (r"/db/dump/check", DumpCheck),
     (r"/mcluster/monitor", Mcluster_Monitor_Sync),
     (r"/mcluster/monitor/async", Mcluster_Monitor_Async),

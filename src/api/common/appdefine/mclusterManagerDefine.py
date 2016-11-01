@@ -76,6 +76,6 @@ define("es_hosts", default='10.140.67.117:9200,10.140.67.85:9200,10.140.67.86:92
 define("es_version", default=2, help='elasticsearch hosts')
 
 define("S3_ACCESS_KEY", default='EH18VA68TUPMOF4L5MK3')
-define("S3_ACCESS_SECRET", default='Y3KW8LAyVcTNS1cAnPEv847lUmtFXILVg+8gXaIo')
-define("S3_BUCKET_NAME", default='martrix')
+define("S3_SECRET_KEY", default='Y3KW8LAyVcTNS1cAnPEv847lUmtFXILVg+8gXaIo')
+define("S3_BUCKET_NAME", default='matrix')
 define("S3_PREFIX_URL", default='http://s3.lecloud.com/')
