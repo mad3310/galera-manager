@@ -40,6 +40,10 @@ RUN yum install -y monit
 ADD ./init/monit /etc/init.d/monit
 RUN chmod 755 /etc/init.d/monit
 
+#Modify /etc/gbalancer Privileges
+RUN mkdir -p /etc/gbalancer
+RUN chown -R gbalancer-manager:gbalancer /etc/gbalancer
+
 #install mcluster-manager
 RUN yum install -y mcluster-manager-version
 
