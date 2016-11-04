@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import commands
+import logging
+import subprocess
 
 from libs.fs.s3 import s3
 
@@ -34,11 +35,17 @@ class Dump(object):
         else:
             command = DUMP_DB_COMMAND.format(db_name=db_name,
                                              local_path=local_path)
-        commands.getoutput(command)
+        logging.info("[dump] command:{0}".format(command))
+
+        p = subprocess.Popen(command, shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+        p.wait()
 
         # 上传到S3
         if os.path.exists(local_path):
             s3.upload_file(local_path, s3_path)
+            logging.info("[dump] upload file [{0}] to [matrix/{1}]".format(local_path, s3_path))
 
         # 再次删除本地dump文件
         self.delete_local(local_path)
@@ -82,8 +89,10 @@ class Dump(object):
         """删除本地"""
         if os.path.exists(path):
             os.remove(path)
+            logging.info("[dump] delete local file:{0}".format(path))
 
     def delete_s3(self, path):
         """删除远端"""
         if s3.is_file_exists(path):
             s3.delete_file(path)
+            logging.info("[dump] delete s3 file:{0}".format(path))

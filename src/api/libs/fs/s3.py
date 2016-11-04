@@ -62,7 +62,7 @@ class S3(object):
             key:  文件名
             acl: 'private'|'public-read'|'public-read-write'|'authenticated-read'
         """
-        key = key or randbytes2(16)
+        key = key or randbytes2()
         self.bucket.upload_file(file, key)
         acl = acl or 'public-read'
         self.object_acl(key, acl)

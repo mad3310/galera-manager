@@ -10,5 +10,5 @@ def randbytes(bytes):
     return binascii.hexlify(os.urandom(bytes))
 
 
-def randbytes2(bytes):
+def randbytes2(bytes=16):
     return b64encode(randbytes(bytes)).rstrip('=')
