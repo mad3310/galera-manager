@@ -119,7 +119,7 @@ class APIHandler(BaseHandler):
             logging.info("version_str :" + str(version_str))
             # send email
             subject = "[%s]Internal Server Error " % options.sitename
-            body = exception + "\n" + version_str + "\nip:" + local_ip
+            body = "{0}\n{1}\nip:{2}".format(exception, version_str, local_ip)
 
 #            email_from = "%s <noreply@%s>" % (options.sitename, options.domain)
             if options.send_email_switch:

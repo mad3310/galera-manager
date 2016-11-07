@@ -3,9 +3,9 @@
 import os
 
 
-class ConfigFile(object):
+class File(object):
     '''
-    config静态配置文件操作
+    文件操作
     '''
 
     def get_values(self, path):
