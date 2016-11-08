@@ -436,9 +436,11 @@ class ZkOpers(object):
         path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_path)
         if self.zk.get_children(path=path):
             lock_name = self.zk.get_children(path=path)[0]
-            difftime = int(time.time()) - int(self.zk.get(path + "/" + lock_name)[-1].ctime / 1000)
+            local_address = "{path} +/+ {lock_name}".format(path=path,lock_name=lock_name)
+            node_ctime = int(self.zk.get(local_address)[-1].ctime)
+            difftime = int(time.time()) - node_ctime / 1000
             if difftime >= 5 * 60:
-                self.zk.delete(path + "/" + lock_name)
+                self.zk.delete(local_address)
         lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
         isLock = lock.acquire(blocking=True, timeout=5)
         return (isLock, lock)
