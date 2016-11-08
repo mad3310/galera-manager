@@ -32,6 +32,7 @@ from handlers.backup import BackUpCheck, BackUp_Checker, Backup, Inner_Backup_Ac
 handlers = [
     (r"/admin/conf", AdminConf),
     (r"/admin/user", AdminUser),
+    (r"/admin/reset", AdminReset),
     (r"/cluster", CreateMCluster),
     (r"/cluster/init", InitMCluster),
     (r"/cluster/sync", SyncMCluster),
@@ -54,7 +55,6 @@ handlers = [
     (r"/node/stat/memory/size", StatNodeMemorySize),
     (r"/node/conf/zk", DateNodeConfZk),
     (r"/node/stat/info", StatMysqlInfo),
-    (r"/admin/reset", AdminReset),
     (r"/db", DBOnMCluster),
     (r"/db/([a-zA-Z\-\_0-9]+)", DBOnMCluster),
     (r"/db/all/stat", DBStat),

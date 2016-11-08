@@ -12,18 +12,18 @@ from common.scheduler_opers import Scheduler_Opers
 import routes
 
 
-class Application(tornado.web.Application):
-
-    def __init__(self):
-        settings = dict(
-            debug=options.debug,
-        )
-        tornado.web.Application.__init__(self, routes.handlers, **settings)
+def create_app():
+    settings = dict(
+        debug=options.debug,
+    )
+    return tornado.web.Application(routes.handlers, **settings)
 
 
 def main():
     tornado.options.parse_command_line()
-    http_server = tornado.httpserver.HTTPServer(Application())
+    app = create_app()
+    print app.settings
+    http_server = tornado.httpserver.HTTPServer(app)
     http_server.listen(options.port)
 
     Scheduler_Opers()
