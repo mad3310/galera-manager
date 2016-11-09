@@ -29,6 +29,7 @@ TEMPLATE = {
     "mappings": MAPPING,
 }
 
+
 def put_template(template_name, template):
     context = init_context('mcluster', servers=options.es_hosts)
     es = ElasticsearchEngine.init_by_context(context)
