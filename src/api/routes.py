@@ -29,11 +29,16 @@ from handlers.status import MclusterHealth, MclusterStatus, MclusterStatusDetail
 from handlers.backup import BackUpCheck, BackUp_Checker, Backup, Inner_Backup_Action
 from handlers.dump import DBDump, DumpCheck
 
-
+# 管理配置
 handlers = [
     (r"/admin/conf", AdminConf),
     (r"/admin/user", AdminUser),
     (r"/admin/reset", AdminReset),
+    (r"/admin/reset", AdminReset)
+]
+
+# 集群操作及监控
+handlers += [
     (r"/cluster", CreateMCluster),
     (r"/cluster/init", InitMCluster),
     (r"/cluster/sync", SyncMCluster),
@@ -41,7 +46,20 @@ handlers = [
     (r"/cluster/start", ClusterStart),
     (r"/cluster/stop", ClusterStop),
     (r"/cluster/check/online_node", ClusterStatus),
-    (r"/cluster/zk/remove", ClusterZkRemove),
+    (r"/cluster/zk/remove", ClusterZkRemove)
+]
+
+# 集群监控
+handlers += [
+    (r"/mcluster/monitor", Mcluster_Monitor_Sync),
+    (r"/mcluster/monitor/async", Mcluster_Monitor_Async),
+    (r"/mcluster/status", MclusterStatus),
+    (r"/mcluster/health", MclusterHealth),
+    (r"/mcluster/status/([a-zA-Z]+)", MclusterStatusDetail)
+]
+
+# 节点操作及监控
+handlers += [
     (r"/node/sync/([\.0-9]+)", SyncDataNode),
     (r"/node/start", DataNodeStart),
     (r"/node/stop", DataNodeStop),
@@ -56,13 +74,23 @@ handlers = [
     (r"/node/stat/memory/size", StatNodeMemorySize),
     (r"/node/conf/zk", DateNodeConfZk),
     (r"/node/stat/info", StatMysqlInfo),
-    (r"/admin/reset", AdminReset),
-    (r"/db/create", DBCreate),
-    (r"/db/([a-zA-Z\-\_0-9]+)/delete/", DBDelete),
+    (r"/inner/node/check/log/error", DataNodeMonitorLogError),
+    (r"/inner/node/check/log/warning", DataNodeMonitorLogWarning),
+    (r"/inner/node/check/log/health", DataNodeMonitorLogHealth),
+    (r"/inner/node_port/check", PortCheck),
+]
+
+# MYSQL操作及监控
+handlers += [
     (r"/dbUser", DBUser),
     (r"/dbUser/([a-zA-Z\-\_0-9]+)/([a-zA-Z\-\_0-9]+)/([\.0-9\%]+|\%)", DBUser),
+    (r"/db/create", DBCreate),
+    (r"/db/([a-zA-Z\-\_0-9]+)/delete/", DBDelete),
     (r"/db/dump", DBDump),
     (r"/db/dump/check", DumpCheck),
+    (r"/db/table/size", DumpCheck),
+    (r"/db/table/size", DumpCheck),
+    # 监控信息收集
     (r"/db/binlog/pos", BinlogPos),
     (r"/db/binlog/node/stat", BinLogNodestat),
     (r"/db/all/stat", DBStat),
@@ -77,22 +105,17 @@ handlers = [
     (r"/db/all/stat/wsrepstatus/flow_control_paused", StatWsrepStatusFlowControlPaused),
     (r"/db/all/stat/wsrepstatus/slowest_node_param", StatWsrepStatusSlowestNodeParam),
     (r"/db/all/stat/wsrepstatus/slowest_network_param", StatWsrepStatusSlowestNetworkParam),
-    (r"/mcluster/monitor", Mcluster_Monitor_Sync),
-    (r"/mcluster/monitor/async", Mcluster_Monitor_Async),
-    (r"/mcluster/status", MclusterStatus),
-    (r"/mcluster/health", MclusterHealth),
-    (r"/mcluster/status/([a-zA-Z]+)", MclusterStatusDetail),
     (r"/inner/db/check/wr", Inner_DB_Check_WR),
     (r"/inner/db/check/wsrep_status", Inner_DB_Check_WsrepStatus),
     (r"/inner/db/check/cur_conns", Inner_DB_Check_CurConns),
     (r"/inner/db/check/cur_user_conns", Inner_DB_Check_User_CurConns),
     (r"/inner/db/recover/uuid_seqno", Inner_DB_Retrieve_Recover_UUID_Seqno),
-    (r"/inner/node/check/log/error", DataNodeMonitorLogError),
-    (r"/inner/node/check/log/warning", DataNodeMonitorLogWarning),
-    (r"/inner/node/check/log/health", DataNodeMonitorLogHealth),
-    (r"/inner/node_port/check", PortCheck),
+]
+
+# MYSQL备份
+handlers += [
     (r"/backup", Backup),
-    (r"/inner/backup", Inner_Backup_Action),
     (r"/backup/check", BackUpCheck),
-    (r"/backup/checker", BackUp_Checker)
+    (r"/backup/checker", BackUp_Checker),
+    (r"/inner/backup", Inner_Backup_Action),
 ]
