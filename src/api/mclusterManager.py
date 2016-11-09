@@ -22,7 +22,6 @@ def create_app():
 def main():
     tornado.options.parse_command_line()
     app = create_app()
-    print app.settings
     http_server = tornado.httpserver.HTTPServer(app)
     http_server.listen(options.port)
 

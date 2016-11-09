@@ -62,7 +62,6 @@ define("alarm_nothing", default="nothing", help="no alarm")
 define("stat_rows_oper", default="/usr/local/bin/innotop -h127.0.0.1 -uroot -pMcluster --nonint --count 1 --mode R", help="stat_rows_oper")
 define("stat_innodb_buffer", default="/usr/local/bin/innotop -h127.0.0.1 -uroot -pMcluster --nonint --count 1 --mode B", help="stat_innodb_buffer")
 define("stat_variable_status", default="/usr/local/bin/innotop -h127.0.0.1 -uroot -pMcluster --nonint --count 1 --mode S", help="stat_variable_status")
-define("stat_dir_size", default="df -Ph", help="stat_dir_size")
 define("stat_top_command", default='top -u mysql -bn 1', help='stat_top_command')
 define("stat_mem_command", default='free -g', help='stat_mem_command')
 
@@ -75,3 +74,8 @@ define("full_back_sh", default=join(base_dir, "shell", "mcluster_backup_full.sh"
 define("on_check_storedprocedure", default=False, type=bool, help='the flag of checking stored procedure')
 define("es_hosts", default='10.140.67.117:9200,10.140.67.85:9200,10.140.67.86:9200', help='elasticsearch hosts')
 define("es_version", default=2, help='elasticsearch hosts')
+
+define("S3_ACCESS_KEY", default='EH18VA68TUPMOF4L5MK3')
+define("S3_SECRET_KEY", default='Y3KW8LAyVcTNS1cAnPEv847lUmtFXILVg+8gXaIo')
+define("S3_BUCKET_NAME", default='matrix')
+define("S3_PREFIX_URL", default='http://s3.lecloud.com/')

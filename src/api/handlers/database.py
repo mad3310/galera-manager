@@ -37,7 +37,7 @@ TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
 @require_basic_auth
-class DBOnMCluster(APIHandler):
+class DBCreate(APIHandler):
     dba_opers = DBAOpers()
 
     conf_opers = ConfigFileOpers()
@@ -84,6 +84,12 @@ class DBOnMCluster(APIHandler):
         result.setdefault("manager_user_name", userName)
         result.setdefault("manager_user_password", userPassword)
         self.finish(result)
+
+
+@require_basic_auth
+class DBDelete(APIHandler):
+    dba_opers = DBAOpers()
+    conf_opers = ConfigFileOpers()
 
     def delete(self, dbName):
         if not dbName:
@@ -321,7 +327,8 @@ class Inner_DB_Check_WR(APIHandler):
             self.finish(return_flag)
             return
         finally:
-            conn.close()
+            if not conn:
+                conn.close()
 
         t_threshold = options.delta_time
         n_stamp_time = time.time()
