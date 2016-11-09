@@ -1,0 +1,43 @@
+[letv-updates]
+name=CentOS-$releasever - letv-updates
+baseurl=http://pkg-repo.oss.letv.com/pkgs/centos$releasever/updates/
+        http://114.134.84.154/mrepo/pkgs/centos$releasever/updates/
+        http://10.120.58.109/mrepo/pkgs/centos$releasever/updates/
+        http://220.181.155.227/mrepo/pkgs/centos$releasever/updates/
+        http://107.155.42.50:8088/mrepo/pkgs/centos$releasever/updates/
+        http://10.120.8.126:8088/mrepo/pkgs/centos$releasever/updates/
+enabled=1
+gpgcheck=0
+
+[letv-extras]
+name=CentOS-$releasever - letv-extras
+baseurl=http://pkg-repo.oss.letv.com/pkgs/centos$releasever/extras/
+        http://114.134.84.154/mrepo/pkgs/centos$releasever/extras/
+        http://10.120.58.109/mrepo/pkgs/centos$releasever/extras/
+        http://220.181.155.227/mrepo/pkgs/centos$releasever/extras/
+        http://107.155.42.50:8088/mrepo/pkgs/centos$releasever/extras/
+        http://10.120.8.126:8088/mrepo/pkgs/centos$releasever/extras/
+enabled=1
+gpgcheck=0
+
+[letv-drivers]
+name=CentOS-$releasever - letv-drivers
+baseurl=http://pkg-repo.oss.letv.com/pkgs/centos$releasever/drivers/
+        http://114.134.84.154/mrepo/pkgs/centos$releasever/drivers/
+        http://10.120.58.109/mrepo/pkgs/centos$releasever/drivers/
+        http://220.181.155.227/mrepo/pkgs/centos$releasever/drivers/
+        http://107.155.42.50:8088/mrepo/pkgs/centos$releasever/drivers/
+        http://10.120.8.126:8088/mrepo/pkgs/centos$releasever/drivers/
+enabled=1
+gpgcheck=0
+
+[staging]
+name=CentOS-$releasever - staging
+baseurl=http://pkg-repo.oss.letv.com/pkgs/centos$releasever/staging/
+        http://114.134.84.154/mrepo/pkgs/centos$releasever/staging/
+        http://10.120.58.109/mrepo/pkgs/centos$releasever/staging/
+        http://220.181.155.227/mrepo/pkgs/centos$releasever/staging/
+        http://107.155.42.50:8088/mrepo/pkgs/centos$releasever/staging/
+        http://10.120.8.126:8088/mrepo/pkgs/centos$releasever/staging/
+enabled=0
+gpgcheck=0

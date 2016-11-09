@@ -1,0 +1,64 @@
+# CentOS.repo 5 / 6
+# Pkgs updates for CentOS system
+
+[CentOS-os-add]
+name=CentOS-$releasever-os-add
+baseurl=http://10.200.91.36/mrepo/centos$releasever-server-$basearch/RPMS.os/
+        http://220.181.155.227/mrepo/centos$releasever-server-$basearch/RPMS.os/
+        http://114.134.84.154/mrepo/centos$releasever-server-$basearch/RPMS.os/
+        http://10.120.58.109/mrepo/centos$releasever-server-$basearch/RPMS.os/
+        http://107.155.42.50:8088/mrepo/centos$releasever-server-$basearch/RPMS.os/
+        http://10.120.8.126:8088/mrepo/centos$releasever-server-$basearch/RPMS.os/
+enabled=1
+gpgcheck=0
+
+[CentOS-updates-add]
+name=CentOS-$releasever-updates-add
+baseurl=http://10.200.91.36/mrepo/centos$releasever-server-$basearch/RPMS.updates/
+        http://220.181.155.227/mrepo/centos$releasever-server-$basearch/RPMS.updates/
+        http://114.134.84.154/mrepo/centos$releasever-server-$basearch/RPMS.updates/
+        http://10.120.58.109/mrepo/centos$releasever-server-$basearch/RPMS.updates/
+        http://107.155.42.50:8088/mrepo/centos$releasever-server-$basearch/RPMS.updates/
+        http://10.120.8.126:8088/mrepo/centos$releasever-server-$basearch/RPMS.updates/
+enabled=1
+gpgcheck=0
+
+[CentOS-extras-add]
+name=CentOS-$releasever-extras-add
+baseurl=http://10.200.91.36/mrepo/centos$releasever-server-$basearch/RPMS.extras/
+        http://220.181.155.227/mrepo/centos$releasever-server-$basearch/RPMS.extras/
+        http://114.134.84.154/mrepo/centos$releasever-server-$basearch/RPMS.extras/
+        http://10.120.58.109/mrepo/centos$releasever-server-$basearch/RPMS.extras/
+        http://107.155.42.50:8088/mrepo/centos$releasever-server-$basearch/RPMS.extras/
+        http://10.120.8.126:8088/mrepo/centos$releasever-server-$basearch/RPMS.extras/
+enabled=1
+gpgcheck=0
+
+[CentOS-epel-add]
+name=CentOS-$releasever-epel-add
+baseurl=http://10.200.91.36/mrepo/centos$releasever-server-$basearch/RPMS.epel/
+        http://220.181.155.227/mrepo/centos$releasever-server-$basearch/RPMS.epel/
+        http://114.134.84.154/mrepo/centos$releasever-server-$basearch/RPMS.epel/
+        http://10.120.58.109/mrepo/centos$releasever-server-$basearch/RPMS.epel/
+        http://107.155.42.50:8088/mrepo/centos$releasever-server-$basearch/RPMS.epel/
+        http://10.120.8.126:8088/mrepo/centos$releasever-server-$basearch/RPMS.epel/
+enabled=1
+gpgcheck=0
+
+[CentOS-puppet-dep-add]
+name=CentOS-$releasever-puppet-dep-add
+baseurl=http://10.200.91.36/mrepo/centos$releasever-server-$basearch/RPMS.puppet-dep/
+        http://220.181.155.227/mrepo/centos$releasever-server-$basearch/RPMS.puppet-dep/
+        http://114.134.84.154/mrepo/centos$releasever-server-$basearch/RPMS.puppet-dep/
+        http://10.120.58.109/mrepo/centos$releasever-server-$basearch/RPMS.puppet-dep/
+enabled=1
+gpgcheck=0
+
+[CentOS-puppet-prod-add]
+name=CentOS-$releasever-puppet-prod-add
+baseurl=http://10.200.91.36/mrepo/centos$releasever-server-$basearch/RPMS.puppet-prod/
+        http://220.181.155.227/mrepo/centos$releasever-server-$basearch/RPMS.puppet-prod/
+        http://114.134.84.154/mrepo/centos$releasever-server-$basearch/RPMS.puppet-prod/
+        http://10.120.58.109/mrepo/centos$releasever-server-$basearch/RPMS.puppet-prod/
+enabled=1
+gpgcheck=0

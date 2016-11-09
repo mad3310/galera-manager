@@ -431,15 +431,18 @@ class ZkOpers(object):
     def unLock_init_node_action(self, lock):
         self._unLock_base_action(lock)
 
-    def _lock_base_action(self, lock_name):
+    def _lock_base_action(self, lock_path):
         clusterUUID = self.getClusterUUID()
-        path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_name)
+        path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_path)
+        if self.zk.get_children(path=path):
+            lock_name = self.zk.get_children(path=path)[0]
+            local_address = "{path} +/+ {lock_name}".format(path=path,lock_name=lock_name)
+            node_ctime = int(self.zk.get(local_address)[-1].ctime)
+            difftime = int(time.time()) - node_ctime / 1000
+            if difftime >= 5 * 60:
+                self.zk.delete(local_address)
         lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
         isLock = lock.acquire(blocking=True, timeout=5)
-        if (int(time.time()) - int(self.zk.get(path)[-1].ctime/1000)) >= 5 * 60:
-            lock.release()
-            lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
-            isLock = lock.acquire(blocking=True, timeout=5)
         return (isLock, lock)
 
     def _unLock_base_action(self, lock):
