@@ -6,15 +6,10 @@ import datetime
 
 from abc import abstractmethod
 
-from common.appdefine.backupDefine import *
+from .consts import BACKUP_CONFIG
 
 
 class AbstractBackupOpers(object):
-
-    def __init__(self, params):
-        '''
-        '''
-
     @abstractmethod
     def remove_expired_backup_file(self):
         raise NotImplementedError, "Cannot call abstract method"
@@ -36,9 +31,10 @@ class AbstractBackupOpers(object):
         return str(return_code)
 
     def _fb_update_index(self, file_name):
-        remove_remote_file = 'rm -rf ' + REMOTE_BACKUPDIR + '/full'
-        ln_sym = 'ln -s ' + REMOTE_BACKUPDIR + '/' + file_name + ' ' + REMOTE_BACKUPDIR + '/full'
-        remove_local_file = 'rm -rf ' + BACKUPDIR + file_name
+        remove_remote_file = 'rm -rf ' + BACKUP_CONFIG.FULL_REMOTE_DIR + '/full'
+        ln_sym = 'ln -s ' + BACKUP_CONFIG.FULL_REMOTE_DIR + '/' + file_name + ' ' + \
+                 BACKUP_CONFIG.FULL_REMOTE_DIR + '/full'
+        remove_local_file = 'rm -rf ' + BACKUP_CONFIG.FULL_LOCAL_DIR + file_name
 
         [self._run_comm_call(cmdStr) for cmdStr in (remove_remote_file, ln_sym, remove_local_file)]
 

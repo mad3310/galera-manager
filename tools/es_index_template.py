@@ -33,7 +33,6 @@ def put_template(template_name, template):
     context = init_context('mcluster', servers=options.es_hosts)
     es = ElasticsearchEngine.init_by_context(context)
     r = es.put_template(template_name, template)
-    print r
     return r.get('acknowledged')
 
 
