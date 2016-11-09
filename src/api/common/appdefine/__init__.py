@@ -1,2 +1,1 @@
-#coding=utf-8
-import mclusterManagerDefine
+# -*- coding: utf-8 -*-
