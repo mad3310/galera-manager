@@ -29,6 +29,7 @@ dependencies:
     - zope.interface
     - mcluster-mysql-libs
     - saturn-es == 0.0.2
+    - python-boto3-full == 1.4.1
 
 # 安装位置，无需再写软件包名. 已默认安装至 /opt/letv
 # prefix: /opt/letv
