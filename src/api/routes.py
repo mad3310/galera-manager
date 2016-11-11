@@ -86,8 +86,8 @@ handlers += [
     (r"/dbUser/([a-zA-Z\-\_0-9]+)/([a-zA-Z\-\_0-9]+)/([\.0-9\%]+|\%)", DBUser),
     (r"/db/create", DBCreate),
     (r"/db/([a-zA-Z\-\_0-9]+)/delete/", DBDelete),
-    (r"/db/dump", DBDump),
-    (r"/db/dump/check", DumpCheck),
+    (r"/db/(?P<db_name>.*)/dump", DBDump),
+    (r"/db/dump/file/(?P<file_name>.*)/check", DumpCheck),
     (r"/db/table/size", DumpCheck),
     (r"/db/table/size", DumpCheck),
     # 监控信息收集
