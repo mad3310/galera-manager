@@ -33,7 +33,7 @@ class DBDump(RequestHandler):
             self.finish({"errmsg": "required argument is none", "errcode": 40001})
             return
 
-        if not is_disk_space_enough(db_name, tb_name=tb_name):
+        if not self.is_disk_space_enough(db_name, tb_name=tb_name):
             self.set_status(400)
             self.finish({"errmsg": "disk space is not enough", "errcode": 40030})
             return
@@ -50,6 +50,20 @@ class DBDump(RequestHandler):
     def dump_exector(self, dump, db_name, tb_name=None):
         dump.execute(db_name, tb_name=tb_name)
         logging.info("[dump] execute succseeful")
+
+    def is_disk_space_enough(self, db_name, tb_name=None):
+        """探测磁盘空间是否够用"""
+        available = disk_available(DIR_MCLUSTER_MYSQ) if os.path.exists(DIR_MCLUSTER_MYSQ) else 0
+        db_dir = DIR_MCLUSTER_MYSQ + '/{db_name}'.format(db_name=db_name)
+        if not os.path.exists(db_dir):
+            self.set_status(400)
+            self.finish({"errmsg": "db is not exist", "errcode": 40031})
+            return
+        db_size = dir_size(db_dir)
+        if tb_name:
+            db_size = DBAOpers.get_table_size(db_name, tb_name)
+        logging.info("[dump] space available:{0},db_size:{1}".format(available, db_size))
+        return available > db_size
 
 
 class DumpCheck(RequestHandler):
@@ -68,14 +82,3 @@ class DumpCheck(RequestHandler):
 
         result = {"url": url}
         self.finish(result)
-
-
-def is_disk_space_enough(db_name, tb_name=None):
-    """探测磁盘空间是否够用"""
-    available = disk_available(DIR_MCLUSTER_MYSQ) if os.path.exists(DIR_MCLUSTER_MYSQ) else 0
-    db_dir = DIR_MCLUSTER_MYSQ + '/{db_name}'.format(db_name=db_name)
-    db_size = dir_size(db_dir)
-    if tb_name:
-        db_size = DBAOpers.get_table_size(db_name, tb_name)
-    logging.info("[dump] space available:{0},db_size:{1}".format(available, db_size))
-    return available > db_size
