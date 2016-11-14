@@ -61,7 +61,7 @@ class DBDump(RequestHandler):
             return
         db_size = dir_size(db_dir)
         if tb_name:
-            db_size = DBAOpers.get_table_size(db_name, tb_name)
+            db_size = DBAOpers.DBAOpers.get_tables_size(db_name, [tb_name])
         logging.info("[dump] space available:{0},db_size:{1}".format(available, db_size))
         return available > db_size
 

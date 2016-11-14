@@ -15,6 +15,11 @@ class DBAOpers(object):
     def __unicode__(self):
         return self.name
 
+    def cursor(self, db_name):
+        conn = self.get_mysql_connection()
+        conn.select_db(db_name)
+        return conn.cursor()
+
     def check_if_existed_database(self, conn, db_name):
         cursor = conn.cursor()
         sql = """SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '{db_name}'""".format(db_name=db_name)
@@ -144,15 +149,17 @@ class DBAOpers(object):
         logging.info('drop ' + tb_name + 'success')
 
     @classmethod
-    def get_table_size(cls, db_name, tb_name):
-        conn = cls.get_mysql_connection()
-        conn.select_db(db_name)
-        cursor = conn.cursor()
-        sql = (('select (data_length+index_length) from information_schema.tables '
-                'where table_schema={db_name} and table_name={tb_name}')
-               .format(db_name=db_name, tb_name=tb_name))
-        r = cursor.execute(sql)
-        return r if r else 0
+    def get_tables_size(cls, db_name, tables):
+        """获取一个或多个表大小"""
+        size = {}
+        cursor = cls.cursor(db_name)
+        for tb in tables:
+            sql = (('select (data_length+index_length) from information_schema.tables '
+                    'where table_schema={db_name} and table_name={tb_name}')
+                   .format(db_name=db_name, tb_name=tb))
+            r = cursor.execute(sql)
+            size[tb] = r if r else 0
+        return size
 
     def create_user(self, conn, username, passwd, ip_address='%', dbName=None):
         cursor = conn.cursor()
@@ -161,7 +168,7 @@ class DBAOpers(object):
         rows = cursor.fetchall()
         c = rows[0][0]
 
-        if c and dbName==None:
+        if c and not dbName:
             logging.info("user has existed, so you should be provide db name to grant privileges!")
             return
 
@@ -258,7 +265,7 @@ class DBAOpers(object):
                                                        username=username,
                                                        ip_address=ip_address)
             cursor.execute(resource_limit_sql)
-        except Exception, e:
+        except Exception:
             pass
 
         if 'manager' == role:
@@ -725,7 +732,7 @@ class DBAOpers(object):
         cursor = conn.cursor()
         cursor.execute('select (sum(DATA_LENGTH)+sum(INDEX_LENGTH))/1024 FROM information_schema.TABLES where TABLE_SCHEMA="{0}"'.format(value))
         rows = cursor.fetchall()
-        if rows[0][0] == None:
+        if rows[0][0] is None:
             raise UserVisiableException('%s param given is wrong!' % key)
         _dict.setdefault(key, str(rows[0][0]))
 
@@ -742,7 +749,7 @@ class DBAOpers(object):
             raise UserVisiableException('params are not given')
         _dict = {}
         conn = self.get_mysql_connection()
-        if conn==None:
+        if conn is None:
             raise UserVisiableException("Can\'t connect to mysql server")
         try:
             for item in params:

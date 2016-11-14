@@ -79,3 +79,5 @@ define("S3_ACCESS_KEY", default='EH18VA68TUPMOF4L5MK3')
 define("S3_SECRET_KEY", default='Y3KW8LAyVcTNS1cAnPEv847lUmtFXILVg+8gXaIo')
 define("S3_BUCKET_NAME", default='matrix')
 define("S3_PREFIX_URL", default='http://s3.lecloud.com/')
+
+define("MYSQL_DSN", default="mysql://127.0.0.1:3306")
