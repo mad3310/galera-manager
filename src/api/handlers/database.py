@@ -25,12 +25,6 @@ from controllers.db.batch import SQLBatch
 
 from base import APIHandler
 
-# create database in mcluster
-# eg. curl --user root:root -d "dbName=managerTest&userName=zbz" "http://localhost:8888/db"
-
-# delete database in mcluster
-# eg. curl --user root:root -X DELETE "http://localhost:8888/db/{dbName}"
-
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
@@ -110,8 +104,20 @@ class TablesSize(RequestHandler):
         db = DBAOpers()
         body = json.loads(self.request.body, encoding='utf-8')
         tables = body.get("tables")
-        result = db.get_tables_size(db_name, tables)
+        result = db.get_tables_rows(db_name, tables)
+        # 判断是否有不存在的表
+        for tb, size in result.items():
+            if not size:
+                self.set_status(404)
+                self.finish({"errmsg": "table {0} is not exist".format(tb), "errcode": 404001})
+                return
         self.finish(result)
+
+# create database in mcluster
+# eg. curl --user root:root -d "dbName=managerTest&userName=zbz" "http://localhost:8888/db"
+
+# delete database in mcluster
+# eg. curl --user root:root -X DELETE "http://localhost:8888/db/{dbName}"
 
 
 @require_basic_auth

@@ -152,14 +152,27 @@ class DBAOpers(object):
     def get_tables_size(cls, db_name, tables):
         """获取一个或多个表大小"""
         size = {}
-        cursor = cls.cursor(db_name)
+        cursor = DBAOpers().cursor(db_name)
         for tb in tables:
-            sql = (('select (data_length+index_length) from information_schema.tables '
-                    'where table_schema={db_name} and table_name={tb_name}')
+            sql = (("select (data_length+index_length) from information_schema.tables "
+                    "where table_schema='{db_name}' and table_name='{tb_name}'")
                    .format(db_name=db_name, tb_name=tb))
             r = cursor.execute(sql)
             size[tb] = r if r else 0
         return size
+
+    @classmethod
+    def get_tables_rows(cls, db_name, tables):
+        """获取一个或多个表行数"""
+        rows = {}
+        cursor = DBAOpers().cursor(db_name)
+        for tb in tables:
+            sql = (("select table_rows from information_schema.tables "
+                    "where TABLE_SCHEMA='{db_name}' and table_name='{tb_name}'")
+                   .format(db_name=db_name, tb_name=tb))
+            r = cursor.execute(sql)
+            rows[tb] = r if r else 0
+        return rows
 
     def create_user(self, conn, username, passwd, ip_address='%', dbName=None):
         cursor = conn.cursor()
