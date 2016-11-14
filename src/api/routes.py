@@ -14,7 +14,7 @@ from handlers.dataNode import (DataNodeToMCluster, SyncDataNode,
                                StatNodeMemorySize, StatNodeWorkLoad,
                                StatNodeDiskEnough, DataNodeMonitorLogError)
 from handlers.database import (BinLogNodestat, BinlogPos, DBCreate, DBDelete,
-                               DDLBatch, DMLBatch, TablesSize, DBStat,
+                               DDLBatch, DMLBatch, TablesRows, DBStat,
                                Inner_DB_Check_CurConns, Inner_DB_Check_User_CurConns,
                                Inner_DB_Check_WR, Inner_DB_Check_WsrepStatus,
                                Inner_DB_Retrieve_Recover_UUID_Seqno, StatInnoBufferMemAlloc,
@@ -91,7 +91,7 @@ handlers += [
     (r"/db/dump/file/(?P<file_name>.*)/check", DumpCheck),
     (r"/db/(?P<db_name>.*)/ddl/batch", DDLBatch),
     (r"/db/(?P<db_name>.*)/dml/batch", DMLBatch),
-    (r"/db/(?P<db_name>.*)/tables/size", TablesSize),
+    (r"/db/(?P<db_name>.*)/tables/rows", TablesRows),
     # 监控信息收集
     (r"/db/binlog/pos", BinlogPos),
     (r"/db/binlog/node/stat", BinLogNodestat),
