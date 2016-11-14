@@ -59,11 +59,12 @@ class DBDump(RequestHandler):
             self.set_status(400)
             self.finish({"errmsg": "db is not exist", "errcode": 40031})
             return
-        db_size = dir_size(db_dir)
+        size = dir_size(db_dir)
         if tb_name:
-            db_size = DBAOpers.DBAOpers.get_tables_size(db_name, [tb_name])
-        logging.info("[dump] space available:{0},db_size:{1}".format(available, db_size))
-        return available > db_size
+            tables_size = DBAOpers.DBAOpers.get_tables_size(db_name, [tb_name])
+            size = tables_size.get(tb_name)
+        logging.info("[dump] space available:{0},size:{1}".format(available, size))
+        return available > size
 
 
 class DumpCheck(RequestHandler):
