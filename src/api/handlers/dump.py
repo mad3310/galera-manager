@@ -73,13 +73,12 @@ class DumpCheck(RequestHandler):
     """
 
     def get(self, file_name):
+        result = {"isUploaded": False, "url": ""}
         r = Dump.is_upload_s3(file_name)
         if not r:
-            self.set_status(404)
-            self.finish({"errmsg": "dump file is not uploaded", "errcode": 40012})
+            self.finish(result)
             return
-
         url = Dump.url(file_name)
-
-        result = {"url": url}
+        result["isUploaded"] = True
+        result["url"] = url
         self.finish(result)
