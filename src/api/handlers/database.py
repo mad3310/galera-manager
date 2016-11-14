@@ -95,9 +95,9 @@ class DMLBatch(RequestHandler):
         self.finish({"status": result})
 
 
-class TablesSize(RequestHandler):
+class TablesRows(RequestHandler):
 
-    """/db/{db_name}/tables/size
+    """/db/{db_name}/tables/rows
     """
 
     def post(self, db_name):
