@@ -37,14 +37,15 @@ class DDLBatch(RequestHandler):
     @engine
     def post(self, db_name):
         body = json.loads(self.request.body, encoding='utf-8')
+        pts = body.get('pts', [])
         self.zk = Requests_ZkOpers()
-        if not body:
+        if not pts:
             self.set_status(400)
-            self.finish({"errmsg": "required argument is none", "errcode": 40001})
+            self.finish({"errmsg": "required argument is empty", "errcode": 40001})
             return
         yield self.set_ddl_begin(db_name)
         self.finish({"status": 'sql batch ddl is in processing'})
-        yield self.sqlbatch_ddl_execute(db_name, body)
+        yield self.sqlbatch_ddl_execute(db_name, pts)
 
     @run_on_executor()
     @run_callback
@@ -56,11 +57,11 @@ class DDLBatch(RequestHandler):
 
     @run_on_executor()
     @run_callback
-    def sqlbatch_ddl_execute(self, db_name, ddls):
+    def sqlbatch_ddl_execute(self, db_name, pts):
         isFinished = True
-        for ddl in ddls:
-            ddl_sqls = ddl.get("ddlSqls")
-            tb_name = ddl.get("tbName")
+        for pt in pts:
+            ddl_sqls = pt.get("ddlSqls")
+            tb_name = pt.get("tbName")
             ret = self.sqlbatch_ddl_execute_one(ddl_sqls, db_name,
                                                 tb_name)
             if not ret:
