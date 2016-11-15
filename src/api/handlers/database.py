@@ -157,9 +157,9 @@ class DMLBatch(RequestHandler):
         if error:
             dml_status.update(dict(errcode=400))
         is_finished = True if (not error) else False
-        result = error or 'sql process is successful'
+        status = error or 'sql batch dml successed'
         dml_status.update(dict(isFinished=is_finished,
-                               status=result))
+                               status=status))
         #self.finish({"status": result})
         self.zk.write_sqlbatch_dml_info(db_name, dml_status)
 
