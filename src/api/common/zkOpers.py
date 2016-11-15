@@ -256,6 +256,37 @@ class ZkOpers(object):
         resultValue = self._retrieveSpecialPathProp(path)
         return resultValue
 
+    def write_sqlbatch_status(self, sql_type, db_name, dict_status):
+        clusterUUID = self.getClusterUUID()
+        full_path = '%s/%s/sqlbatch/%s/%s' %(self.rootPath,
+                                             clusterUUID, sql_type,
+                                             db_name)
+        if not self.zk.exists(full_path):
+            self.zk.ensure_path(full_path)
+        self.DEFAULT_RETRY_POLICY(self.zk.set, full_path, str(dict_status))
+
+    def retrieve_sqlbatch_status(self, sql_type, db_name):
+        clusterUUID = self.getClusterUUID()
+        full_path = '%s/%s/sqlbatch/%s/%s' %(self.rootPath,
+                                             clusterUUID, sql_type,
+                                             db_name)
+        resultValue = self._retrieveSpecialPathProp(full_path)
+        return resultValue
+
+    def write_sqlbatch_ddl_info(self, db_name, dict_status):
+        self.write_sqlbatch_status('ddl', db_name, dict_status)
+
+    def retrieve_sqlbatch_ddl_status_info(self, db_name):
+        resultValue = self.retrieve_sqlbatch_status('ddl', db_name)
+        return resultValue
+
+    def write_sqlbatch_dml_info(self, db_name, dict_status):
+        self.write_sqlbatch_status('dml', db_name, dict_status)
+
+    def retrieve_sqlbatch_dml_status_info(self, db_name):
+        resultValue = self.retrieve_sqlbatch_status('dml', db_name)
+        return resultValue
+
     def retrieve_type_backup_status_info(self, path):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/backup/" + path + '_backup'
