@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-'''
-Created on 2013-7-21
-
-@author: asus
-'''
 import MySQLdb
 import logging
 
@@ -17,14 +12,13 @@ from common.utils.asyc_utils import run_on_executor, run_callback
 
 
 class DBAOpers(object):
-
-    def __init__(self):
-        '''
-        Constructor
-        '''
-
     def __unicode__(self):
         return self.name
+
+    def cursor(self, db_name):
+        conn = self.get_mysql_connection()
+        conn.select_db(db_name)
+        return conn.cursor()
 
     def check_if_existed_database(self, conn, db_name):
         cursor = conn.cursor()
@@ -46,11 +40,11 @@ class DBAOpers(object):
     def delete_user(self, conn, username, ip_address):
         cursor = conn.cursor()
         cursor.execute("""select count(*) as c from mysql.user where user='{username}' and host='{ip_address}'"""
-                       .format(username=username,ip_address=ip_address))
+                       .format(username=username, ip_address=ip_address))
         rows = cursor.fetchall()
         c = rows[0][0]
         if c:
-            sql = """drop user `{username}`@'{ip_address}'""".format(username=username,ip_address=ip_address)
+            sql = """drop user `{username}`@'{ip_address}'""".format(username=username, ip_address=ip_address)
             logging.info("drop user sql is:" + sql)
             cursor.execute(sql)
 
@@ -154,6 +148,32 @@ class DBAOpers(object):
             logging.exception(e)
         logging.info('drop ' + tb_name + 'success')
 
+    @classmethod
+    def get_tables_size(cls, db_name, tables):
+        """获取一个或多个表大小"""
+        size = {}
+        cursor = DBAOpers().cursor(db_name)
+        for tb in tables:
+            sql = (("select (data_length+index_length) from information_schema.tables "
+                    "where table_schema='{db_name}' and table_name='{tb_name}'")
+                   .format(db_name=db_name, tb_name=tb))
+            r = cursor.execute(sql)
+            size[tb] = r if r else 0
+        return size
+
+    @classmethod
+    def get_tables_rows(cls, db_name, tables):
+        """获取一个或多个表行数"""
+        rows = {}
+        cursor = DBAOpers().cursor(db_name)
+        for tb in tables:
+            sql = (("select table_rows from information_schema.tables "
+                    "where TABLE_SCHEMA='{db_name}' and table_name='{tb_name}'")
+                   .format(db_name=db_name, tb_name=tb))
+            r = cursor.execute(sql)
+            rows[tb] = r if r else 0
+        return rows
+
     def create_user(self, conn, username, passwd, ip_address='%', dbName=None):
         cursor = conn.cursor()
         cursor.execute("""select count(*) as c from mysql.user where user='{username}' and host='{ip_address}'"""
@@ -161,7 +181,7 @@ class DBAOpers(object):
         rows = cursor.fetchall()
         c = rows[0][0]
 
-        if c and dbName==None:
+        if c and not dbName:
             logging.info("user has existed, so you should be provide db name to grant privileges!")
             return
 
@@ -171,7 +191,6 @@ class DBAOpers(object):
         else:
             cursor.execute("""CREATE USER `{username}`@'{ip_address}' IDENTIFIED BY '{passwd}'"""
                            .format(username=username, passwd=passwd, ip_address=ip_address))
-
 
     def grant_wr_privileges(self, conn, username, passwd, database, ipAddress='%',
                             max_queries_per_hour=0,
@@ -259,7 +278,7 @@ class DBAOpers(object):
                                                        username=username,
                                                        ip_address=ip_address)
             cursor.execute(resource_limit_sql)
-        except Exception, e:
+        except Exception:
             pass
 
         if 'manager' == role:
@@ -448,7 +467,6 @@ class DBAOpers(object):
         c = rows[0][0]
         return c
 
-
     def check_anti_item(self, conn):
         cursor = conn.cursor()
         cursor.execute("""SELECT DISTINCT
@@ -477,7 +495,7 @@ class DBAOpers(object):
         try:
             conn = MySQLdb.Connect(host, user, passwd, port=options.mysql_port)
             conn.autocommit(autocommit)
-        except Exception,e:
+        except Exception, e:
             logging.exception(e)
 
         return conn
@@ -561,7 +579,7 @@ class DBAOpers(object):
     def retrieve_stat_wating_count_command(self, conn, key, value, _dict):
         cursor = conn.cursor()
         cursor.execute('select concat("wait_num ",count(command)) from information_schema.PROCESSLIST  where command<>"Sleep" and time >2')
-        rows=cursor.fetchall()
+        rows = cursor.fetchall()
         _dict.setdefault(key, rows[0][0].lstrip('wait_num '))
 
     def retrieve_stat_net_send_command(self, conn, key, value, _dict):
@@ -727,7 +745,7 @@ class DBAOpers(object):
         cursor = conn.cursor()
         cursor.execute('select (sum(DATA_LENGTH)+sum(INDEX_LENGTH))/1024 FROM information_schema.TABLES where TABLE_SCHEMA="{0}"'.format(value))
         rows = cursor.fetchall()
-        if rows[0][0] == None:
+        if rows[0][0] is None:
             raise UserVisiableException('%s param given is wrong!' % key)
         _dict.setdefault(key, str(rows[0][0]))
 
@@ -744,7 +762,7 @@ class DBAOpers(object):
             raise UserVisiableException('params are not given')
         _dict = {}
         conn = self.get_mysql_connection()
-        if conn==None:
+        if conn is None:
             raise UserVisiableException("Can\'t connect to mysql server")
         try:
             for item in params:

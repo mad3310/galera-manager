@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import random
 import string
 
@@ -30,6 +31,7 @@ def local_get_zk_address():
 
 
 def cluster_name():
+    """集群名称"""
     cluster_name = ''
     with open('/etc/hostname', 'r') as f:
         res_str = f.readline().replace('d-mcl-', '')
@@ -37,3 +39,26 @@ def cluster_name():
     return cluster_name
 
 CLUSTER_NAME = cluster_name()
+
+
+def disk_capacity(path):
+    """磁盘总容量：字节"""
+    vfs = os.statvfs(path)
+    disk_capacity = vfs.f_blocks * vfs.f_bsize
+    return disk_capacity
+
+
+def disk_available(path):
+    """磁盘可用容量: 字节"""
+    vfs = os.statvfs(path)
+    disk_available = vfs.f_bavail * vfs.f_bsize
+    return disk_available
+
+
+def dir_size(dir):
+    """文件夹大小：字节"""
+    path = os.path
+    size = 0L
+    for root, dirs, files in os.walk(dir):
+        size += sum([path.getsize(path.join(root, name)) for name in files])
+    return size

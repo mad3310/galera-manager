@@ -17,7 +17,7 @@ name: mcluster-manager
 # 软件包版本号
 version: 0.2.2
 # 软件包发型序号，即相同版本号（version）的代码这是第几次打包发型
-release: 5
+release: 6
 
 # 软件包安装及运行时依赖
 dependencies:
@@ -29,6 +29,7 @@ dependencies:
     - zope.interface
     - mcluster-mysql-libs
     - saturn-es == 0.0.2
+    - python-boto3-full == 1.4.1
 
 # 安装位置，无需再写软件包名. 已默认安装至 /opt/letv
 # prefix: /opt/letv

@@ -1,31 +1,117 @@
 # -*- coding: utf-8 -*-
 
-'''
-Created on 2013-7-21
-
-@author: asus
-'''
-
+import json
 import socket
 import datetime
 import time
 import logging
 
-from tornado.web import asynchronous
 from tornado.gen import engine
 from tornado.options import options
+from tornado.web import asynchronous, RequestHandler
 
-from base import APIHandler
 from common.tornado_basic_auth import require_basic_auth
 from common.dba_opers import DBAOpers
 from common.configFileOpers import ConfigFileOpers
 from common.utils import get_random_password
 from common.utils.exceptions import HTTPAPIErrorException
+from common.utils.asyc_utils import run_on_executor, run_callback
 from common.db_stat_opers import DBStatOpers
 from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
 from common.helper import is_monitoring, get_localhost_ip
-from common.utils.asyc_utils import run_on_executor, run_callback
+
+from controllers.db.batch import SQLBatch
+
+from base import APIHandler
+
+TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+
+class DDLBatch(RequestHandler):
+
+    """/db/{db_name}/ddl/batch
+    """
+
+    def post(self, db_name):
+        body = json.loads(self.request.body, encoding='utf-8')
+        ddl_sqls = body.get("ddlSqls")
+        tb_name = body.get("tbName")
+        if not ddl_sqls or not tb_name:
+            self.set_status(400)
+            self.finish({"errmsg": "required argument is none", "errcode": 40001})
+            return
+
+        """
+        PT-OSC工具执行分两步操作：
+        先测试，成功返回：
+        Dry run complete.
+        """
+        batch = SQLBatch(db_name)
+
+        ret = batch.ddl_test(ddl_sqls, tb_name)
+        logging.info("[DDL Batch] test result: {0}".format(ret))
+        if "Error altering" in ret:
+            logging.error("[DDL Batch] test error: {0}".format(ret))
+            self.set_status(400)
+            self.finish({"errmsg": ret, "errcode": 40005})
+            return
+
+        """
+        再执行，成功返回：
+        Successfully.
+        """
+        ret = batch.ddl(ddl_sqls, tb_name)
+        logging.info("[DDL Batch] result: {0}".format(ret))
+        if "Error altering" in ret:
+            logging.error("[DDL Batch] error: {0}".format(ret))
+            self.set_status(400)
+            self.finish({"errmsg": ret, "errcode": 40005})
+            return
+
+        self.finish({"status": 'sql process is successful'})
+
+
+class DMLBatch(RequestHandler):
+
+    """/db/{db_name}/dml/batch
+    """
+
+    def post(self, db_name):
+        body = json.loads(self.request.body, encoding='utf-8')
+        dml_sqls = body.get("dmlSqls")
+        if not dml_sqls:
+            self.set_status(400)
+            self.finish({"errmsg": "required argument is none", "errcode": 40001})
+            return
+
+        sqls = dml_sqls.split(";")
+        sqls = [sql for sql in sqls if sql]
+
+        batch = SQLBatch(db_name)
+
+        error = batch.dml(sqls)
+        result = error or 'sql process is successful'
+        self.finish({"status": result})
+
+
+class TablesRows(RequestHandler):
+
+    """/db/{db_name}/tables/rows
+    """
+
+    def post(self, db_name):
+        db = DBAOpers()
+        body = json.loads(self.request.body, encoding='utf-8')
+        tables = body.get("tables")
+        result = db.get_tables_rows(db_name, tables)
+        # 判断是否有不存在的表
+        for tb, size in result.items():
+            if not size:
+                self.set_status(404)
+                self.finish({"errmsg": "table {0} is not exist".format(tb), "errcode": 404001})
+                return
+        self.finish(result)
 
 # create database in mcluster
 # eg. curl --user root:root -d "dbName=managerTest&userName=zbz" "http://localhost:8888/db"
@@ -33,11 +119,9 @@ from common.utils.asyc_utils import run_on_executor, run_callback
 # delete database in mcluster
 # eg. curl --user root:root -X DELETE "http://localhost:8888/db/{dbName}"
 
-TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-
 
 @require_basic_auth
-class DBOnMCluster(APIHandler):
+class DBCreate(APIHandler):
     dba_opers = DBAOpers()
 
     conf_opers = ConfigFileOpers()
@@ -56,7 +140,8 @@ class DBOnMCluster(APIHandler):
         try:
             self.dba_opers.craete_database(conn, dbName)
             self.dba_opers.create_user(conn, userName, userPassword, ip_address)
-            self.dba_opers.grant_manager_privileges(conn, userName, userPassword, dbName, ip_address,
+            self.dba_opers.grant_manager_privileges(conn, userName, userPassword, dbName,
+                                                    ip_address,
                                                     max_queries_per_hour,
                                                     max_updates_per_hour,
                                                     max_connections_per_hour,
@@ -84,6 +169,12 @@ class DBOnMCluster(APIHandler):
         result.setdefault("manager_user_name", userName)
         result.setdefault("manager_user_password", userPassword)
         self.finish(result)
+
+
+@require_basic_auth
+class DBDelete(APIHandler):
+    dba_opers = DBAOpers()
+    conf_opers = ConfigFileOpers()
 
     def delete(self, dbName):
         if not dbName:
@@ -231,7 +322,7 @@ class Inner_DB_Check_WsrepStatus(APIHandler):
             error_message = "connection break down"
             raise HTTPAPIErrorException(error_message, status_code=417)
 
-        if check_result == False:
+        if not check_result:
             self.finish("false")
             return
 
@@ -321,7 +412,8 @@ class Inner_DB_Check_WR(APIHandler):
             self.finish(return_flag)
             return
         finally:
-            conn.close()
+            if not conn:
+                conn.close()
 
         t_threshold = options.delta_time
         n_stamp_time = time.time()
@@ -563,6 +655,7 @@ class StatWsrepStatusSlowestNetworkParam(APIHandler):
 # eg. curl "http://localhost:8888/db/binlog/pos?xid=16754"
 class BinlogPos(APIHandler):
     stat_opers = DBStatOpers()
+
     @asynchronous
     @engine
     def post(self):
@@ -574,10 +667,10 @@ class BinlogPos(APIHandler):
 # retrieve opened binlog node list of mcluster
 class BinLogNodestat(APIHandler):
     stat_opers = DBStatOpers()
+
     @asynchronous
     @engine
     def post(self):
-        #params = self.get_all_arguments()
         return_result = yield self.stat_opers.bin_log_node_stat()
         self.finish(return_result)
 
