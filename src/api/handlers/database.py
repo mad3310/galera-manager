@@ -64,11 +64,11 @@ class DDLBatch(RequestHandler):
             ddl_sqls = pt.get("ddlSqls")
             tb_name = pt.get("tbName")
             ddl_type = pt.get('type', 'ALTER')
-            if ddl_type == 'ALTER':
+            if ddl_type == 'ALERT':
                 ret = self.sqlbatch_ddl_execute_one(ddl_sqls,
                                                     db_name, tb_name)
             else:
-                ret = self.sqlbatch_ddl_execute_direct(ddl_sqls)
+                ret = self.sqlbatch_ddl_execute_direct(db_name, ddl_sqls)
             if not ret:
                 isFinished = False
                 break
@@ -77,9 +77,10 @@ class DDLBatch(RequestHandler):
                               status='sql batch ddl successed')
             self.zk.write_sqlbatch_ddl_info(db_name, ddl_status)
 
-    def sqlbatch_ddl_execute_direct(self, sql):
+    def sqlbatch_ddl_execute_direct(self, db_name, sql):
         zkOper = self.zk
         batch = self.batch
+        ret = True
         ddl_status = dict(isFinished=False,
                           status='batch ddl sql(%s) is in processing' %sql
                           )
@@ -87,8 +88,9 @@ class DDLBatch(RequestHandler):
         if error:
             ddl_status.update(dict(errmsg=error,
                               errcode=40005))
-            return False
-        return True
+            ret = False
+        self.zk.write_sqlbatch_ddl_info(db_name, ddl_status)
+        return ret
 
     def sqlbatch_ddl_execute_one(self, ddl_sqls, db_name, tb_name):
         """
@@ -144,7 +146,7 @@ class DDLBatchCheck(RequestHandler):
     @run_callback
     def get_status(self, db_name):
         zkOper = Requests_ZkOpers()
-        ddl_status = zkOpers.retrieve_sqlbatch_ddl_status_info(db_name)
+        ddl_status = zkOper.retrieve_sqlbatch_ddl_status_info(db_name)
         return ddl_status
 
 class DMLBatch(RequestHandler):
@@ -209,7 +211,7 @@ class DMLBatchCheck(RequestHandler):
     @run_callback
     def get_status(self, db_name):
         zkOper = Requests_ZkOpers()
-        dml_status = zkOpers.retrieve_sqlbatch_dml_status_info(db_name)
+        dml_status = zkOper.retrieve_sqlbatch_dml_status_info(db_name)
         return dml_status
 
 class TablesRows(RequestHandler):

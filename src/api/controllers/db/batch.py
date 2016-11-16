@@ -23,14 +23,14 @@ class SQLBatch(object):
 
     def ddl_test(self, sqls, tb_name):
         """PT工具测试"""
-        command = PT_TEST_COMMAND.format(sqls=sqls,
+        command = PT_TEST_COMMAND.format(sqls='"%s"' %sqls,
                                          db_name=self.db_name,
                                          tb_name=tb_name)
         return InvokeCommand.run_with_syn(command)
 
     def ddl(self, sqls, tb_name):
         """PT工具正式执行"""
-        command = PT_COMMAND.format(sqls=sqls,
+        command = PT_COMMAND.format(sqls='"%s"' %sqls,
                                     db_name=self.db_name,
                                     tb_name=tb_name)
         return InvokeCommand.run_with_syn(command)

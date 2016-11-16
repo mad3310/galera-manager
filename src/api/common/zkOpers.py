@@ -263,7 +263,7 @@ class ZkOpers(object):
                                              db_name)
         if not self.zk.exists(full_path):
             self.zk.ensure_path(full_path)
-        self.DEFAULT_RETRY_POLICY(self.zk.set, full_path, str(dict_status))
+        self.DEFAULT_RETRY_POLICY(self.zk.set, full_path, json.dumps(dict_status))
 
     def retrieve_sqlbatch_status(self, sql_type, db_name):
         clusterUUID = self.getClusterUUID()
