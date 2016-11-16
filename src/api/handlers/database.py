@@ -39,6 +39,7 @@ class DDLBatch(RequestHandler):
         body = json.loads(self.request.body, encoding='utf-8')
         pts = body.get('pts', [])
         self.zk = Requests_ZkOpers()
+        self.batch = SQLBatch(db_name)
         if not pts:
             self.set_status(400)
             self.finish({"errmsg": "required argument is empty", "errcode": 40001})
@@ -62,8 +63,12 @@ class DDLBatch(RequestHandler):
         for pt in pts:
             ddl_sqls = pt.get("ddlSqls")
             tb_name = pt.get("tbName")
-            ret = self.sqlbatch_ddl_execute_one(ddl_sqls, db_name,
-                                                tb_name)
+            ddl_type = pt.get('type', 'ALTER')
+            if ddl_type == 'ALTER':
+                ret = self.sqlbatch_ddl_execute_one(ddl_sqls,
+                                                    db_name, tb_name)
+            else:
+                ret = self.sqlbatch_ddl_execute_direct(ddl_sqls)
             if not ret:
                 isFinished = False
                 break
@@ -72,6 +77,19 @@ class DDLBatch(RequestHandler):
                               status='sql batch ddl successed')
             self.zk.write_sqlbatch_ddl_info(db_name, ddl_status)
 
+    def sqlbatch_ddl_execute_direct(self, sql):
+        zkOper = self.zk
+        batch = self.batch
+        ddl_status = dict(isFinished=False,
+                          status='batch ddl sql(%s) is in processing' %sql
+                          )
+        error = batch.sql_excute(sql)
+        if error:
+            ddl_status.update(dict(errmsg=error,
+                              errcode=40005))
+            return False
+        return True
+
     def sqlbatch_ddl_execute_one(self, ddl_sqls, db_name, tb_name):
         """
         PT-OSC工具执行分两步操作：
@@ -79,7 +97,7 @@ class DDLBatch(RequestHandler):
         Dry run complete.
         """
         zkOper = self.zk
-        batch = SQLBatch(db_name)
+        batch = self.batch
         ret = batch.ddl_test(ddl_sqls, tb_name)
         logging.info("[DDL Batch] test result: {0}".format(ret))
         ddl_status = dict(isFinished=False,

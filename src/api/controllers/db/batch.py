@@ -35,6 +35,17 @@ class SQLBatch(object):
                                     tb_name=tb_name)
         return InvokeCommand.run_with_syn(command)
 
+    def sql_excute(self,sql):
+        error = ''
+        try:
+            self.db.execute(sql)
+            self.db.commit()
+        except ProgrammingError, e:
+            error = e[1]
+        except IntegrityError, e:
+            error = e[1]
+        return error
+
     def dml(self, sqls):
         """执行失败需要回滚"""
         if not sqls:
