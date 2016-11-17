@@ -39,7 +39,6 @@ class SQLBatch(object):
         error = ''
         try:
             self.db.execute(sql)
-            self.db.commit()
         except ProgrammingError, e:
             error = e[1]
         except IntegrityError, e:
@@ -50,16 +49,6 @@ class SQLBatch(object):
         """执行失败需要回滚"""
         if not sqls:
             return None
-        error = ''
-        try:
-            for sql in sqls:
-                self.db.execute(sql)
-            self.db.commit()
-        # an error in SQL syntax
-        except ProgrammingError, e:
-            error = e[1]
-        # an error in SQL integrity
-        except IntegrityError, e:
-            error = e[1]
-            self.db.rollback()
+        error = self.db.transaction(sqls)
+
         return error
