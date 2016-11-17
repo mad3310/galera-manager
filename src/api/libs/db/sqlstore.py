@@ -60,6 +60,22 @@ class SqlStore(object):
         return call
 
     @execute_retry
+    def execute_notrans(self, sql, args=None, conn=None):
+        if args is not None and not isinstance(args, (list, tuple, dict)):
+            args = (args,)
+
+        for retry in xrange(self.retry, -1, -1):
+            try:
+                cursor = self._conn().cursor() if not conn else conn.cursor()
+                cursor.execute(sql, args)
+                break
+            except MySQLdb.OperationalError:
+                exc_class, exception, tb = sys.exc_info()
+                if not retry:
+                    raise exc_class, exception, tb
+        return cursor
+
+    @execute_retry
     def execute(self, sql, args=None, conn=None):
         if args is not None and not isinstance(args, (list, tuple, dict)):
             args = (args,)
@@ -70,6 +86,7 @@ class SqlStore(object):
                 if (sql, args,) not in self.executed_sql:
                     cursor.execute(sql, args)
                     self.executed_sql.append((sql, args))
+                break
             except MySQLdb.OperationalError:
                 exc_class, exception, tb = sys.exc_info()
                 if not retry:

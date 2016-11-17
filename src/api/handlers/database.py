@@ -36,13 +36,14 @@ class DDLBatch(RequestHandler):
     @asynchronous
     @engine
     def post(self, db_name):
-        body = json.loads(self.request.body, encoding='utf-8')
-        pts = body.get('pts', [])
+        body = json.loads(self.request.body,strict=False,
+                          encoding='utf-8')
+        pts = json.loads(body.get('pts', '[]'))
         self.zk = Requests_ZkOpers()
         self.batch = SQLBatch(db_name)
         if not pts:
             self.set_status(400)
-            self.finish({"errmsg": "required argument is empty", "errcode": 40001})
+            self.finish({"status": "required argument is empty", "errcode": 40001})
             return
         yield self.set_ddl_begin(db_name)
         self.finish({"status": 'sql batch ddl is in processing'})
@@ -64,7 +65,7 @@ class DDLBatch(RequestHandler):
             ddl_sqls = pt.get("ddlSqls")
             tb_name = pt.get("tbName")
             ddl_type = pt.get('type', 'ALTER')
-            if ddl_type == 'ALERT':
+            if ddl_type == 'ALTER':
                 ret = self.sqlbatch_ddl_execute_one(ddl_sqls,
                                                     db_name, tb_name)
             else:
@@ -78,7 +79,6 @@ class DDLBatch(RequestHandler):
             self.zk.write_sqlbatch_ddl_info(db_name, ddl_status)
 
     def sqlbatch_ddl_execute_direct(self, db_name, sql):
-        zkOper = self.zk
         batch = self.batch
         ret = True
         ddl_status = dict(isFinished=False,
@@ -86,7 +86,7 @@ class DDLBatch(RequestHandler):
                           )
         error = batch.sql_excute(sql)
         if error:
-            ddl_status.update(dict(errmsg=error,
+            ddl_status.update(dict(status=error,
                               errcode=40005))
             ret = False
         self.zk.write_sqlbatch_ddl_info(db_name, ddl_status)
@@ -101,17 +101,18 @@ class DDLBatch(RequestHandler):
         zkOper = self.zk
         batch = self.batch
         ret = batch.ddl_test(ddl_sqls, tb_name)
-        logging.info("[DDL Batch] test result: {0}".format(ret))
+        logging.info("[DDL Batch] test sqls: {0}".format(ddl_sqls))
         ddl_status = dict(isFinished=False,
                           status='%s sql batch ddl is in processing' %tb_name
                           )
-        if "Error altering" in ret:
-            logging.error("[DDL Batch] test error: {0}".format(ret))
+        if not ret:
+            error = 'alter table %s %s failed' %(tb_name, ddl_sqls)
+            logging.error("[DDL Batch] test error: {0}".format(error))
             #self.set_status(400)
-            #self.finish({"errmsg": ret, "errcode": 40005})
-            ddl_status.update(dict(errmsg=ret,
+            #self.finish({"status": ret, "errcode": 40005})
+            ddl_status.update(dict(status=error,
                               errcode=40005))
-            ZkOpers.write_sqlbatch_ddl_info(db_name, ddl_status)
+            zkOper.write_sqlbatch_ddl_info(db_name, ddl_status)
             return False
 
         """
@@ -119,14 +120,15 @@ class DDLBatch(RequestHandler):
         Successfully.
         """
         ret = batch.ddl(ddl_sqls, tb_name)
-        logging.info("[DDL Batch] result: {0}".format(ret))
-        if "Error altering" in ret:
-            logging.error("[DDL Batch] error: {0}".format(ret))
+        logging.info("[DDL Batch] result sqls: {0}".format(ddl_sqls))
+        if not ret:
+            error = 'alter table %s %s failed' %(tb_name, ddl_sqls)
+            logging.error("[DDL Batch] error: {0}".format(error))
             #self.set_status(400)
-            #self.finish({"errmsg": ret, "errcode": 40005})
-            ddl_status.update(dict(errmsg=ret,
+            #self.finish({"status": ret, "errcode": 40005})
+            ddl_status.update(dict(status=error,
                               errcode=40005))
-            ZkOpers.write_sqlbatch_ddl_info(db_name, ddl_status)
+            zkOper.write_sqlbatch_ddl_info(db_name, ddl_status)
             return False
         return True
 
@@ -156,12 +158,13 @@ class DMLBatch(RequestHandler):
     @asynchronous
     @engine
     def post(self, db_name):
-        body = json.loads(self.request.body, encoding='utf-8')
+        body = json.loads(self.request.body, strict=False,
+                          encoding='utf-8')
         dml_sqls = body.get("dmlSqls")
         self.zk = Requests_ZkOpers()
         if not dml_sqls:
             self.set_status(400)
-            self.finish({"errmsg": "required argument is none", "errcode": 40001})
+            self.finish({"status": "required argument is none", "errcode": 40001})
             return
         yield self.set_dml_begin(db_name)
         self.finish({"status": 'sql batch dml is in processing'})
@@ -218,19 +221,25 @@ class TablesRows(RequestHandler):
 
     """/db/{db_name}/tables/rows
     """
-
+    @asynchronous
+    @engine
     def post(self, db_name):
-        db = DBAOpers()
-        body = json.loads(self.request.body, encoding='utf-8')
-        tables = body.get("tables")
-        result = db.get_tables_rows(db_name, tables)
+        body = json.loads(self.request.body, strict=False,
+                          encoding='utf-8')
+        tables = json.loads(body.get("tables"))
+        result = yield self.get_rows(db_name, tables)
+        ret = {}
         # 判断是否有不存在的表
         for tb, size in result.items():
             if not size:
-                self.set_status(404)
-                self.finish({"errmsg": "table {0} is not exist".format(tb), "errcode": 404001})
-                return
-        self.finish(result)
+                self.set_status(400)
+                ret = {"status": "table {0} is not exist".format(tb), "errcode": 404001}
+                break
+                #self.finish({"status": "table {0} is not exist".format(tb), "errcode": 404001})
+            else:
+                ret[tb] = str(size)
+        self.finish(ret)
+
 
 # create database in mcluster
 # eg. curl --user root:root -d "dbName=managerTest&userName=zbz" "http://localhost:8888/db"

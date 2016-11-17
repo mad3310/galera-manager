@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 from MySQLdb import IntegrityError, ProgrammingError
 
 from libs.db import db as mysql
@@ -26,19 +28,21 @@ class SQLBatch(object):
         command = PT_TEST_COMMAND.format(sqls='"%s"' %sqls,
                                          db_name=self.db_name,
                                          tb_name=tb_name)
-        return InvokeCommand.run_with_syn(command)
+        ret = os.system(command)
+        return int(ret) == 0
 
     def ddl(self, sqls, tb_name):
         """PT工具正式执行"""
         command = PT_COMMAND.format(sqls='"%s"' %sqls,
                                     db_name=self.db_name,
                                     tb_name=tb_name)
-        return InvokeCommand.run_with_syn(command)
+        ret = os.system(command)
+        return int(ret) == 0
 
     def sql_excute(self,sql):
         error = ''
         try:
-            self.db.execute(sql)
+            self.db.execute_notrans(sql)
         except ProgrammingError, e:
             error = e[1]
         except IntegrityError, e:

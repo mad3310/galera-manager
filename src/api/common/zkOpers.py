@@ -505,8 +505,11 @@ class ZkOpers(object):
         return resultValue
 
     def _format_data(self, data):
-        local_data = data.replace("'", "\"").replace("[u\"", "[\"").replace(" u\"", " \"")
-        formatted_data = json.loads(local_data)
+        try:
+            local_data = data.replace("'", "\"").replace("[u\"", "[\"").replace(" u\"", " \"")
+            formatted_data = json.loads(local_data)
+        except:
+            formatted_data = json.loads(data)
         return formatted_data
 
 
