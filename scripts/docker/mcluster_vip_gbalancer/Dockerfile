@@ -7,6 +7,9 @@ ADD ./init/test.repo /etc/yum.repos.d/test.repo
 RUN chmod 755 /etc/yum.repos.d/test.repo
 RUN yum clean all
 
+#Increase default limit
+ADD ./init/limits-90-nproc.conf /etc/security/limits.d/90-nproc.conf
+
 RUN yum install vim -y
 RUN yum install tar -y
 RUN yum install cronie -y
