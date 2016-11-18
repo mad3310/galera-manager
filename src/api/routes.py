@@ -86,6 +86,9 @@ handlers += [
 handlers += [
     (r"/dbUser", DBUser),
     (r"/dbUser/([a-zA-Z\-\_0-9]+)/([a-zA-Z\-\_0-9]+)/([\.0-9\%]+|\%)", DBUser),
+    # It is an old url, which is still used by matrix
+    # this url should be instead by '/db/create' in the future
+    (r"/db", DBCreate),
     (r"/db/create", DBCreate),
     (r"/db/([a-zA-Z\-\_0-9]+)/delete/", DBDelete),
     (r"/db/(?P<db_name>.*)/dump", DBDump),
