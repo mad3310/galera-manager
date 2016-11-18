@@ -465,6 +465,8 @@ class ZkOpers(object):
     def _lock_base_action(self, lock_path):
         clusterUUID = self.getClusterUUID()
         path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_path)
+        if not self.zk.exists(path):
+            self.zk.ensure_path(path)
         if self.zk.get_children(path=path):
             lock_name = self.zk.get_children(path=path)[0]
             local_address = "{path} +/+ {lock_name}".format(path=path,lock_name=lock_name)
