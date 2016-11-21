@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import json
 import socket
 import datetime
 import time
@@ -8,7 +7,7 @@ import logging
 
 from tornado.gen import engine
 from tornado.options import options
-from tornado.web import asynchronous, RequestHandler
+from tornado.web import asynchronous
 
 from common.tornado_basic_auth import require_basic_auth
 from common.dba_opers import DBAOpers
@@ -21,10 +20,7 @@ from common.node_mysql_service_opers import Node_Mysql_Service_Opers
 from common.invokeCommand import InvokeCommand
 from common.helper import is_monitoring, get_localhost_ip
 
-from controllers.db.batch import SQLBatch
-
 from base import APIHandler
-from common.zkOpers import Requests_ZkOpers
 
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
