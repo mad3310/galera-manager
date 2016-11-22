@@ -44,7 +44,7 @@ DROP DATABASE test;
 CREATE DATABASE monitor;
 CREATE USER 'sstuser'@'localhost' IDENTIFIED BY '$sstpwd';
 CREATE USER 'monitor'@'%' IDENTIFIED BY '$sstpwd';
-GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'sstuser'@'localhost';
+GRANT RELOAD, PROCESS, LOCK TABLES, REPLICATION CLIENT ON *.* TO 'sstuser'@'localhost';
 GRANT ALL ON monitor.* to 'monitor'@'%' WITH MAX_QUERIES_PER_HOUR 36000 MAX_UPDATES_PER_HOUR 36000 MAX_CONNECTIONS_PER_HOUR 36000 MAX_USER_CONNECTIONS 36000;
 delete from mysql.user where user='' or host not in ('%','127.0.0.1','localhost');
 FLUSH PRIVILEGES;

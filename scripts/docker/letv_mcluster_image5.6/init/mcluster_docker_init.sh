@@ -85,11 +85,7 @@ sed -i "/FLUSH PRIVILEGES/i\GRANT ALL ON monitor.* to 'monitor'@'%' WITH MAX_QUE
 fi
 
 
-#innotop
-sed -i '473 s/.*/   if \( defined \$mysqlversion \&\& $mysqlversion =~ \/^5\\\.6\/ \) {/' /usr/local/bin/innotop
-
 service crond restart
-
 
 # init salt
 sed -i "42s/.*/id: $(hostname)/" /etc/salt/minion
