@@ -7,7 +7,7 @@
 import sys
 import threading
 import MySQLdb
-
+from MySQLdb import IntegrityError, ProgrammingError
 
 class SqlStore(object):
 
@@ -60,30 +60,62 @@ class SqlStore(object):
         return call
 
     @execute_retry
-    def execute(self, sql, args=None):
+    def execute_notrans(self, sql, args=None, conn=None):
         if args is not None and not isinstance(args, (list, tuple, dict)):
             args = (args,)
 
         for retry in xrange(self.retry, -1, -1):
             try:
-                cursor = self._conn().cursor()
-                if (sql, args,) not in self.executed_sql:
-                    cursor.execute(sql, args)
-                    self.executed_sql.append((sql, args))
+                cursor = self._conn().cursor() if not conn else conn.cursor()
+                cursor.execute(sql, args)
+                break
             except MySQLdb.OperationalError:
                 exc_class, exception, tb = sys.exc_info()
                 if not retry:
                     raise exc_class, exception, tb
         return cursor
 
-    def commit(self):
-        r = self._conn().commit()
+    @execute_retry
+    def execute(self, sql, args=None, conn=None):
+        if args is not None and not isinstance(args, (list, tuple, dict)):
+            args = (args,)
+
+        for retry in xrange(self.retry, -1, -1):
+            try:
+                cursor = self._conn().cursor() if not conn else conn.cursor()
+                if (sql, args,) not in self.executed_sql:
+                    cursor.execute(sql, args)
+                    self.executed_sql.append((sql, args))
+                break
+            except MySQLdb.OperationalError:
+                exc_class, exception, tb = sys.exc_info()
+                if not retry:
+                    raise exc_class, exception, tb
+        return cursor
+
+    def transaction(self, sqls):
+        conn = self._conn()
+        error = ''
+        try:
+            for sql in sqls:
+                self.execute(sql, args=None, conn=conn)
+            self.commit(conn=conn)
+        except ProgrammingError, e:
+            error = e[1]
+        # an error in SQL integrity
+        except IntegrityError, e:
+            error = e[1]
+            self.rollback(conn=conn)
+        return error
+
+    def commit(self, conn=None):
+        r = self._conn().commit() if not conn else conn.commit()
         for sql, args in self.executed_sql:
             self.executed_sql = []
         return r
 
-    def rollback(self):
-        r = self._conn().rollback()
+    def rollback(self, conn=None):
+        r = self._conn().rollback() if not conn else conn.rollback()
         self.executed_sql = []
         return r
 
