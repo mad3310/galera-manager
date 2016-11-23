@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import json
 import logging
 
@@ -11,6 +12,8 @@ from common.utils.asyc_utils import run_on_executor, run_callback
 from common.zkOpers import Requests_ZkOpers
 from controllers.db.batch import SQLBatch
 from controllers.db.consts import DDL_TYPE
+
+DIR_MCLUSTER_MYSQ = '/srv/mcluster/mysql'
 
 
 class DDLBatch(RequestHandler):
@@ -194,7 +197,16 @@ class TablesRows(RequestHandler):
     def post(self, db_name):
         body = json.loads(self.request.body, strict=False, encoding='utf-8')
         tables = body.get("tables")
+
+        # 判断数据库是否存在
+        db_dir = DIR_MCLUSTER_MYSQ + '/{db_name}'.format(db_name=db_name)
+        if not os.path.exists(db_dir):
+            self.set_status(400)
+            self.finish({"errmsg": "db is not exist", "errcode": 40031})
+            return
+
         result = DBAOpers.get_tables_rows(db_name, tables)
+
         # 判断是否有不存在的表
         for tb, row in result.items():
             if not row:
