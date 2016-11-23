@@ -29,7 +29,8 @@ from handlers.databaseUser import DBUser
 from handlers.monitor import Mcluster_Monitor_Async, Mcluster_Monitor_Sync
 from handlers.status import MclusterHealth, MclusterStatus, MclusterStatusDetail
 from handlers.backup import BackUpCheck, BackUp_Checker, Backup, Inner_Backup_Action
-from handlers.dump import DBDump, DumpCheck
+from handlers.db.dump import DBDump, DumpCheck
+from handlers.db.batch import DDLBatch, DDLBatchCheck, DMLBatch, DMLBatchCheck, TablesRows
 
 # 管理配置
 handlers = [
