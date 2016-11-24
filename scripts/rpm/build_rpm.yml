@@ -24,7 +24,6 @@ dependencies:
     - MySQL-python
     - kazoo
     - python-futures
-    - python-simplejson
     - python-tornado
     - zope.interface
     - mcluster-mysql-libs
