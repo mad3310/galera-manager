@@ -28,14 +28,15 @@ class DDLBatch(RequestHandler):
     @engine
     def post(self, db_name):
         body = json.loads(self.request.body, strict=False, encoding='utf-8')
-        pts = body.get('pts', '[]')
+        pts = json.loads(body.get('pts', '[]'))
         if not pts:
             self.set_status(400)
             self.finish({"errmsg": "required argument is empty", "errcode": 40001})
             return
 
         # 写开始状态到zk
-        ddl_status = dict(isFinished=False, status='sql batch ddl is in processing')
+        ddl_status = dict(isFinished=False, isSuccessed=False,
+                          status='sql batch ddl is in processing')
         yield self.set_start_status(db_name, ddl_status)
         self.finish(ddl_status)
 
@@ -51,6 +52,7 @@ class DDLBatch(RequestHandler):
     def ddl_execute(self, db_name, pts):
         batch = SQLBatch(db_name)
         is_finished = True
+        is_successed = True
         ddl_status = {}
         for pt in pts:
             ddl_sqls = pt.get("ddlSqls")
@@ -62,17 +64,18 @@ class DDLBatch(RequestHandler):
             else:
                 ret = self.execute_direct(batch, db_name, ddl_sqls)
             if not ret:
-                is_finished = False
-                ddl_status = dict(isFinished=is_finished,
+                is_successed = False
+                ddl_status = dict(isFinished=is_finished, isSuccessed=is_successed,
                                   status='sql batch ddl({0}) is failed'.format(ddl_sqls))
                 break
-        if is_finished:
-            ddl_status = dict(isFinished=is_finished, status='sql batch ddl is successed')
+        if is_successed:
+            ddl_status = dict(isFinished=is_finished, isSuccessed=is_successed,
+                              status='sql batch ddl is successed')
         self.zk.write_sqlbatch_ddl_info(db_name, ddl_status)
 
     def execute_direct(self, batch, db_name, sql):
         ret = True
-        ddl_status = dict(isFinished=False,
+        ddl_status = dict(isFinished=True, isSuccessed=False,
                           status='sql batch ddl({0}) is in processing'.format(sql))
         error = batch.sql_excute(sql)
         logging.info("[DDL Batch] execute_direct sqls: {0}".format(sql))
@@ -85,7 +88,7 @@ class DDLBatch(RequestHandler):
     def execute_one(self, batch, db_name, tb_name, ddl_sqls):
         # PT-OSC工具执行分两步操作：
         # 先测试，成功返回：Dry run complete.
-        ddl_status = dict(isFinished=False,
+        ddl_status = dict(isFinished=True, isSuccessed=False,
                           status='sql batch ddl ({0}) is failed'.format(ddl_sqls))
 
         ret = batch.ddl_test(ddl_sqls, tb_name)
@@ -143,7 +146,8 @@ class DMLBatch(RequestHandler):
             return
 
         # 写开始状态到zk
-        dml_status = dict(isFinished=False, status='sql batch dml is in processing')
+        dml_status = dict(isFinished=False, isSuccessed=False,
+                          status='sql batch dml is in processing')
         yield self.set_start_status(db_name, dml_status)
         self.finish(dml_status)
 
@@ -164,9 +168,9 @@ class DMLBatch(RequestHandler):
         error = batch.dml(sqls)
 
         # 写结束状态到zk
-        is_finished = False if error else True
+        is_successed = False if error else True
         status = error or 'sql batch dml is successed'
-        dml_status = dict(isFinished=is_finished, status=status)
+        dml_status = dict(isFinished=True, isSuccessed=is_successed, status=status)
         self.zk.write_sqlbatch_dml_info(db_name, dml_status)
 
 
