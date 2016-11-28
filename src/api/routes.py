@@ -13,8 +13,7 @@ from handlers.dataNode import (DataNodeToMCluster, SyncDataNode,
                                StatMysqlCpuPartion, StatMysqlMemoryPartion,
                                StatNodeMemorySize, StatNodeWorkLoad,
                                StatNodeDiskEnough, DataNodeMonitorLogError)
-from handlers.database import (BinLogNodestat, BinlogPos, DBCreate, DBDelete,
-                               DDLBatch, DMLBatch, TablesRows, DBStat,
+from handlers.database import (BinLogNodestat, BinlogPos, DBCreate, DBDelete, DBStat,
                                Inner_DB_Check_CurConns, Inner_DB_Check_User_CurConns,
                                Inner_DB_Check_WR, Inner_DB_Check_WsrepStatus,
                                Inner_DB_Retrieve_Recover_UUID_Seqno, StatInnoBufferMemAlloc,
@@ -28,7 +27,8 @@ from handlers.databaseUser import DBUser
 from handlers.monitor import Mcluster_Monitor_Async, Mcluster_Monitor_Sync
 from handlers.status import MclusterHealth, MclusterStatus, MclusterStatusDetail
 from handlers.backup import BackUpCheck, BackUp_Checker, Backup, Inner_Backup_Action
-from handlers.dump import DBDump, DumpCheck
+from handlers.db.dump import DBDump, DumpCheck
+from handlers.db.batch import DDLBatch, DDLBatchCheck, DMLBatch, DMLBatchCheck, TablesRows
 
 # 管理配置
 handlers = [
@@ -85,12 +85,17 @@ handlers += [
 handlers += [
     (r"/dbUser", DBUser),
     (r"/dbUser/([a-zA-Z\-\_0-9]+)/([a-zA-Z\-\_0-9]+)/([\.0-9\%]+|\%)", DBUser),
+    # It is an old url, which is still used by matrix
+    # this url should be instead by '/db/create' in the future
+    (r"/db", DBCreate),
     (r"/db/create", DBCreate),
     (r"/db/([a-zA-Z\-\_0-9]+)/delete/", DBDelete),
     (r"/db/(?P<db_name>.*)/dump", DBDump),
     (r"/db/dump/file/(?P<file_name>.*)/check", DumpCheck),
     (r"/db/(?P<db_name>.*)/ddl/batch", DDLBatch),
+    (r"/db/(?P<db_name>.*)/ddl/batch/check", DDLBatchCheck),
     (r"/db/(?P<db_name>.*)/dml/batch", DMLBatch),
+    (r"/db/(?P<db_name>.*)/dml/batch/check", DMLBatchCheck),
     (r"/db/(?P<db_name>.*)/tables/rows", TablesRows),
     # 监控信息收集
     (r"/db/binlog/pos", BinlogPos),

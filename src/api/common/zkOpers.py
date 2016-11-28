@@ -256,6 +256,37 @@ class ZkOpers(object):
         resultValue = self._retrieveSpecialPathProp(path)
         return resultValue
 
+    def write_sqlbatch_status(self, sql_type, db_name, dict_status):
+        clusterUUID = self.getClusterUUID()
+        full_path = '%s/%s/sqlbatch/%s/%s' %(self.rootPath,
+                                             clusterUUID, sql_type,
+                                             db_name)
+        if not self.zk.exists(full_path):
+            self.zk.ensure_path(full_path)
+        self.DEFAULT_RETRY_POLICY(self.zk.set, full_path, json.dumps(dict_status))
+
+    def retrieve_sqlbatch_status(self, sql_type, db_name):
+        clusterUUID = self.getClusterUUID()
+        full_path = '%s/%s/sqlbatch/%s/%s' %(self.rootPath,
+                                             clusterUUID, sql_type,
+                                             db_name)
+        resultValue = self._retrieveSpecialPathProp(full_path)
+        return resultValue
+
+    def write_sqlbatch_ddl_info(self, db_name, dict_status):
+        self.write_sqlbatch_status('ddl', db_name, dict_status)
+
+    def retrieve_sqlbatch_ddl_status_info(self, db_name):
+        resultValue = self.retrieve_sqlbatch_status('ddl', db_name)
+        return resultValue
+
+    def write_sqlbatch_dml_info(self, db_name, dict_status):
+        self.write_sqlbatch_status('dml', db_name, dict_status)
+
+    def retrieve_sqlbatch_dml_status_info(self, db_name):
+        resultValue = self.retrieve_sqlbatch_status('dml', db_name)
+        return resultValue
+
     def retrieve_type_backup_status_info(self, path):
         clusterUUID = self.getClusterUUID()
         path = self.rootPath + "/" + clusterUUID + "/backup/" + path + '_backup'
@@ -434,6 +465,8 @@ class ZkOpers(object):
     def _lock_base_action(self, lock_path):
         clusterUUID = self.getClusterUUID()
         path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_path)
+        if not self.zk.exists(path):
+            self.zk.ensure_path(path)
         if self.zk.get_children(path=path):
             lock_name = self.zk.get_children(path=path)[0]
             local_address = "{path} +/+ {lock_name}".format(path=path,lock_name=lock_name)
@@ -474,8 +507,11 @@ class ZkOpers(object):
         return resultValue
 
     def _format_data(self, data):
-        local_data = data.replace("'", "\"").replace("[u\"", "[\"").replace(" u\"", " \"")
-        formatted_data = json.loads(local_data)
+        try:
+            local_data = data.replace("'", "\"").replace("[u\"", "[\"").replace(" u\"", " \"")
+            formatted_data = json.loads(local_data)
+        except:
+            formatted_data = json.loads(data)
         return formatted_data
 
 

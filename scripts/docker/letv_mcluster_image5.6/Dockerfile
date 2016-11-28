@@ -61,8 +61,8 @@ ADD ./init/mcluster-bootstrap /usr/share/mysql/mcluster-bootstrap
 RUN chmod 755 /usr/share/mysql/mcluster-bootstrap
 
 #yum need software
-RUN yum install cronie -y
 RUN yum install vim -y
+RUN yum install cronie -y
 RUN yum update bash -y
 
 #set innotop
