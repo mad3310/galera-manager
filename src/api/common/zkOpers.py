@@ -13,7 +13,7 @@ import time
 
 from tornado.options import options
 from kazoo.client import KazooClient, KazooState
-from kazoo.exceptions import SessionExpiredError
+from kazoo.exceptions import SessionExpiredError, NoNodeError
 from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
 from common.utils.exceptions import CommonException
@@ -467,10 +467,14 @@ class ZkOpers(object):
         path = "%s/%s/lock/%s" % (self.rootPath, clusterUUID, lock_path)
         if not self.zk.exists(path):
             self.zk.ensure_path(path)
-        if self.zk.get_children(path=path):
-            lock_name = self.zk.get_children(path=path)[0]
+        lock_children_list = self.zk.get_children(path=path)
+        if lock_children_list:
+            lock_name = lock_children_list[0]
             local_address = "{path} +/+ {lock_name}".format(path=path,lock_name=lock_name)
-            node_ctime = int(self.zk.get(local_address)[-1].ctime)
+            try:
+                node_ctime = int(self.zk.get(local_address)[-1].ctime)
+            except NoNodeError:
+                logging.info('zk is not lock')
             difftime = int(time.time()) - node_ctime / 1000
             if difftime >= 5 * 60:
                 self.zk.delete(local_address)
