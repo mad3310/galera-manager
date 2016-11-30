@@ -477,7 +477,7 @@ class ZkOpers(object):
                 if difftime >= 5 * 60:
                     self.zk.delete(local_address)
             except NoNodeError:
-                logging.info('zk is not lock')
+                pass
         lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
         isLock = lock.acquire(blocking=True, timeout=5)
         return (isLock, lock)
