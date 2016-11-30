@@ -9,6 +9,7 @@ import threading
 import MySQLdb
 from MySQLdb import IntegrityError, ProgrammingError
 
+
 class SqlStore(object):
 
     def __init__(self, context, retry=1):
@@ -100,10 +101,7 @@ class SqlStore(object):
             for sql in sqls:
                 self.execute(sql, args=None, conn=conn)
             self.commit(conn=conn)
-        except ProgrammingError, e:
-            error = e[1]
-        # an error in SQL integrity
-        except IntegrityError, e:
+        except (ProgrammingError, IntegrityError) as e:
             error = e[1]
             self.rollback(conn=conn)
         return error
