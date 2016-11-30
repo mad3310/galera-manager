@@ -473,11 +473,11 @@ class ZkOpers(object):
             local_address = "{path} +/+ {lock_name}".format(path=path,lock_name=lock_name)
             try:
                 node_ctime = int(self.zk.get(local_address)[-1].ctime)
+                difftime = int(time.time()) - node_ctime / 1000
+                if difftime >= 5 * 60:
+                    self.zk.delete(local_address)
             except NoNodeError:
                 logging.info('zk is not lock')
-            difftime = int(time.time()) - node_ctime / 1000
-            if difftime >= 5 * 60:
-                self.zk.delete(local_address)
         lock = self.DEFAULT_RETRY_POLICY(self.zk.Lock, path, threading.current_thread())
         isLock = lock.acquire(blocking=True, timeout=5)
         return (isLock, lock)
