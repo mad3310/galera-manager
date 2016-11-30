@@ -110,13 +110,12 @@ class SqlStore(object):
 
     def commit(self, conn=None):
         r = self._conn().commit() if not conn else conn.commit()
-        for sql, args in self.executed_sql:
-            self.executed_sql = []
+        del self.executed_sql[:]
         return r
 
     def rollback(self, conn=None):
         r = self._conn().rollback() if not conn else conn.rollback()
-        self.executed_sql = []
+        del self.executed_sql[:]
         return r
 
     @classmethod
