@@ -42,14 +42,11 @@ class SQLBatch(object):
         error = ''
         try:
             self.db.execute_notrans(sql)
-        except ProgrammingError, e:
-            error = e[1]
-        except IntegrityError, e:
+        except (ProgrammingError, IntegrityError, Exception) as e:
             error = e[1]
         return error
 
     def dml(self, sqls):
         """执行失败需要回滚"""
-        if not sqls:
-            return None
-        return self.db.transaction(sqls)
+        if sqls:
+            return self.db.transaction(sqls)
