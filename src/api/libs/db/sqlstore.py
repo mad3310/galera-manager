@@ -5,6 +5,7 @@
 """
 
 import sys
+import logging
 import threading
 import MySQLdb
 from MySQLdb import IntegrityError, ProgrammingError
@@ -70,10 +71,10 @@ class SqlStore(object):
                 cursor = self._conn().cursor() if not conn else conn.cursor()
                 cursor.execute(sql, args)
                 break
-            except MySQLdb.OperationalError:
-                exc_class, exception, tb = sys.exc_info()
+            except (MySQLdb.OperationalError, Exception) as e:
                 if not retry:
-                    raise exc_class, exception, tb
+                    logging.error(e, exc_info=True)
+                    raise
         return cursor
 
     @execute_retry
@@ -88,10 +89,10 @@ class SqlStore(object):
                     cursor.execute(sql, args)
                     self.executed_sql.append((sql, args))
                 break
-            except MySQLdb.OperationalError:
-                exc_class, exception, tb = sys.exc_info()
+            except (MySQLdb.OperationalError, Exception) as e:
                 if not retry:
-                    raise exc_class, exception, tb
+                    logging.error(e, exc_info=True)
+                    raise
         return cursor
 
     def transaction(self, sqls):
@@ -101,7 +102,7 @@ class SqlStore(object):
             for sql in sqls:
                 self.execute(sql, args=None, conn=conn)
             self.commit(conn=conn)
-        except (ProgrammingError, IntegrityError) as e:
+        except (ProgrammingError, IntegrityError, Exception) as e:
             error = e[1]
             self.rollback(conn=conn)
         return error
