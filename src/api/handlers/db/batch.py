@@ -74,36 +74,24 @@ class DDLBatch(RequestHandler):
         self.zk.write_sqlbatch_ddl_info(db_name, ddl_status)
 
     def execute_direct(self, batch, db_name, sql):
-        ret = True
-        ddl_status = dict(isFinished=True, isSuccessed=False,
-                          status='sql batch ddl({0}) is in processing'.format(sql))
-        error = batch.sql_excute(sql)
         logging.info("[DDL Batch] execute_direct sqls: {0}".format(sql))
-        if error:
-            ddl_status.update(dict(status=error))
-            ret = False
-        self.zk.write_sqlbatch_ddl_info(db_name, ddl_status)
-        return ret
+        error = batch.sql_excute(sql)
+        return False if error else True
 
     def execute_one(self, batch, db_name, tb_name, ddl_sqls):
         # PT-OSC工具执行分两步操作：
         # 先测试，成功返回：Dry run complete.
-        ddl_status = dict(isFinished=True, isSuccessed=False,
-                          status='sql batch ddl ({0}) is failed'.format(ddl_sqls))
-
-        ret = batch.ddl_test(ddl_sqls, tb_name)
         logging.info("[DDL Batch] test sqls: {0}".format(ddl_sqls))
+        ret = batch.ddl_test(ddl_sqls, tb_name)
         if not ret:
             logging.error("[DDL Batch] test error: {0}".format(ddl_sqls))
-            self.zk.write_sqlbatch_ddl_info(db_name, ddl_status)
             return False
 
         # 再执行，成功返回：Successfully.
-        ret = batch.ddl(ddl_sqls, tb_name)
         logging.info("[DDL Batch] result sqls: {0}".format(ddl_sqls))
+        ret = batch.ddl(ddl_sqls, tb_name)
         if not ret:
             logging.error("[DDL Batch] error: {0}".format(ddl_sqls))
-            self.zk.write_sqlbatch_ddl_info(db_name, ddl_status)
             return False
         return True
 
@@ -213,7 +201,8 @@ class TablesRows(RequestHandler):
 
         # 判断是否有不存在的表
         for tb, row in result.items():
-            if not row:
+            # 行数为0不能说明表不存在, 以-1作为行数表示不存在的表
+            if row < 0:
                 self.set_status(400)
                 result = {"errmsg": "table {0} is not exist".format(tb), "errcode": 40401}
                 break
