@@ -171,7 +171,8 @@ class DBAOpers(object):
                     "where TABLE_SCHEMA='{db_name}' and table_name='{tb_name}'")
                    .format(db_name=db_name, tb_name=tb))
             r = cursor.execute(sql)
-            rows[tb] = cursor.fetchall()[0][0] if r else 0
+            # 若为空表则行数本为0行，若该表不存在，行数以-1代替
+            rows[tb] = cursor.fetchall()[0][0] if r else -1
         return rows
 
     def create_user(self, conn, username, passwd, ip_address='%', dbName=None):
