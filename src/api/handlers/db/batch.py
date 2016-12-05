@@ -213,7 +213,8 @@ class TablesRows(RequestHandler):
 
         # 判断是否有不存在的表
         for tb, row in result.items():
-            if not row:
+            # 行数为0不能说明表不存在, 以-1作为行数表示不存在的表
+            if row < 0:
                 self.set_status(400)
                 result = {"errmsg": "table {0} is not exist".format(tb), "errcode": 40401}
                 break
