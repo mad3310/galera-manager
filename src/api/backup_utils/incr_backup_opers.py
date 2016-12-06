@@ -53,12 +53,12 @@ class IncrementBackupOpers(AbstractBackupOpers):
                     --incremental %s/incre_backup-%s \
                     --incremental-basedir=%s/full > %s.log \
                     2>&1" % (BACKUP_SECRET.USER,
-                             BACKUP_SECRET.PASSED,
+                             BACKUP_SECRET.PASSWD,
                              options.mysql_cnf_file_name,
                              BACKUP_CONFIG.INCR_LOCAL_DIR,
                              self.time,
                              base_dir,
-                             BACKUP_CONFIG.TMPFILE + self.time)
+                             BACKUP_CONFIG.TMP_FILE + self.time)
 
         run_bak_relust = os.system(bak_cmd)
 

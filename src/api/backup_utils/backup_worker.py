@@ -72,7 +72,7 @@ class BackupWorkers(threading.Thread):
         except Exception, e:
             record = {"error: ": 'backup is wrong, please check it!', 'time:': datetime.datetime.now().strftime(TIME_FORMAT), 'backup_type: ': self._backup_mode}
             self.zkOpers.write_backup_backup_info(record)
-            logging.info(e)
+            logging.error(e, exc_info=True)
 
         finally:
             conn.close()
