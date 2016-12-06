@@ -58,7 +58,7 @@ class IncrementBackupOpers(AbstractBackupOpers):
                              BACKUP_CONFIG.INCR_LOCAL_DIR,
                              self.time,
                              base_dir,
-                             BACKUP_CONFIG.TMPFILE + self.time)
+                             BACKUP_CONFIG.TMP_FILE + self.time)
 
         run_bak_relust = os.system(bak_cmd)
 
