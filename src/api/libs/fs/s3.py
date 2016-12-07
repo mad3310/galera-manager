@@ -6,7 +6,7 @@ import urlparse
 
 from tornado.options import options
 
-from src.api.utils.randbytes import randbytes2
+from utils.randbytes import randbytes2
 
 
 class S3(object):
