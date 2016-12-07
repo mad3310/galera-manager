@@ -4,6 +4,7 @@ import os
 import logging
 import subprocess
 
+from boto3.s3.transfer import TransferConfig
 from libs.fs.s3 import s3
 
 from .consts import (DIR_MCLUSTER, S3_DUMP_FILE_PATH,
@@ -44,7 +45,9 @@ class Dump(object):
 
         # 上传到S3
         if os.path.exists(local_path):
-            s3.upload_file(local_path, s3_path)
+            # 针对大文件上传，并发上传线程数设置为1
+            config = TransferConfig(max_concurrency=1)
+            s3.upload_file(local_path, s3_path, config=config)
             logging.info("[dump] upload file [{0}] to [matrix/{1}]".format(local_path, s3_path))
 
         # 再次删除本地dump文件

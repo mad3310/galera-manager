@@ -54,7 +54,7 @@ class S3(object):
         object_acl = self.bucket.Object(key).Acl()
         return object_acl.put(ACL=acl)
 
-    def upload_file(self, file, key=None, acl=None):
+    def upload_file(self, file, key=None, acl=None, config=None):
         """上传文件
 
         Args:
@@ -63,7 +63,7 @@ class S3(object):
             acl: 'private'|'public-read'|'public-read-write'|'authenticated-read'
         """
         key = key or randbytes2()
-        self.bucket.upload_file(file, key)
+        self.bucket.upload_file(file, key, Config=config)
         acl = acl or 'public-read'
         self.object_acl(key, acl)
         return key
