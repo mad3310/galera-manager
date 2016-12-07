@@ -6,27 +6,7 @@ import urlparse
 
 from tornado.options import options
 
-from utils.randbytes import randbytes2
-
-KB = 1024
-MB = KB * KB
-
-
-class UploadConfig(object):
-    def __init__(self,
-                 multipart_threshold=8 * MB,
-                 max_concurrency=10,
-                 multipart_chunksize=8 * MB,
-                 num_download_attempts=5,
-                 max_io_queue=100,
-                 io_chunksize=256 * KB):
-
-        self.multipart_threshold = multipart_threshold
-        self.max_request_concurrency = max_concurrency
-        self.multipart_chunksize = multipart_chunksize
-        self.num_download_attempts = num_download_attempts
-        self.max_io_queue_size = max_io_queue
-        self.io_chunksize = io_chunksize
+from src.api.utils.randbytes import randbytes2
 
 
 class S3(object):
