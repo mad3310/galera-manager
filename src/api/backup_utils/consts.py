@@ -16,7 +16,7 @@ LOCAL = '/srv/mcluster/mcluster_data/hot_backup/xbstream/rs/full_add'  # 备份�
 REMOTE = '/data/mcluster_data/hot_backup/xbstream/rs/full_add'         # 备份的远程目录
 
 BACKUP_CONFIG = storify(dict(
-    LOG_FILE_PATH='backup',
+    LOG_FILE_PATH='/var/log/mcluster-manager/mcluster-backup/',
     FULL_LOCAL_DIR=LOCAL,
     FULL_REMOTE_DIR=REMOTE,
     INCR_LOCAL_DIR='%s/incr' % LOCAL,

@@ -6,6 +6,7 @@ import json
 
 from common.utils.exceptions import HTTPAPIErrorException
 
+# TODO: 应统一从配置读取
 FULL_LOG_FILE_PATH = '/var/log/mcluster-manager/mcluster-backup/'
 INCR_LOG_FILE_PATH = '/var/log/mcluster-manager/mcluster-backup/incr/'
 
