@@ -15,9 +15,9 @@ target_type: rpm
 # 软件包名
 name: mcluster-manager
 # 软件包版本号
-version: 0.2.3a5
+version: 0.2.3
 # 软件包发型序号，即相同版本号（version）的代码这是第几次打包发型
-release: 1
+release: 3
 
 # 软件包安装及运行时依赖
 dependencies:
