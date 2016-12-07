@@ -8,6 +8,26 @@ from tornado.options import options
 
 from utils.randbytes import randbytes2
 
+KB = 1024
+MB = KB * KB
+
+
+class UploadConfig(object):
+    def __init__(self,
+                 multipart_threshold=8 * MB,
+                 max_concurrency=10,
+                 multipart_chunksize=8 * MB,
+                 num_download_attempts=5,
+                 max_io_queue=100,
+                 io_chunksize=256 * KB):
+
+        self.multipart_threshold = multipart_threshold
+        self.max_request_concurrency = max_concurrency
+        self.multipart_chunksize = multipart_chunksize
+        self.num_download_attempts = num_download_attempts
+        self.max_io_queue_size = max_io_queue
+        self.io_chunksize = io_chunksize
+
 
 class S3(object):
 
@@ -54,7 +74,7 @@ class S3(object):
         object_acl = self.bucket.Object(key).Acl()
         return object_acl.put(ACL=acl)
 
-    def upload_file(self, file, key=None, acl=None):
+    def upload_file(self, file, key=None, acl=None, config=None):
         """上传文件
 
         Args:
@@ -63,7 +83,7 @@ class S3(object):
             acl: 'private'|'public-read'|'public-read-write'|'authenticated-read'
         """
         key = key or randbytes2()
-        self.bucket.upload_file(file, key)
+        self.bucket.upload_file(file, key, Config=config)
         acl = acl or 'public-read'
         self.object_acl(key, acl)
         return key
