@@ -18,6 +18,8 @@ name: mcluster-manager
 version: 0.2.3
 # 软件包发型序号，即相同版本号（version）的代码这是第几次打包发型
 release: 4
+# mysql version
+mysql_ver: 5.5
 
 # 软件包安装及运行时依赖
 dependencies:

@@ -7,7 +7,7 @@ function checkvar(){
   fi
 }
 
-IFACE=${IFACE:-pbond0}
+IFACE=${IFACE:-peth1}
 
 checkvar IP $IP
 checkvar NETMASK $NETMASK
@@ -30,13 +30,13 @@ IPADDR=$IP
 NETMASK=$NETMASK
 GATEWAY=$GATEWAY
 EOF
-ifconfig $IFACE $IP/16
+ifconfig $IFACE $IP/24
 echo 'set network successfully'
 
 #route
-gateway=`echo $IP | cut -d. -f1,2`.0.1
-route add default gw $gateway
+gateway=`echo $IP | cut -d. -f1,2`.91.1
 route del -net 0.0.0.0 netmask 0.0.0.0 dev eth0
+route add default gw $gateway
 
 #my.cnf
 if [ ! -d "/srv/mcluster/tmp" ]; then
@@ -160,45 +160,45 @@ echo 'set logrotate successfully'
 
 
 #install logstash
-if [ ! -f "/etc/logstash-forwarder.conf" ]; then
-cd /tmp
-/usr/bin/wget --no-check-certificate https://10.154.29.92:443/v1/AUTH_gaoqiang3/oss/elk_set/logstash-forwarder.crt
-/usr/bin/wget --no-check-certificate https://10.154.29.92:443/v1/AUTH_gaoqiang3/oss/elk_set/logstash-forwarder.key
-/usr/bin/wget --no-check-certificate https://10.154.29.92:443/v1/AUTH_gaoqiang3/oss/elk_set/elkserverip.txt
-HOST_NAME='testgao'
-CURRENT_HOST_NAME=`hostname`
-MYSQL_LOG='/var/log/mcluster-mysqld.log'
-SLOW_LOG="/srv/mcluster/mysql/${CURRENT_HOST_NAME}-slow.log"
-ELK_SERVER_IP=`cat elkserverip.txt`
+#if [ ! -f "/etc/logstash-forwarder.conf" ]; then
+#cd /tmp
+#/usr/bin/wget --no-check-certificate https://10.154.29.92:443/v1/AUTH_gaoqiang3/oss/elk_set/logstash-forwarder.crt
+#/usr/bin/wget --no-check-certificate https://10.154.29.92:443/v1/AUTH_gaoqiang3/oss/elk_set/logstash-forwarder.key
+#/usr/bin/wget --no-check-certificate https://10.154.29.92:443/v1/AUTH_gaoqiang3/oss/elk_set/elkserverip.txt
+#HOST_NAME='testgao'
+#CURRENT_HOST_NAME=`hostname`
+#MYSQL_LOG='/var/log/mcluster-mysqld.log'
+#SLOW_LOG="/srv/mcluster/mysql/${CURRENT_HOST_NAME}-slow.log"
+#ELK_SERVER_IP=`cat elkserverip.txt`
 
-/bin/mv logstash-forwarder.crt /etc/pki/tls/certs/logstash-forwarder.crt
-/bin/mv logstash-forwarder.key /etc/pki/tls/private/logstash-forwarder.key
+#/bin/mv logstash-forwarder.crt /etc/pki/tls/certs/logstash-forwarder.crt
+#/bin/mv logstash-forwarder.key /etc/pki/tls/private/logstash-forwarder.key
 
-cat > /etc/logstash-forwarder.conf << EOF
-{
-  "network": {
-    "servers": [ "${ELK_SERVER_IP}" ],
-    "ssl ca": "/etc/pki/tls/certs/logstash-forwarder.crt",
-    "ssl key": "/etc/pki/tls/private/logstash-forwarder.key"
-  },
-  "files": [
-    {
-      "paths":["${MYSQL_LOG}"],
-      "fields":{"type":"${HOST_NAME}_mysqld"}
-    },
-    {
-      "paths":["${SLOW_LOG}"],
-      "fields":{"type":"${HOST_NAME}_slow"}
-    }
-  ]
-}
-EOF
+#cat > /etc/logstash-forwarder.conf << EOF
+#{
+#  "network": {
+#    "servers": [ "${ELK_SERVER_IP}" ],
+#    "ssl ca": "/etc/pki/tls/certs/logstash-forwarder.crt",
+#    "ssl key": "/etc/pki/tls/private/logstash-forwarder.key"
+#  },
+#  "files": [
+#    {
+#      "paths":["${MYSQL_LOG}"],
+#      "fields":{"type":"${HOST_NAME}_mysqld"}
+#    },
+#    {
+#      "paths":["${SLOW_LOG}"],
+#      "fields":{"type":"${HOST_NAME}_slow"}
+#    }
+#  ]
+#}
+#EOF
 
-service logstash-forwarder stop
-service logstash-forwarder start
+#service logstash-forwarder stop
+#service logstash-forwarder start
 
-fi
-echo 'set logstash successfully'
+#fi
+#echo 'set logstash successfully'
 
 
 # set monit
@@ -210,9 +210,9 @@ set httpd port 30000
 allow 127.0.0.1
 
 #data node
-check process logstash MATCHING '/opt/logstash-forwarder/bin/logstash-forwarder -config /etc/logstash-forwarder.conf'
-    start program = "/etc/init.d/logstash-forwarder start"
-    stop  program = "/etc/init.d/logstash-forwarder stop"
+#check process logstash MATCHING '/opt/logstash-forwarder/bin/logstash-forwarder -config /etc/logstash-forwarder.conf'
+#    start program = "/etc/init.d/logstash-forwarder start"
+#    stop  program = "/etc/init.d/logstash-forwarder stop"
 
 check process salt_minion MATCHING '/usr/bin/python /usr/bin/salt-minion'
     start program = "/etc/init.d/salt-minion start"

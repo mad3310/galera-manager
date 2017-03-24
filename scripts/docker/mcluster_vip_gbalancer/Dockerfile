@@ -3,8 +3,8 @@ MAINTAINER bingzheng.zhou <zhoubingzheng@letv.com>
 RUN rpm -ivh http://pkg-repo.oss.letv.com/pkgs/centos6/letv-release.noarch.rpm
 
 # set yum repo
-ADD ./init/test.repo /etc/yum.repos.d/test.repo
-RUN chmod 755 /etc/yum.repos.d/test.repo
+#ADD ./init/test.repo /etc/yum.repos.d/test.repo
+#RUN chmod 755 /etc/yum.repos.d/test.repo
 RUN yum clean all
 
 #Increase default limit
@@ -16,6 +16,8 @@ RUN yum install cronie -y
 RUN yum install gbalancer-manager -y
 RUN yum install gbalancer -y
 RUN yum update bash -y
+RUN yum install -y wget
+RUN yum install -y monit
 
 EXPOSE 3306 8888 9888
 
@@ -38,8 +40,6 @@ ADD ./init/check_gbalancer.sh /usr/local/init/check_gbalancer.sh
 RUN chmod 755 /usr/local/init/check_gbalancer.sh
 
 # install monit
-RUN yum install -y wget
-RUN yum install -y monit
 ADD ./init/monit /etc/init.d/monit
 RUN chmod 755 /etc/init.d/monit
 
