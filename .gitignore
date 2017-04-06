@@ -30,3 +30,5 @@
 /*.egg
 /docs/_build
 /htmlcov
+/.project
+/org.eclipse.core.resources.prefs
