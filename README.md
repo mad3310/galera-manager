@@ -1,14 +1,14 @@
-# mcluster-manager
+# galera-manager
 
 ## 项目简介
 * 是什么
-[mcluster-manager介绍](http://wiki.letv.cn/pages/viewpage.action?title=mcluster-manager&spaceKey=pla)
+[galera-manager介绍](http://wiki.letv.cn/pages/viewpage.action?title=mcluster-manager&spaceKey=pla)
 * 为什么要用这个
-[mcluster-manager 特性](http://wiki.letv.cn/display/pla/the+feature+list+of+mcluster+manager)
+[galera-manager 特性](http://wiki.letv.cn/display/pla/the+feature+list+of+mcluster+manager)
 
 
 ## 变更历史
-[mcluster-manager版本更新历史](http://wiki.letv.cn/pages/viewpage.action?pageId=30838427)
+[galera-manager版本更新历史](http://wiki.letv.cn/pages/viewpage.action?pageId=30838427)
 ### v0.0.8(2016-04-26)
 #### 重大更新
 
@@ -20,8 +20,8 @@
 * [使用说明1](http://wiki.letv.cn/pages/viewpage.action?pageId=47027464)
 * [使用说明2](http://wiki.letv.cn/pages/viewpage.action?pageId=28577052)
 * [API使用说明文档](http://wiki.letv.cn/display/pla/the+design+of+mcluster+manager+API)
-* [mcluster-manager RDS创建过程](http://wiki.letv.cn/pages/viewpage.action?pageId=48647150)
-* [mcluster-manager监控接口调用](http://wiki.letv.cn/pages/viewpage.action?pageId=53422781)
+* [galera-manager RDS创建过程](http://wiki.letv.cn/pages/viewpage.action?pageId=48647150)
+* [galera-manager监控接口调用](http://wiki.letv.cn/pages/viewpage.action?pageId=53422781)
 
 ## 环境依赖
 ### 开发环境
