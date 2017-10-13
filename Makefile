@@ -29,7 +29,7 @@ lint:
 	@echo "[\033[94mlint\033[0m] basic"
 	@$(WITH_ENV) flake8 --immediate
 	@echo "[\033[94mlint\033[0m] complexity (warning only)"
-	@$(WITH_ENV) flake8 --immediate --max-complexity=12 mcluster-manager || true
+	@$(WITH_ENV) flake8 --immediate --max-complexity=12 galera-manager || true
 
 unittest:
 	@$(WITH_ENV) py.test tests/unittests
